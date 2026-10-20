@@ -45,3 +45,8 @@ GitHub Pages reported commit **35d16916dbed288cd26896231c29d77cb3c06e7f** built 
 ## Temporary backend connection and strict budget check
 
 A Cloudflare Quick Tunnel exposed the existing backend temporarily. Public health returned 200, allowed-origin preflight 204, protected readiness 200 with database/worker ready, and unauthenticated readiness 401. This is a real server path, not a static fixture; it remains dependent on the team computer and has no hosting uptime guarantee. The separate fresh-quote seven-second benchmark **failed**: the new refreshed job was still processing at the deadline. See [preview details](PUBLIC-PREVIEW.md) and the two new evidence captures. This supersedes the earlier statement that Pages had no connected backend, once the new frontend release is published.
+
+## Connected frontend verification
+
+Pages release **9ee6f65206ce3033536a6e9438e92915a1141199** loaded the connected frontend successfully. In the actual public browser, team-token authentication reached the database and worker, and a cached comparison returned real retailer observations in 1.06 seconds. This was not a new collection and is not a strict-budget pass. All nine HTTP smoke checks also passed through the public tunnel. The refreshed budget-test quote later finished partial, with no complete verified plan. Proof: [connected frontend](public-backend-connected.png). The preview remains dependent on the team computer staying online.
+
