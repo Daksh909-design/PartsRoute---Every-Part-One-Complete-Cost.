@@ -32,6 +32,7 @@ During development, actual TinyFish connector calls fetched Robu/Robocraze produ
 - Enumeration of complete assignments and at most three distinct finalist retailer-basket browser checks per quote.
 - PostgreSQL jobs, worker leases, cached original observations with original timestamps, normalized observations, protected evidence/usage endpoints and recoverable TinyFish run IDs.
 - Separate live and synthetic modes, progress, refresh, partial results, retries, comparisons and source links.
+- GitHub Pages build for browser-calculated synthetic examples, with live mode disabled and clearly labelled hosting limits.
 - Server-only provider keys, a shared team token for live endpoints, durable live quotas and same-origin browser access.
 
 ## Retailers and catalogue
@@ -194,6 +195,6 @@ See [architecture](docs/ARCHITECTURE.md), [deployment/recovery](docs/DEPLOYMENT.
 
 Public repository: [Daksh909-design / PartsRoute — Every Part. One Complete Cost.](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost.)
 
-No public hosted demo or presentation link is available yet. The app can run on localhost; see `START-HERE.md` for setup and existing-repository publishing instructions.
+GitHub Pages deployment is being configured for the interactive saved-data demo. Pages does not host live API routes or the worker; live collection requires a server deployment. See [deployment instructions](docs/DEPLOYMENT.md). No presentation link is available yet.
 
 Made with love by Team REsynced.

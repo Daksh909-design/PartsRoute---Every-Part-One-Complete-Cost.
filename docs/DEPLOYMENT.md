@@ -2,6 +2,16 @@
 
 PartsRoute requires **two long-running Node services and one persistent PostgreSQL database** for live mode. Deploy the web service and worker from the same commit. Do not run the worker inside a request handler or on short-lived serverless functions.
 
+## GitHub Pages: interactive saved-data demo
+
+GitHub Pages hosts static files only. This deployment supports editable quantities, required specifications, validation and deterministic sample basket comparisons in the browser. It uses the same synthetic fixtures and calculator as the server demo. Live TinyFish/OpenAI collection, private evidence, database jobs and the worker are unavailable on this host; live mode is disabled and the limitation is shown in the interface.
+
+Run `pnpm build:pages`. The build stages an allowlisted copy of the public UI, domain code and synthetic fixture in `.pages-build/`. It does not alter the running server build or copy server modules, API routes, environment files or credentials. The generated directory and base path are recorded in `artifacts/pages-build.json`. `PAGES_BASE_PATH` defaults to `/PartsRoute---Every-Part-One-Complete-Cost.` and can be overridden for another repository.
+
+Publish the generated directory, including `.nojekyll`, to the root of the `gh-pages` branch. Configure the repository's Pages source as `gh-pages` at `/`. Keep source development on `main`; updating `main` alone does not rebuild this deployment. Rebuild and push the generated output for each release. No custom Actions workflow or additional workflow OAuth permission is needed for branch publishing.
+
+For live quotes, use the server deployment below. Never embed API keys in a Pages build.
+
 ## Container deployment
 
 The included Dockerfile has `web` and `worker` targets. Build them separately:
@@ -57,4 +67,4 @@ The command refuses to overwrite known IDs and performs a basic goal/pincode che
 
 Run the real provider checks, manually review extraction, verify PostgreSQL migrations/concurrent claims/restart recovery, run tests/typecheck/build and browser-check desktop/mobile UI. Set API spending limits in the provider dashboards. A per-quote three-basket cap and six-quotes/hour shared quota are not a substitute for account-level budgets.
 
-No deployment or public URL has been created by this repository.
+The public Pages demo is separate from a live server deployment. See the README for the verified deployment link; a live server deployment still needs configuration and qualification.

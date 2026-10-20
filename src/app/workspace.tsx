@@ -4,6 +4,9 @@ import { catalogue, retailers, sampleParts } from "../domain/catalogue";
 import type { PartRequest, Plan, QuoteResult } from "../domain/schema";
 import { CircuitScene, Icon } from "./ui-icons";
 
+const staticDemo = process.env.NEXT_PUBLIC_STATIC_DEMO === "true";
+const homePath = `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/`;
+
 const money = (amount: number | null) =>
   amount === null
     ? "Unknown"
@@ -73,7 +76,7 @@ export default function Workspace() {
   const polling = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingKey = useRef<string | null>(null);
   useEffect(() => {
-    setSavedId(localStorage.getItem("partsroute-job") || "");
+    if (!staticDemo) setSavedId(localStorage.getItem("partsroute-job") || "");
     return () => {
       if (polling.current) clearTimeout(polling.current);
     };
@@ -143,15 +146,28 @@ export default function Workspace() {
       }));
       const input = { parts: parsed, pincode, mode, refresh };
       if (mode === "demo") {
-        const demo = await call("/api/demo", {
-          method: "POST",
-          body: JSON.stringify(input),
-        });
+        let demo: QuoteResult;
+        if (staticDemo) {
+          const [{ demoQuote }, { QuoteInput }] = await Promise.all([
+            import("../domain/demo"),
+            import("../domain/schema"),
+          ]);
+          demo = demoQuote(QuoteInput.parse(input));
+        } else {
+          demo = await call("/api/demo", {
+            method: "POST",
+            body: JSON.stringify(input),
+          });
+        }
         setResult(demo);
         setJob(null);
         setBusy(false);
         setPhase("Saved sample calculated");
       } else {
+        if (staticDemo)
+          throw new Error(
+            "Live collection needs the server deployment. This site runs the saved-data demo only.",
+          );
         pendingKey.current ??= crypto.randomUUID();
         const response = await call("/api/quotes", {
           method: "POST",
@@ -249,7 +265,7 @@ export default function Workspace() {
   return (
     <div className="app-frame">
       <aside className="nav-rail" aria-label="Primary navigation">
-        <a className="rail-logo" href="/" aria-label="PartsRoute home">
+        <a className="rail-logo" href={homePath} aria-label="PartsRoute home">
           <Icon name="route" />
         </a>
         <span className="rail-divider" />
@@ -289,7 +305,7 @@ export default function Workspace() {
       </aside>
       <div className="shell">
         <header className="topbar">
-          <a className="brand" href="/" aria-label="PartsRoute home">
+          <a className="brand" href={homePath} aria-label="PartsRoute home">
             Parts
             <span>
               Route<span className="brand-dot">.</span>
@@ -474,6 +490,12 @@ export default function Workspace() {
                           type="radio"
                           name="mode"
                           checked={mode === "live"}
+                          disabled={staticDemo}
+                          title={
+                            staticDemo
+                              ? "Live mode requires a server deployment"
+                              : undefined
+                          }
                           onChange={() => {
                             setMode("live");
                             setResult(null);
@@ -487,6 +509,12 @@ export default function Workspace() {
                     >
                       {mode === "demo" ? (
                         <>
+                          {staticDemo && (
+                            <strong>
+                              GitHub Pages demo. Live collection is unavailable
+                              on this host.{" "}
+                            </strong>
+                          )}
                           Synthetic prices and shipping for a reproducible
                           example. No live API calls.
                         </>
@@ -1058,8 +1086,9 @@ export default function Workspace() {
                 </div>
               ) : !job ? (
                 <div className="notice">
-                  Create or resume a live quote to inspect its original
-                  observations here.
+                  {staticDemo
+                    ? "This GitHub Pages site runs saved-data calculations only. Live TinyFish observations and run identifiers require the server deployment. Earlier feasibility captures are in the repository under docs/evidence."
+                    : "Create or resume a live quote to inspect its original observations here."}
                 </div>
               ) : (
                 <>

@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
+    "build:pages": "node scripts/build-pages.mjs",
     "start": "next start",
     "worker": "tsx --env-file-if-exists=.env.local src/worker.ts",
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",

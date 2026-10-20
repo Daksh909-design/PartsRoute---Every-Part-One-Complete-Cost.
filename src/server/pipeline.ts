@@ -10,7 +10,8 @@ import {
   type Basket,
 } from "../domain/schema";
 import { matchOffer } from "../domain/matching";
-import { buildPlans, priceLine } from "../domain/optimizer";
+import { finish } from "../domain/quote";
+export { finish } from "../domain/quote";
 import { OpenAIProvider, type AIProvider } from "./ai";
 import {
   db,
@@ -193,36 +194,6 @@ async function verify(
   const shipping = validateBasket(run.result, basket, pincode, evidence(o));
   await normalizeObservation(o.id, shipping);
   return shipping;
-}
-export function finish(
-  input: QuoteInput,
-  offers: Offer[],
-  rules: ShippingRule[],
-  shipping: ShippingObservation[],
-  errors: string[],
-): QuoteResult {
-  const plans = buildPlans(input.parts, offers, input.pincode, rules, shipping);
-  const recommended = plans.find((p) => p.verified);
-  return {
-    mode: input.mode,
-    input,
-    offers,
-    shipping,
-    plans,
-    recommendedId: recommended?.id ?? null,
-    coverage: {
-      requested: input.parts.length,
-      covered: input.parts.filter((p) =>
-        offers.some((o) => o.partId === p.id && priceLine(p, o) !== null),
-      ).length,
-    },
-    errors,
-    explanation: recommended
-      ? `Best verified plan among checked options. This plan includes all ${input.parts.length} component lines, with shipping checked for each retailer basket.`
-      : "No fully verified purchasing plan is available. Inspect the product gaps and unverified shipping below.",
-    explanationSource: "deterministic",
-    generatedAt: new Date().toISOString(),
-  };
 }
 export async function processQuote(
   jobId: string,
