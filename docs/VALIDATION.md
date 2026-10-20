@@ -42,3 +42,6 @@ Run pnpm test, pnpm typecheck, pnpm build, pnpm test:http and pnpm benchmark:htt
 
 GitHub Pages reported commit **35d16916dbed288cd26896231c29d77cb3c06e7f** built successfully. The deployed HTML, hashed JavaScript and CSS returned HTTP 200. The actual public calculator changed quantity three to ₹370 and reset to ₹295, with no browser errors. Screenshot: [published release](pages-current-release.png). Source implementation: **9c24a4790858c916e7aeb2bb6afb27477b9ca77b**. The public release remains the static sample, with no live backend connected.
 
+## Temporary backend connection and strict budget check
+
+A Cloudflare Quick Tunnel exposed the existing backend temporarily. Public health returned 200, allowed-origin preflight 204, protected readiness 200 with database/worker ready, and unauthenticated readiness 401. This is a real server path, not a static fixture; it remains dependent on the team computer and has no hosting uptime guarantee. The separate fresh-quote seven-second benchmark **failed**: the new refreshed job was still processing at the deadline. See [preview details](PUBLIC-PREVIEW.md) and the two new evidence captures. This supersedes the earlier statement that Pages had no connected backend, once the new frontend release is published.

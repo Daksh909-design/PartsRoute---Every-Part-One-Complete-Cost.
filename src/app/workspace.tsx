@@ -13,6 +13,7 @@ import {
   repository,
   requestApi,
   staticSite,
+  temporaryBackend,
 } from "./api-client";
 import QuoteResults from "./quote-results";
 import EvidenceView, { type EvidenceData } from "./evidence-view";
@@ -400,6 +401,16 @@ export default function Workspace() {
         {error && (
           <div className="notice error" role="alert">
             {error}
+          </div>
+        )}
+        {mode === "live" && temporaryBackend && (
+          <div className="demo-banner" role="status">
+            <Icon name="info" />
+            <span>
+              <strong>Temporary live server.</strong> The team computer must
+              stay online. Fresh collection can take longer than seven seconds;
+              a cached comparison is a separate operation.
+            </span>
           </div>
         )}
         {view === "evidence" ? (

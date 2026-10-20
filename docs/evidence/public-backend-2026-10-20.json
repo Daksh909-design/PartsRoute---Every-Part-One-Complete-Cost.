@@ -1,0 +1,33 @@
+{
+  "checkedAt": "2026-10-20T15:21:00.211Z",
+  "origin": "https://heritage-classical-printer-repository.trycloudflare.com",
+  "kind": "temporary",
+  "health": 200,
+  "cors": 204,
+  "allowedOrigin": "https://daksh909-design.github.io",
+  "readinessStatus": 200,
+  "ready": true,
+  "unauthorisedStatus": 401,
+  "checks": [
+    {
+      "name": "TinyFish",
+      "ok": true,
+      "detail": "Server API key configured; account access is checked when collecting."
+    },
+    {
+      "name": "Gemini",
+      "ok": true,
+      "detail": "Server API key configured; model access is checked when extracting."
+    },
+    {
+      "name": "Database",
+      "ok": true,
+      "detail": "Connected and migrated."
+    },
+    {
+      "name": "Worker",
+      "ok": true,
+      "detail": "Worker heartbeat received."
+    }
+  ]
+}

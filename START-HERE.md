@@ -12,3 +12,5 @@ Direct-key TinyFish Fetch/Agent, the local server/worker and real SQL checks hav
 The repository belongs to **Daksh909-design**. Its name ends in a dot; the Git URL is `https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost..git`. Preserve existing history and never force-push over team changes.
 
 Use **Compare latest observations** for a fast read-only result. Use **Refresh from retailers** to collect new evidence; it can take longer than seven seconds. Review [the timing measurements](docs/PERFORMANCE.md) before the pitch.
+
+The updated Pages interface uses an account-free **temporary public backend** while this computer and its local services stay online. The same team token protects it. See [PUBLIC-PREVIEW.md](docs/PUBLIC-PREVIEW.md). The strict fresh seven-second test failed; do not submit the project as meeting that requirement.

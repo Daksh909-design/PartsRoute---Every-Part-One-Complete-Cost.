@@ -74,3 +74,7 @@ The public Pages demo is separate from a live server deployment. See the README 
 ## Latency and preparation
 
 Run migrations 004 and 005 before deploying this revision, then deploy web and worker from the same commit. Compare latest observations uses the read-only `/api/comparisons` route. Warm the live catalogue before measuring it with `pnpm benchmark:http`; do not present an empty cache, synthetic sample or job acknowledgement as a completed seven-second live basket. Cold hosting starts and provider latency are not covered by local timings. [PERFORMANCE.md](PERFORMANCE.md) records the limits.
+
+## Account-free live preview
+
+The public interface was connected to the existing local backend through a temporary Cloudflare Quick Tunnel. This does not provision Render or permanent hosting. It depends on the team computer and all local services staying online. See [PUBLIC-PREVIEW.md](PUBLIC-PREVIEW.md) for lifecycle, authentication, recovery and the strict seven-second test result.

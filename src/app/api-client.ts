@@ -4,6 +4,8 @@ export const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(
   "",
 );
 export const liveAvailable = !staticSite || Boolean(apiBase);
+export const temporaryBackend =
+  /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(apiBase);
 export const repository =
   "https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost.";
 export const homePath = `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/`;

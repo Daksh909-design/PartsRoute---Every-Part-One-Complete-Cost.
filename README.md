@@ -12,7 +12,7 @@ PartsRoute helps Indian student teams, makers and electronics teams compare the 
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Sample calculator  | Deployed to GitHub Pages. Synthetic data, real quantity and basket calculations.                                                                                                                                                                            |
 | Server application | Next.js production server, PostgreSQL and worker running locally. Build, HTTP and real SQL checks passed.                                                                                                                                                   |
-| Hosted live server | Deployment configuration prepared. Not provisioned; needs owner sign-in, API keys and approval of hosting charges.                                                                                                                                          |
+| Hosted live server | Temporary Cloudflare preview connected to the existing local stack. Requires the team computer to stay online; permanent hosting is not provisioned.                                                                                                        |
 | Live qualification | Direct-key TinyFish Fetch and Agent checked; original responses saved. Replacement Gemini key generates successfully; real structured product extraction saved, with intermittent timeouts. A complete verified landed basket and human review remain open. |
 
 **The first live milestone has not passed.** The Pages sample is not evidence of a live integration. See [feasibility](docs/FEASIBILITY.md) and [checks actually executed](docs/VALIDATION.md).
@@ -98,7 +98,7 @@ Deterministic code validates specifications, excludes insufficient stock, rounds
 
 ## Response time
 
-**Compare latest observations** uses PostgreSQL and the calculator without new provider calls. The final ten local requests measured 11–302 ms. A cache miss asks for an explicit **Refresh from retailers**, which runs in the background and can exceed seven seconds. This is not a seven-second guarantee for a newly collected, verified basket. See [measurements and the mentor requirement](docs/PERFORMANCE.md).
+**Compare latest observations** uses PostgreSQL and the calculator without new provider calls. The final ten local requests measured 11–302 ms. A cache miss asks for an explicit **Refresh from retailers**, which runs in the background and can exceed seven seconds. This is not a seven-second guarantee for a newly collected, verified basket. The strict fresh-quote test was executed and **failed**: a new quote was still processing at seven seconds. See [measurements and the mentor requirement](docs/PERFORMANCE.md).
 
 ## Tests and diagnostics
 
@@ -123,7 +123,7 @@ The test fixtures are explicitly synthetic. The sample's manual totals are ₹25
 
 `pnpm build:pages` builds an isolated static sample export. Without a configured backend it shows a setup screen for live quotes. With an actual `NEXT_PUBLIC_API_BASE_URL` and allowed backend origin, it can call the protected server. API keys never enter this build. Custom CI is an optional template in `docs/ci-workflow.yml.example`.
 
-The main remaining gaps are extraction reliability, complete pincode shipping, two fully qualified retailers, human-reviewed extraction and real model evaluation. PostgreSQL persistence, concurrent claiming and expired-lease recovery have been exercised. Public live hosting is not provisioned. No delivery deadline or guaranteed shipping fee is inferred from a banner or dispatch estimate.
+The main remaining gaps are extraction reliability, complete pincode shipping, two fully qualified retailers, human-reviewed extraction and real model evaluation. PostgreSQL persistence, concurrent claiming and expired-lease recovery have been exercised. Permanent public hosting is not provisioned. The Pages interface can now use a temporary protected live preview; see [preview setup](docs/PUBLIC-PREVIEW.md). No delivery deadline or guaranteed shipping fee is inferred from a banner or dispatch estimate.
 
 ## Roadmap
 
@@ -139,6 +139,6 @@ Built by **Team REsynced**, NSUT, for the AI/ML track of Kritical Hacks.
 
 [Daksh Sachdev](https://github.com/Daksh909-design) — Team Leader; Niyati Jain, Parth, Tashi Saxena and Ritesh Kumar — Team Members.
 
-[Repository](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost.) · [Public sample](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./). No hosted live-server or presentation URL is available yet.
+[Repository](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost.) · [Public sample](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./). The public interface connects to a temporary live preview while the team computer is online. No permanent hosted-server or presentation URL is available.
 
 Official integration references: [TinyFish Fetch](https://docs.tinyfish.ai/api-reference/fetch-and-extract-content-from-urls), [TinyFish async Agent](https://docs.tinyfish.ai/api-reference/automation/start-automation-asynchronously), [Gemini structured outputs](https://ai.google.dev/gemini-api/docs/structured-output), [Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing), [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs).

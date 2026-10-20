@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-10-20T15:20:18.153Z",
+  "requirement": "New live collection AND complete verified purchasing plan within 7000 ms",
+  "quoteId": "95324b58-c54e-478b-9a0c-181b2012252f",
+  "statusAtDeadline": "processing",
+  "elapsedMs": 7002.51,
+  "completeVerifiedPlan": false,
+  "passed": false,
+  "reason": "No complete verified purchasing plan was returned within seven seconds.",
+  "savedJobContinues": true
+}
