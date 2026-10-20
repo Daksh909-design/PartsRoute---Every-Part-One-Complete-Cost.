@@ -25,6 +25,12 @@ Authenticated local readiness showed configured providers, migrated PostgreSQL a
 - **TinyFish Agent:** direct-key run **52d7ca78-5076-4dbd-a08b-760a3d67c08c** completed a three-line guest-cart research probe. It reported the expected quantities and ₹248 item subtotal, but did not establish pincode serviceability or shipping and marked the basket as mismatching. The validator correctly kept shipping and landed total unknown. A sanitized original is saved; browser-session/video links were excluded from the public copy. This probe did not test the subsequently added order-control fields.
 - **Gemini:** model metadata returned HTTP 200. Actual generation returned **HTTP 403**, with `Your project has been denied access. Please contact support.` Both Interactions and GenerateContent failed. The opt-in real extraction test therefore **failed**; no live AI extraction pass, accuracy result or successful model usage is claimed. The owner's report of `Set up billing` is not an authenticated billing audit.
 
+## Published sample verification
+
+GitHub reported Pages commit **04f2eae5de33baaad857b7bc3a8f2c13243a4701** built successfully. The public HTML referenced the new hashed JavaScript and CSS, and both returned HTTP 200. A browser check on the actual public URL recalculated quantity three to ₹370, reset to ₹295, and reported no browser errors. This release is the static sample; it has no public live backend connected.
+
+All 13 stored observation hashes matched their manifest. The source tree and all five current public export files were checked for configured private credentials; none were found. Public JavaScript contained no direct TinyFish/Gemini provider endpoints. Relative documentation links resolved.
+
 ## Still open
 
 - Resolve Google project generation permissions without enabling paid billing merely to retry.

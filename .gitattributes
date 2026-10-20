@@ -1,0 +1,4 @@
+* text=auto eol=lf
+# Preserve the bytes identified by the observation SHA-256 manifest on Windows.
+docs/evidence/*.json -text
+*.png binary
