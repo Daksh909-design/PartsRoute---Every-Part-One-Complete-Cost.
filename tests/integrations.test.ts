@@ -15,18 +15,16 @@ const baseline = demoQuote({
 });
 describe("TinyFish HTTP contract with labelled mocked responses", () => {
   it("uses Fetch centrally and returns per-URL errors despite HTTP 200", async () => {
-    const transport = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            results: [],
-            errors: [
-              { url: "https://robu.in/product/test/", error: "bot_blocked" },
-            ],
-          }),
-        ),
-      );
+    const transport = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          results: [],
+          errors: [
+            { url: "https://robu.in/product/test/", error: "bot_blocked" },
+          ],
+        }),
+      ),
+    );
     const result = await new TinyFishClient(
       "test-secret",
       transport,
@@ -46,22 +44,20 @@ describe("TinyFish HTTP contract with labelled mocked responses", () => {
       "https://robu.in:4433/",
     ])
       expect(() => safeRetailerUrl(url, "robu")).toThrow();
-    const transport = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            results: [
-              {
-                url: "https://robu.in/",
-                final_url: "https://evil.test/",
-                text: "bad",
-              },
-            ],
-            errors: [],
-          }),
-        ),
-      );
+    const transport = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          results: [
+            {
+              url: "https://robu.in/",
+              final_url: "https://evil.test/",
+              text: "bad",
+            },
+          ],
+          errors: [],
+        }),
+      ),
+    );
     await expect(
       new TinyFishClient("key", transport).fetchPages(
         ["https://robu.in/"],
@@ -89,17 +85,15 @@ describe("TinyFish HTTP contract with labelled mocked responses", () => {
     expect(body.agent_config.max_steps).toBeUndefined();
   });
   it("recovers an existing run with the documented status endpoint", async () => {
-    const transport = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            run_id: "existing",
-            status: "COMPLETED",
-            result: { status: "failure" },
-          }),
-        ),
-      );
+    const transport = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          run_id: "existing",
+          status: "COMPLETED",
+          result: { status: "failure" },
+        }),
+      ),
+    );
     const result = await new TinyFishClient("key", transport).getRun(
       "existing",
     );
@@ -107,6 +101,41 @@ describe("TinyFish HTTP contract with labelled mocked responses", () => {
     expect(transport.mock.calls[0][0]).toBe(
       "https://agent.tinyfish.ai/v1/runs/existing",
     );
+  });
+  it("reports an Agent rejection returned with HTTP 200 without starting another run", async () => {
+    const transport = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          run_id: null,
+          error: {
+            code: "INSUFFICIENT_CREDITS",
+            message: "Account requires credits",
+          },
+        }),
+      ),
+    );
+    await expect(
+      new TinyFishClient("test-key", transport).startBasket(
+        baseline.plans[0].baskets[0],
+        "560001",
+      ),
+    ).rejects.toThrow("INSUFFICIENT_CREDITS");
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+  it("reports omitted Fetch URLs as failures rather than an empty success", async () => {
+    const transport = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ results: [], errors: [] })),
+      );
+    const result = await new TinyFishClient("test-key", transport).fetchPages(
+      ["https://robu.in/product/test/"],
+      "robu",
+      true,
+    );
+    expect(result.errors).toEqual([
+      { url: "https://robu.in/product/test/", error: "missing_result" },
+    ]);
   });
 });
 describe("basket output validation", () => {

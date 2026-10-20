@@ -1,200 +1,136 @@
 # PartsRoute
 
-Compare the **complete cost** of a small electronics parts list across Indian retailers. PartsRoute is for student teams, makers and small electronics teams whose cheapest individual listings can become an expensive split purchase after shipping, packs and tax.
+**Every part. One complete cost.**
 
-This repository contains a Next.js App Router application, a PostgreSQL-backed quote queue, a separate Node worker, direct TinyFish Fetch/Agent integration, OpenAI Structured Outputs, a deterministic purchasing-plan calculator, labelled synthetic fixtures and tests. It does not buy anything.
+PartsRoute helps Indian student teams, makers and electronics teams compare the complete cost of a small bill of materials. Buying each item from its cheapest listing can lose money once shipping, packs, minimum orders and tax are included. Similar product names can also hide a different connector or board version.
 
-## Team REsynced
+[Try the sample calculator](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./) · [Live server setup](docs/LIVE-SETUP.md) · [Engineering review](docs/REVIEW.md)
 
-Built for the AI/ML track of Kritical Hacks by **Team REsynced**, NSUT.
+## Status
 
-| Member | Role |
-|---|---|
-| [Daksh Sachdev](https://github.com/Daksh909-design) | Team Leader |
-| Niyati Jain | Team Member |
-| Parth | Team Member |
-| Tashi Saxena | Team Member |
-| Ritesh Kumar | Team Member |
+| Area               | Current state                                                                                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Sample calculator  | Deployed to GitHub Pages. Synthetic data, real quantity and basket calculations.                                                                                   |
+| Server application | Next.js API, PostgreSQL queue, worker, TinyFish and configurable AI adapters implemented. Latest checks and remaining runtime limits are recorded below.           |
+| Hosted live server | Deployment configuration prepared. Not provisioned; needs owner sign-in, API keys and approval of hosting charges.                                                 |
+| Live qualification | TinyFish connector Fetch and Agent observations saved. Direct-key application flow, human review and a complete verified three-line live basket remain unverified. |
 
-GitHub owner: [Daksh909-design](https://github.com/Daksh909-design). The intended repository visibility is **public**; publication status is recorded below.
+**The first live milestone has not passed.** The Pages sample is not evidence of a live integration. See [feasibility](docs/FEASIBILITY.md) and [checks actually executed](docs/VALIDATION.md).
 
-## Current status
+## Implemented
 
-The saved-data application is runnable without provider credentials. Live collection and worker code are implemented but the application's direct-key end-to-end path needs your credentials and PostgreSQL validation. **The first live milestone has not passed.** Do not present this as a completed hackathon submission yet.
+- Three curated component types with quantities, exact models, required specifications and a delivery pincode. Input schemas allow three to five lines; the current catalogue has three distinct entries.
+- Exact matches, rejected specifications, unknown fields and explicitly confirmed equivalents. Confirmation cannot override contradictory requirements.
+- Integer-paise calculations for packs, minimum quantities, quantity multiples, price breaks, explicit tax treatment and consolidated retailer shipping.
+- Complete-assignment enumeration, verified-plan ranking and partial alternatives. Unknown shipping is never treated as free.
+- Live quote jobs, leases, worker heartbeat, readiness checks, saved observations, provider run recovery, visible freshness and deliberate refresh.
+- Separate comparison and evidence views, retry states, protected live endpoints, bounded API requests and per-team live quotas.
 
-During development, actual TinyFish connector calls fetched Robu/Robocraze product pages and shipping pages, and a TinyFish Agent inspected a Robocraze guest cart. Its two HC-SR04 sensors cost ₹150 including GST, with serviceability confirmed for 560001; shipping and landed total remained unknown. These observations are saved under [docs/evidence](docs/evidence). They establish connector-level feasibility, not successful execution of the application HTTP adapters. No human verification is claimed.
+## Retailers
 
-## Implemented features
+| Retailer          | Adapter       | Qualification gap                                                                                     |
+| ----------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
+| Robocraze         | Implemented   | Exact DHT11 breakout not established; pincode-only complete basket shipping not obtained.             |
+| Robu              | Implemented   | Checked HC-SR04 page blocked/incomplete, shipping policy incomplete, checked breadboard out of stock. |
+| Evelta            | Research only | Exact overlapping catalogue and guest shipping path need qualification.                               |
+| Amazon / Flipkart | Planned       | Seller, variant, stock and basket-shipping evidence must be established first.                        |
 
-- Three curated component lines, editable quantities (1–100), exact models, required attributes and one Indian pincode. Schema allows 3–5 lines; the initial catalogue contains three distinct entries.
-- Exact matches, rejected specifications, unknown attributes and explicitly confirmed model equivalents. Required-spec conflicts cannot be overridden by confirmation.
-- Integer paise, pack rounding, minimum packs, multiples, price breaks, explicit item/ship tax handling and shipping consolidated by retailer basket.
-- Enumeration of complete assignments and at most three distinct finalist retailer-basket browser checks per quote.
-- PostgreSQL jobs, worker leases, cached original observations with original timestamps, normalized observations, protected evidence/usage endpoints and recoverable TinyFish run IDs.
-- Separate live and synthetic modes, progress, refresh, partial results, retries, comparisons and source links.
-- GitHub Pages build for browser-calculated synthetic examples, with live mode disabled and clearly labelled hosting limits.
-- Server-only provider keys, a shared team token for live endpoints, durable live quotas and same-origin browser access.
+Retailer coverage is provisional. Product URLs are curated in `src/domain/catalogue.ts`; arbitrary-name discovery is not implemented. A fresh TinyFish Agent inspection confirmed the checked Robocraze DHT11 is a bare four-pin sensor, not the requested breakout board. Those products must not be treated as exact equivalents.
 
-## Retailers and catalogue
+## Technology
 
-**Robu and Robocraze adapters are implemented; reliability is provisional.** They are not advertised as fully qualified integrations.
-
-| Retailer | Observed feasibility | Current limitation |
-|---|---|---|
-| Robocraze | HC-SR04, DHT11 and 400-point breadboard pages fetched; Agent checked a guest basket and pincode | Guest cart did not reveal a pincode-only shipping charge. The DHT11 URL describes a four-pin sensor and does not establish the sample's breakout-module requirement. |
-| Robu | DHT11 and 400-point breadboard pages fetched | HC-SR04 was bot-blocked, then returned navigation only. Shipping policy was a placeholder. The checked breadboard was out of stock. |
-| Evelta, fallback research only | FAQ shipping policy and humidity category fetched | Overlapping exact catalogue and guest shipping path not established; no application adapter enabled. |
-
-Product URLs are curated in `src/domain/catalogue.ts`. There is no arbitrary-name discovery and **TinyFish Search is not used**. Never add a replacement retailer by filling synthetic offers into live mode. See [the feasibility report](docs/FEASIBILITY.md) and saved original responses.
-
-### Why not Amazon, Flipkart and every other store yet?
-
-They are expansion candidates, not excluded from the product idea. The initial scope deliberately starts with two electronics-retailer adapters so exact specifications and complete basket costs can be checked before expanding coverage. Evelta has been researched but is not an active adapter.
-
-Marketplace support also needs seller-specific offer identity, selected variants, pack contents, tax evidence and the actual delivery charges for that seller's basket and pincode. Adding a name or logo does not establish a working integration. Amazon and Flipkart should enter the optimizer only after a TinyFish feasibility check and verified basket examples; they are currently labelled **planned** in the interface. No claim is made that either site has been tested through TinyFish yet.
+Next.js App Router and TypeScript; Tailwind CSS; Zod; PostgreSQL with a separate Node.js worker; Vitest; Gemini REST structured outputs by default and an optional official OpenAI SDK adapter. Dependency versions are pinned in `package.json` and `pnpm-lock.yaml`.
 
 ## Local setup
 
-Install Node.js **22.12 or newer**, pnpm **11.25.0**, and Docker Desktop (or an existing PostgreSQL server).
+Install Node **22.12+**, pnpm **11.25.0** and Docker Desktop (or PostgreSQL).
 
 ```sh
 pnpm install --frozen-lockfile
+# PowerShell: Copy-Item .env.example .env.local
+# macOS/Linux: cp .env.example .env.local
 pnpm dev
 ```
 
-Open [localhost:3000](http://localhost:3000) and select **Saved-data demo**. It uses invented fixtures, performs real server-side calculation, and needs neither a database nor API keys.
-
-For live mode:
+Open `http://localhost:3000`. The sample works without provider credentials. For live mode, fill `.env.local` privately and start the complete stack:
 
 ```sh
-# macOS/Linux; PowerShell: Copy-Item .env.example .env.local
-cp .env.example .env.local
-docker compose up -d db
+docker compose -f compose.yaml -f compose.live.yaml up --build -d
 ```
 
-Fill `.env.local` using your own API credentials. Generate a team token with:
+Stop the development preview first if it occupies port 3000. Alternatively start PostgreSQL, run `pnpm db:migrate`, then run `pnpm dev` and `pnpm worker` in separate terminals. See [live setup](docs/LIVE-SETUP.md) for hosted deployment, diagnostics and acceptance steps.
 
-```sh
-node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
-pnpm db:migrate
-pnpm dev
-```
+## Environment
 
-In another terminal, from this repository:
+| Variable                         | Purpose                                                                        |
+| -------------------------------- | ------------------------------------------------------------------------------ |
+| `DATABASE_URL`                   | PostgreSQL connection used by web and worker                                   |
+| `TINYFISH_API_KEY`               | Mandatory server-side Fetch and Agent credential                               |
+| `AI_PROVIDER`                    | `gemini` by default; optional `openai`                                         |
+| `GEMINI_API_KEY`                 | Server-side Google AI Studio credential                                        |
+| `GEMINI_MODEL`                   | Default `gemini-3.8-flash`; account access unverified                          |
+| `GEMINI_REQUEST_INTERVAL_MS`     | Delay between Gemini requests, default 12000; not a quota guarantee            |
+| `OPENAI_API_KEY`, `OPENAI_MODEL` | Only needed when explicitly selecting paid OpenAI                              |
+| `APP_ACCESS_TOKEN`               | Private team token, at least 24 characters, required for live API access       |
+| `APP_ORIGIN`                     | Web application's browser origin                                               |
+| `APP_ALLOWED_ORIGINS`            | Exact additional browser origins; allows the Pages frontend to call the server |
+| `NEXT_PUBLIC_API_BASE_URL`       | Optional public HTTPS backend origin baked into a Pages build; never a secret  |
+| `OBSERVATION_TTL_SECONDS`        | Cached observation freshness, default 900                                      |
+| `MAX_BROWSER_CHECKS`             | Browser checks per quote, capped at three                                      |
 
-```sh
-pnpm worker
-```
+Keep keys in the hosting secret settings or ignored `.env.local`. The website asks only for a team access token, never provider keys. Read [keys and costs](docs/KEYS-AND-COSTS.md) before making live calls: a model offered on a free tier can still incur charges when your project uses a paid tier.
 
-Select **Live TinyFish**, enter the team access token and run the comparison. Do not enter API keys into the interface. Restart web and worker after changing environment variables. Keep both processes on the same database.
+## TinyFish integration
 
-## Environment variables
+`src/server/tinyfish.ts` calls **Fetch** at `POST https://api.fetch.tinyfish.ai` to retrieve product and policy content. Requests use Markdown, bounded timeouts and per-URL error inspection. HTTP 200 alone is not success. Original responses, normalized observations, source URLs and times are persisted.
 
-| Variable | Purpose |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string; local example in `.env.example`. Use TLS in production using your provider's connection parameters. |
-| `TINYFISH_API_KEY` | Your TinyFish API key with Fetch and paid Agent access/credits. |
-| `OPENAI_API_KEY` | API project key; ChatGPT app access alone is not an API credential. |
-| `OPENAI_MODEL` | Defaults to `gpt-6-luna`; configurable, no silent fallback. Confirm access in your API project. |
-| `APP_ACCESS_TOKEN` | Shared private-team token, at least 24 characters; protects every live quote and evidence endpoint. |
-| `APP_ORIGIN` | Exact public origin, such as `http://localhost:3000` locally. |
-| `OBSERVATION_TTL_SECONDS` | Application observation cache freshness, clamped to 0–3600 seconds; default 900. |
-| `MAX_BROWSER_CHECKS` | Maximum distinct finalist baskets checked per quote, clamped to 1–3; default 3. |
+For a small shortlist, **Agent** starts an asynchronous guest-basket check at `POST https://agent.tinyfish.ai/v1/automation/run-async`, persists the returned ID and polls `GET /v1/runs/{id}`. It may inspect variants and pincode controls. It does not log in, invent addresses, submit checkout, pay or place orders. Ambiguous creation is not retried automatically. A structured result is verified against the exact basket, quantities, pincode, subtotal and displayed arithmetic before shipping is accepted.
 
-Production secrets must be configured independently on the web process and worker. No `NEXT_PUBLIC_` provider secrets exist.
+TinyFish Search is not used because automatic discovery is not implemented. There is no substitute scraping provider. [Saved connector captures](docs/evidence) are research evidence, separate from live app execution.
 
-## Exact TinyFish integration
+## AI and deterministic responsibilities
 
-The core collector uses TinyFish; no alternative scraper is present.
+**Gemini is the default provider**, using Google's Interactions REST API with a JSON response schema and local Zod validation. The optional OpenAI adapter uses the official SDK and Responses Structured Outputs when `AI_PROVIDER=openai`. There is no automatic paid fallback. `AIProvider` isolates product/policy extraction and explanations from business logic. Grounding requires supporting excerpts, and missing values remain unknown. The model selects explanation facts already validated by the application; it does not calculate the purchasing plan.
 
-1. `POST https://api.fetch.tinyfish.ai`, with `X-API-Key`, retrieves allowlisted curated product URLs and shipping policies. Semantic HTML is requested so quantity-control evidence can survive extraction. The response `results[]` and `errors[]` are inspected separately even for HTTP 200. `final_url` is validated against the retailer allowlist before content is used. A provider-side redirect may already have happened; this application does not claim to intercept TinyFish browser traffic.
-2. Original responses, retrieval timestamps and normalized results are saved in PostgreSQL. Unusable or blocked pages remain failures. Fresh same-URL observations can be reused; **Refresh live observations** sets Fetch `ttl: 0` and creates a new quote. Reopening/retrying an existing quote reuses that quote's saved work.
-3. Deterministic code generates complete assignments and shortlists promising plans by known prices. Unknown shipping is retained, never assigned zero. Policy information is displayed as evidence; live policy rules alone do not establish pincode applicability and cannot verify a plan.
-4. `POST https://agent.tinyfish.ai/v1/automation/run-async` asks TinyFish to inspect one exact guest basket, variants/quantities and pincode shipping estimator. It may change a temporary guest cart but cannot log in, invent personal details, submit checkout, pay or order. Agent duration is bounded to 180 seconds. Beta-gated `max_steps` and strict mode are omitted.
-5. Persist the returned `run_id`; recover status with `GET https://agent.tinyfish.ai/v1/runs/{id}`. Only a matching basket, pincode, item subtotal, shipping, serviceability, quoted amounts and arithmetic-consistent displayed total can become verified. `COMPLETED` is not enough; goal failures and invalid outputs remain unknown.
+Deterministic code validates specifications, excludes insufficient stock, rounds purchase quantities, applies published price tiers, adds only taxes not already included and charges shipping once per retailer basket. It enumerates complete assignments and checks up to three distinct finalist retailer baskets. The recommendation is the **best verified plan among checked options**, not the cheapest offer across the market.
 
-Browser run creation is never automatically retried. A network failure during submission may have started a paid run. Such an operation is marked uncertain and requires recovery of its existing ID; see [deployment and recovery](docs/DEPLOYMENT.md). A browser refresh does not start another run.
-
-The integration view provides original responses and actual run IDs for judging. Fetch often exposes no usage count; it is recorded as unknown. Agent steps and provider usage fields are recorded when returned. No API-cost figure is invented.
-
-Official references reviewed on 20 October 2026: [TinyFish Fetch](https://docs.tinyfish.ai/fetch-api/reference), [Agent reference](https://docs.tinyfish.ai/agent-api/reference), [run lifecycle](https://docs.tinyfish.ai/key-concepts/runs), [structured-output subset](https://docs.tinyfish.ai/key-concepts/structured-output).
-
-## AI responsibilities
-
-`AIProvider` in `src/server/ai.ts` isolates extraction/explanation from business logic. **OpenAI is the only AI provider used by this project.** Its official SDK calls `responses.parse` with Zod-constrained Structured Outputs. It extracts main-product facts, normalizes names/units, and supplies specifications that deterministic code compares. Exact supporting excerpts and numeric checks ground commercially relevant fields. Unknown values remain null, and grounding is deliberately conservative. `OPENAI_API_KEY` is the AI credential; the separately required `TINYFISH_API_KEY` enables the mandatory web collection service.
-
-For explanations the model selects only indices into facts already validated by the application. It cannot introduce new claims or amounts. Prices, quantities, taxes, shipping arithmetic and ranking are deterministic.
-
-The current [GPT-6 Luna documentation](https://developers.openai.com/api/docs/models/gpt-6-luna) describes it as an efficient model for focused tasks, making it the initial extraction candidate. Structured Outputs support was checked in official documentation, but **account access, latency and extraction quality are not yet evaluated with a real API key**. `OPENAI_MODEL` must remain configurable. See [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs).
-
-## Optimization approach
-
-Each component line is assigned to one eligible offer. Ordering constraints are measured in packs. Required packs are rounded up for units, minimum order and multiples before selecting the applicable pack-price tier. Out-of-stock, unknown-stock, insufficient-stock and mismatched offers are excluded.
-
-`total = listed item costs + additional item tax + shipping per retailer basket + additional shipping tax`
-
-Included tax is not added again. Exclusive tax requires an observed rate for that charge; there is no universal GST rate. Shipping threshold comparisons support strict/inclusive boundaries and either before-tax or payable-item bases. Unknown threshold basis remains unknown. Plans with an unknown cost do not get a complete numeric total.
-
-Only complete verified finalists can become a live recommendation, using **“best verified plan among checked options.”** Estimated/unknown alternatives remain visible. Dispatch estimates are never converted into deadline promises. Coupons, COD fees, arbitrary substitutions, multiple offers for one line, and buying extra just to cross a shipping threshold are not optimized.
-
-## Tests and validation
+## Tests and diagnostics
 
 ```sh
 pnpm test
 pnpm typecheck
 pnpm build
+# With the production web server running:
+pnpm test:http
+# After configuring the live stack:
+pnpm doctor
+pnpm doctor --providers
 ```
 
-Tests cover pack rounding, minimums/multiples, quantity tiers, shipping consolidation, strict/inclusive threshold boundaries, shipping tax, inclusive/exclusive item tax, missing GST, wrong models/connectors/pins, missing specs, stock, unknown shipping, partial collection and hand-calculated ranking. Contract tests use **mocked TinyFish HTTP responses**, not paid APIs. They do not prove live API success.
+The test fixtures are explicitly synthetic. The sample's manual totals are ₹255 items + ₹40 shipping = **₹295** through Robocraze, versus **₹320** through Robu. Split baskets cost more in this example. Tests cover packs, minimums, breaks, tax, thresholds, matching, stock, unknown shipping, partial failure, provider responses, readiness and run recovery. Mocked SQL tests do not establish PostgreSQL behavior. See [validation](docs/VALIDATION.md).
 
-For the real application pipeline after setup:
+## Deployment and limitations
 
-```sh
-# Run while the regular worker is stopped; this command processes its own persisted quote.
-pnpm validate:live 560001
-```
+`render.yaml` prepares a web service, worker and private PostgreSQL database. These always-on services incur charges; the owner must review the hosting estimate. Docker targets and a local Compose override are also included. [Deployment and recovery](docs/DEPLOYMENT.md) explains both processes.
 
-The command requires credentials and migrated PostgreSQL. It saves actual originals in the database and the result to ignored `artifacts/live-<id>.json`. A partial result is not a passed live milestone. Complete the human checks in [docs/FEASIBILITY.md](docs/FEASIBILITY.md). See [validation status](docs/VALIDATION.md) for checks actually executed during this build.
+`pnpm build:pages` builds an isolated static sample export. Without a configured backend it shows a setup screen for live quotes. With an actual `NEXT_PUBLIC_API_BASE_URL` and allowed backend origin, it can call the protected server. API keys never enter this build. Custom CI is an optional template in `docs/ci-workflow.yml.example`.
 
-## Live versus saved data
-
-| Mode | Collection | Arithmetic | What it proves |
-|---|---|---|---|
-| Live | Direct TinyFish Fetch and Agent + OpenAI extraction | Shared deterministic calculator | Actual checked observations, only if those calls ran successfully. |
-| Saved-data demo | Invented fixture with conspicuous synthetic labels | Same calculator and ranking | Reproducible business behavior, not live connectivity or current prices. |
-| Saved feasibility captures | Real earlier TinyFish connector responses | Normalized research observations | What was observed at those times, not a fresh quote or direct-adapter validation. |
-
-The demo sample's manually calculated totals are ₹320 for all Robu, ₹295 for all Robocraze and ₹345 for the lowest-item-price split. **These amounts are fictional** and exist to test shipping consolidation.
-
-## Limitations
-
-- The live milestone is incomplete: two reliable full retailers, complete shipping and human verification remain to qualify.
-- Retailer pages change, bot protection occurs, and checkout can require more than a pincode. Unknown shipping prevents a recommendation.
-- Quantity controls may be absent from Fetch content. Missing pack/minimum/multiple evidence prevents calculation instead of defaulting to one.
-- Curated catalogue only; no broad discovery. The sample DHT11 mismatch deliberately exposes an important real-world ambiguity.
-- Shared team token and global hourly quota are suitable for a private hackathon demo; this is not multi-user identity or tenant isolation. Put public deployments behind access control.
-- Only three distinct lines are currently in the catalogue. No delivery deadline guarantees, arbitrary-pincode region inference or automatic state lookup.
-- Original observation/cache storage needs retention policies for longer production use. Worker leases recover failures but external APIs cannot guarantee exactly-once execution after ambiguous submission.
-- Unit/contract tests do not replace real PostgreSQL/worker restart and provider tests. Consult validation status before claiming deployment readiness.
+The main remaining gaps are live hosting and credentials, complete pincode shipping, two qualified retailers, a human-reviewed extraction sample, real selected-provider evaluation and PostgreSQL recovery/concurrency verification. No delivery deadline or guaranteed shipping fee is inferred from a banner or dispatch estimate.
 
 ## Roadmap
 
-| Stage | Implemented | Remaining |
-|---|---|---|
-| MVP | App/worker/schema, two retailer adapters, TinyFish/OpenAI code, calculator, synthetic demo, evidence | Credentials, human review, reliable complete shipping and direct end-to-end qualification. |
-| Version 1 | Planned | Expand curated verified catalogue, qualify Evelta, retailer-specific quantity parsing, robust pincode mapping, extraction evaluation set, deployment monitoring and identity. |
-| Version 2 | Planned | TinyFish Search discovery, qualified Amazon/Flipkart adapters, richer equivalence review, supplier inventory/lead-time evidence, split-line optimization and team BOM import. |
+| Release             | Scope                                                                                                           |
+| ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| MVP — in progress   | Qualify two retailers, configure the live server and prove one complete three-line landed basket with evidence. |
+| Version 1 — planned | Expand the verified catalogue, extraction evaluation, pincode handling, monitoring and individual user access.  |
+| Version 2 — planned | TinyFish Search discovery, qualified marketplace adapters, BOM import and split-line purchasing.                |
 
-## Architecture and deployment
+## Team and links
 
-GitHub Actions is not enabled. An optional workflow is provided in `docs/ci-workflow.yml.example`; a repository owner can review it and copy it to `.github/workflows/ci.yml` when ready. Publishing the application did not request additional workflow permissions. Local test and build commands work independently of Actions.
+Made with love by **Team REsynced**, NSUT, for the AI/ML track of Kritical Hacks.
 
-See [architecture](docs/ARCHITECTURE.md), [deployment/recovery](docs/DEPLOYMENT.md) and [getting started checklist](START-HERE.md). Web and worker deploy as separate Node services against one PostgreSQL database.
+[Daksh Sachdev](https://github.com/Daksh909-design) — Team Leader; Niyati Jain, Parth, Tashi Saxena and Ritesh Kumar — Team Members.
 
-## Demo, presentation and GitHub
+[Repository](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost.) · [Public sample](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./). No hosted live-server or presentation URL is available yet.
 
-Public repository: [Daksh909-design / PartsRoute — Every Part. One Complete Cost.](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost.)
-
-[Open the interactive GitHub Pages demo](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./). The deployed sample calculator was checked in the browser and returned ₹295 across eight synthetic plans. Pages does not host live API routes or the worker; live collection requires a server deployment. See [deployment instructions](docs/DEPLOYMENT.md). No presentation link is available yet.
-
-Made with love by Team REsynced.
+Official integration references: [TinyFish Fetch](https://docs.tinyfish.ai/fetch-api/reference), [TinyFish async Agent](https://docs.tinyfish.ai/api-reference/automation/start-automation-asynchronously), [Gemini structured outputs](https://ai.google.dev/gemini-api/docs/structured-output), [Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing), [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs).

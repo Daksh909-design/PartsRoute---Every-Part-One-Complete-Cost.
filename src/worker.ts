@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { db, saveResult, type Job } from "./server/db";
 import { processQuote } from "./server/pipeline";
+import { aiConfig } from "./server/ai-provider";
 const owner = randomUUID();
 let stopping = false;
 process.on("SIGINT", () => {
@@ -9,11 +10,23 @@ process.on("SIGINT", () => {
 process.on("SIGTERM", () => {
   stopping = true;
 });
-if (!process.env.TINYFISH_API_KEY || !process.env.OPENAI_API_KEY)
+if (!process.env.TINYFISH_API_KEY || !process.env[aiConfig().keyName])
   throw new Error(
-    "Set TINYFISH_API_KEY and OPENAI_API_KEY before starting the live worker",
+    `Set TINYFISH_API_KEY and ${aiConfig().keyName} before starting the live worker`,
   );
+async function reportHeartbeat() {
+  await db().query(
+    "INSERT INTO worker_heartbeats(worker_id) VALUES($1) ON CONFLICT(worker_id) DO UPDATE SET last_seen=now()",
+    [owner],
+  );
+}
+await reportHeartbeat();
 console.log("PartsRoute worker ready. Provider secrets are never logged.");
+const presence = setInterval(() => {
+  void reportHeartbeat().catch(() => {
+    stopping = true;
+  });
+}, 10000);
 while (!stopping) {
   const job = (
     await db().query(
@@ -62,4 +75,6 @@ while (!stopping) {
     clearInterval(heartbeat);
   }
 }
+clearInterval(presence);
+await db().query("DELETE FROM worker_heartbeats WHERE worker_id=$1", [owner]);
 await db().end();

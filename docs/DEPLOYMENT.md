@@ -2,9 +2,11 @@
 
 PartsRoute requires **two long-running Node services and one persistent PostgreSQL database** for live mode. Deploy the web service and worker from the same commit. Do not run the worker inside a request handler or on short-lived serverless functions.
 
+Start with [LIVE-SETUP.md](LIVE-SETUP.md) for the prepared Render Blueprint and full local Compose stack. Hosted services have not been provisioned. Review hosting charges and enter provider keys privately before deployment.
+
 ## GitHub Pages: interactive saved-data demo
 
-GitHub Pages hosts static files only. This deployment supports editable quantities, required specifications, validation and deterministic sample basket comparisons in the browser. It uses the same synthetic fixtures and calculator as the server demo. Live TinyFish/OpenAI collection, private evidence, database jobs and the worker are unavailable on this host; live mode is disabled and the limitation is shown in the interface.
+GitHub Pages hosts static files only. This deployment supports editable quantities, required specifications, validation and deterministic sample basket comparisons in the browser. It uses the same synthetic fixtures and calculator as the server demo. Without a configured backend, Live quote shows a server setup screen. A Pages build can call a separate server through `NEXT_PUBLIC_API_BASE_URL`; exact allowed origins and the private team token are required. Collection, private evidence, jobs and the worker always run on the server, never in Pages.
 
 Run `pnpm build:pages`. The build stages an allowlisted copy of the public UI, domain code and synthetic fixture in `.pages-build/`. It does not alter the running server build or copy server modules, API routes, environment files or credentials. The generated directory and base path are recorded in `artifacts/pages-build.json`. `PAGES_BASE_PATH` defaults to `/PartsRoute---Every-Part-One-Complete-Cost.` and can be overridden for another repository.
 

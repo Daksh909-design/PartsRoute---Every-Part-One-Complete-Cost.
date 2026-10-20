@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import { allowedOrigin } from "./origins";
 export class AccessError extends Error {
   constructor(
     public status: number,
@@ -23,10 +24,7 @@ export function authorize(request: Request): string {
       "Enter your team access token to use live quotes.",
     );
   const origin = request.headers.get("origin");
-  if (
-    origin &&
-    origin !== (process.env.APP_ORIGIN || new URL(request.url).origin)
-  )
+  if (!allowedOrigin(origin, request.url))
     throw new AccessError(403, "Request origin not permitted.");
   return hash(expected).toString("hex");
 }

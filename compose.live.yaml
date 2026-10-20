@@ -1,0 +1,28 @@
+# docker compose -f compose.yaml -f compose.live.yaml up --build -d
+services:
+  migrate:
+    build: { context: ., target: worker }
+    env_file: .env.local
+    environment:
+      DATABASE_URL: postgresql://partsroute:partsroute@db:5432/partsroute
+    command: ["pnpm", "db:migrate"]
+    depends_on:
+      db: { condition: service_healthy }
+  web:
+    build: { context: ., target: web }
+    env_file: .env.local
+    environment:
+      DATABASE_URL: postgresql://partsroute:partsroute@db:5432/partsroute
+      NEXT_PUBLIC_API_BASE_URL: ""
+    ports: ["127.0.0.1:3000:3000"]
+    restart: unless-stopped
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+  worker:
+    build: { context: ., target: worker }
+    env_file: .env.local
+    environment:
+      DATABASE_URL: postgresql://partsroute:partsroute@db:5432/partsroute
+    restart: unless-stopped
+    depends_on:
+      migrate: { condition: service_completed_successfully }

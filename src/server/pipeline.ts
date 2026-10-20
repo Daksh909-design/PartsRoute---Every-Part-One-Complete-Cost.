@@ -12,7 +12,8 @@ import {
 import { matchOffer } from "../domain/matching";
 import { finish } from "../domain/quote";
 export { finish } from "../domain/quote";
-import { OpenAIProvider, type AIProvider } from "./ai";
+import type { AIProvider } from "./ai";
+import { createAIProvider } from "./ai-provider";
 import {
   db,
   phase,
@@ -206,7 +207,7 @@ export async function processQuote(
     rules: ShippingRule[] = [],
     shipping: ShippingObservation[] = [],
     errors: string[] = [];
-  const ai = suppliedAI ?? new OpenAIProvider((u) => usage(jobId, u));
+  const ai = suppliedAI ?? createAIProvider((u) => usage(jobId, u));
   await phase(jobId, "Collecting product pages and shipping policies");
   // Two independent retailer collectors, sequential requests within each: at most two Fetch/extraction calls at once.
   await Promise.all(
@@ -343,7 +344,8 @@ export async function processQuote(
       "Missing shipping, stock and tax details remain unknown; retailer prices can change.",
     ];
     result.explanation = (await ai.explain(facts)) || facts.join(" ");
-    result.explanationSource = "openai-validated";
+    result.explanationSource =
+      ai.provider === "gemini" ? "gemini-validated" : "openai-validated";
   } catch {
     result.errors.push(
       "The recommendation explanation used validated local facts because the AI explanation was unavailable.",

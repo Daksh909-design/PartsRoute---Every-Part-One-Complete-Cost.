@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { sampleParts } from "../src/domain/catalogue";
 import { enqueue, db, saveResult } from "../src/server/db";
 import { processQuote } from "../src/server/pipeline";
-for (const key of ["DATABASE_URL", "TINYFISH_API_KEY", "OPENAI_API_KEY"])
+import { aiConfig } from "../src/server/ai-provider";
+for (const key of ["DATABASE_URL", "TINYFISH_API_KEY", aiConfig().keyName])
   if (!process.env[key])
     throw new Error(`${key} is missing. No live validation performed.`);
 const input = {

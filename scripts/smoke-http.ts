@@ -48,3 +48,29 @@ check(
   [401, 503].includes(protectedRoute.status),
   "live endpoint refuses unauthenticated or unconfigured use",
 );
+const browserOrigin = process.env.SMOKE_ALLOWED_ORIGIN || new URL(base).origin;
+const preflight = await fetch(`${base}/api/quotes`, {
+  method: "OPTIONS",
+  headers: {
+    Origin: browserOrigin,
+    "Access-Control-Request-Method": "POST",
+    "Access-Control-Request-Headers":
+      "authorization,content-type,idempotency-key",
+  },
+});
+check(
+  preflight.status === 204 &&
+    preflight.headers.get("access-control-allow-origin") === browserOrigin,
+  "allowed browser origin passes API preflight",
+);
+const foreign = await fetch(`${base}/api/demo`, {
+  method: "POST",
+  headers: { Origin: "https://not-partsroute.invalid" },
+  body: JSON.stringify(input),
+});
+check(foreign.status === 403, "unapproved browser origin rejected");
+const readiness = await fetch(`${base}/api/integration/status`);
+check(
+  [401, 503].includes(readiness.status),
+  "live readiness requires team authorization",
+);

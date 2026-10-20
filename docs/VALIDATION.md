@@ -2,6 +2,18 @@
 
 Development date: **20 October 2026**. This file distinguishes observed checks from setup still required.
 
+## Latest debugging revision
+
+- **49 tests passed across six files**, using `node node_modules/vitest/vitest.mjs run --configLoader native`. This includes Gemini mocked HTTP schemas, usage recording, incomplete/invalid output rejection and quota failure without a paid fallback. The JavaScript Vitest config and native loader avoid Windows config bundling subprocess restrictions.
+- TypeScript checking passed after the Gemini integration and readiness/interface changes. Prettier ran on edited sources and documentation.
+- Before adding Gemini, the workbench/readiness revision passed a production build, static export and nine HTTP checks (the original six plus approved-origin CORS preflight, foreign-origin rejection and authenticated readiness). Browser interaction checked recalculation from two to three HC-SR04 units, stale-result notice, reset and evidence navigation.
+- Fresh TinyFish connector Fetch succeeded for the Robocraze HC-SR04 product and shipping policy. Fresh connector Agent run `0719d7ea-f349-4c37-8e5d-82783e1b5558` established the checked DHT11 is a bare four-pin sensor, not the requested breakout board. Original captures are saved as `debug-fetch-2026-10-20.json` and `debug-agent-2026-10-20.json`. Neither check establishes a complete pincode basket or direct-key application execution.
+- Subsequent builds under the current restricted Windows runtime failed with `spawn EPERM`. The newest Gemini revision has **not** passed a production/static build and has not been redeployed to Pages. Earlier successful builds below are historical, not a pass for this revision.
+- PostgreSQL 17.11 binaries were initialized locally, but startup failed under the runtime's interprocess-signalling restrictions. No SQL migration/integration pass is claimed. `test:postgres` supplies separate real-database checks for a dedicated `_test` database; they have not run successfully. The optional local helper needs machine-specific ignored configuration and execution in the user's own Windows terminal.
+- No calls were made with API keys shared in chat. Such keys must be revoked/replaced privately. Gemini account tier was checked only through the owner's report of **Set up billing** in AI Studio; no authenticated billing dashboard inspection or live extraction was performed.
+
+The following sections preserve earlier validation and release history.
+
 ## Executed successfully
 
 - Pinned dependency installation, lockfile generation and the explicitly allowlisted esbuild postinstall. A repository formatting pass used pinned Prettier.
@@ -26,7 +38,7 @@ On 20 October 2026, `pnpm build:pages` completed successfully. The shared calcul
 
 ## Not executed or not qualified
 
-- No real OpenAI extraction call, API account/model-access evaluation, accuracy/latency evaluation or paid usage measurement: no API key available.
+- No real Gemini or OpenAI extraction call, API account/model-access evaluation, accuracy/latency evaluation or paid usage measurement. Shared keys were not used; replacement private credentials are required.
 - No direct-key application TinyFish API call: no app API key available. Connector live evidence is a separate validation surface.
 - No PostgreSQL migration/worker integration test, concurrent-worker lease or process-crash test against PostgreSQL: no PostgreSQL/Docker service was available. In-memory persistence tests do not validate SQL.
 - No verified complete three-line live landed basket and no human review. Retailer qualification remains open.

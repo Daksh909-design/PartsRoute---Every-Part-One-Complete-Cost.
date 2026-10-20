@@ -6,7 +6,7 @@ flowchart LR
   API --> PG[(PostgreSQL jobs and evidence)]
   PG --> Worker[Node worker with leases]
   Worker --> Fetch[TinyFish Fetch]
-  Fetch --> AI[OpenAI structured extraction]
+  Fetch --> AI[Selected AI structured extraction]
   AI --> Match[Evidence grounding and exact matching]
   Match --> Optimizer[Integer-paise enumeration]
   Optimizer --> Agent[TinyFish Agent finalist basket checks]
@@ -23,8 +23,9 @@ flowchart LR
 - `quotes`: validated input, status, progress, result snapshot, errors, attempts and worker lease. Create uses a caller request ID and a body/token fingerprint. Refresh requests are deliberate new jobs.
 - `observations`: original JSON response, normalized result, URL, retrieval time, collection method and provider ID, uniquely keyed by quote/operation. Cached copies preserve the original timestamp.
 - `provider_operations`: one row per exact basket operation. Submission is recorded before Agent creation, then the run ID is persisted immediately. Restarts poll that ID. An uncertain submission never automatically creates another run.
-- `provider_usage`: actual OpenAI token usage/request/model and available TinyFish usage/step information. Missing metrics and monetary cost remain unknown.
+- `provider_usage`: actual selected AI token usage/request/model and available TinyFish usage/step information. Missing metrics and monetary cost remain unknown.
 - `rate_events`: durable private-team create quota. Creation is serialized under a PostgreSQL advisory transaction lock and limited to six per hour and three queued/running jobs.
+- `worker_heartbeats`: process presence refreshed every ten seconds. Authenticated readiness requires a heartbeat newer than 45 seconds and accessible migrated tables; configured keys alone do not mark the server ready.
 
 The worker claims jobs with `FOR UPDATE SKIP LOCKED`, renews a 60-second lease every ten seconds and caps recovery attempts at three. Retailer collectors run concurrently, with sequential requests within each, limiting Fetch/extraction concurrency to two. Browser finalist checks are sequential and limited to three distinct baskets across the three shortlisted plans. If a worker dies after submission but before saving the ID, reconcile with TinyFish dashboard and `recover:run`.
 
@@ -40,4 +41,8 @@ The supported-domain check accepts only exact HTTPS apex/www domains, rejects em
 
 ## Provider extension
 
-Implement `AIProvider` for a future provider; keep extraction schemas, grounding and deterministic math shared. Gemini is intentionally not implemented in this MVP. Automatic discovery would require TinyFish Search and a separate URL/specification review stage.
+Gemini is the default AI provider; OpenAI remains an explicit optional adapter. Gemini calls use a serial queue with configurable spacing, schema-constrained JSON, Zod validation and recorded actual usage. A quota error does not trigger a paid provider. `AIProvider` keeps extraction and explanation independent of the calculator. Automatic discovery would require TinyFish Search and a separate URL/specification review stage.
+
+## Frontend and deployment boundary
+
+The UI separates the workspace controller, quote results, evidence view and API client. Reset and mode changes invalidate pending poll responses. Team tokens stay in component memory; a quote ID may be stored locally for resumption. The Pages export includes only public UI/domain files and synthetic fixtures. An optional HTTPS API origin is embedded at build time. The server's API proxy handles approved-origin CORS preflight and rejects unrelated origins; bearer authorization still protects live requests.

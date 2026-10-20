@@ -155,6 +155,6 @@ export type QuoteResult = {
   coverage: { covered: number; requested: number };
   errors: string[];
   explanation: string;
-  explanationSource: "deterministic" | "openai-validated";
+  explanationSource: "deterministic" | "openai-validated" | "gemini-validated";
   generatedAt: string;
 };

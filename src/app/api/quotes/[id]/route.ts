@@ -5,6 +5,7 @@ import {
   AccessError,
 } from "../../../../server/access";
 import { db, getJob } from "../../../../server/db";
+import { readiness } from "../../../../server/readiness";
 export const runtime = "nodejs";
 export async function GET(
   request: Request,
@@ -28,6 +29,12 @@ export async function POST(
 ) {
   try {
     authorize(request);
+    const status = await readiness();
+    if (!status.ready)
+      throw new AccessError(
+        503,
+        "The live worker or database is not ready. Check the live service before retrying.",
+      );
     const { id } = await params;
     if (!uuidPattern.test(id))
       throw new AccessError(400, "Invalid quote identifier.");

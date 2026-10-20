@@ -8,18 +8,29 @@ import {
   uuidPattern,
 } from "../../../server/access";
 import { enqueue, RequestLimit } from "../../../server/db";
+import { readiness } from "../../../server/readiness";
+import { aiConfig } from "../../../server/ai-provider";
 export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     const actor = authorize(request);
-    if (!process.env.OPENAI_API_KEY || !process.env.TINYFISH_API_KEY)
+    if (!process.env[aiConfig().keyName] || !process.env.TINYFISH_API_KEY)
       throw new AccessError(
         503,
-        "Live mode needs TinyFish and OpenAI API keys on the server.",
+        `Live mode needs TINYFISH_API_KEY and ${aiConfig().keyName} on the server.`,
       );
     const input = QuoteInput.parse(await requestJson(request));
     if (input.mode !== "live")
       throw new AccessError(400, "Use the saved-data endpoint for the demo.");
+    const status = await readiness();
+    if (!status.ready)
+      throw new AccessError(
+        503,
+        status.checks
+          .filter((check) => !check.ok)
+          .map((check) => `${check.name}: ${check.detail}`)
+          .join(" "),
+      );
     const key = request.headers.get("idempotency-key") ?? "";
     if (!uuidPattern.test(key))
       throw new AccessError(400, "A valid request identifier is required.");

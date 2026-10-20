@@ -6,6 +6,19 @@ import { spawnSync } from "node:child_process";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const basePath =
   process.env.PAGES_BASE_PATH || "/PartsRoute---Every-Part-One-Complete-Cost.";
+const backend = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+if (
+  backend &&
+  (new URL(backend).protocol !== "https:" ||
+    new URL(backend).username ||
+    new URL(backend).password ||
+    new URL(backend).pathname !== "/" ||
+    new URL(backend).search ||
+    new URL(backend).hash)
+)
+  throw new Error(
+    "NEXT_PUBLIC_API_BASE_URL must be an HTTPS server origin without credentials, a path or query string.",
+  );
 if (!/^\/[A-Za-z0-9._-]+$/.test(basePath)) {
   throw new Error(
     "PAGES_BASE_PATH must be one repository path, beginning with /.",
@@ -22,6 +35,9 @@ for (const name of [
   "workspace.tsx",
   "globals.css",
   "ui-icons.tsx",
+  "api-client.ts",
+  "quote-results.tsx",
+  "evidence-view.tsx",
 ]) {
   await cp(join(root, "src", "app", name), join(project, "src", "app", name));
 }
@@ -44,7 +60,11 @@ await writeFile(
     trailingSlash: true,
     poweredByHeader: false,
     outputFileTracingRoot: root,
-    env: { NEXT_PUBLIC_STATIC_DEMO: "true", NEXT_PUBLIC_BASE_PATH: basePath },
+    env: {
+      NEXT_PUBLIC_STATIC_DEMO: "true",
+      NEXT_PUBLIC_BASE_PATH: basePath,
+      NEXT_PUBLIC_API_BASE_URL: backend,
+    },
   })};\n`,
 );
 const built = spawnSync(
@@ -70,10 +90,7 @@ await writeFile(
   JSON.stringify({ directory, basePath }, null, 2),
 );
 const home = await readFile(join(directory, "index.html"), "utf8");
-if (
-  !home.includes("GitHub Pages demo") ||
-  !home.includes(`${basePath}/_next/`)
-) {
+if (!home.includes("Sample data.") || !home.includes(`${basePath}/_next/`)) {
   throw new Error(
     "Static export is missing its demo label or repository asset prefix.",
   );

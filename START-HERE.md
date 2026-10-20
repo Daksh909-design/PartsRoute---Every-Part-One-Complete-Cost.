@@ -1,22 +1,12 @@
-# What you need to do next
+# Team setup checklist
 
-1. Open this folder in your editor and install Node 22.12+ and pnpm 11.25.0. Run `pnpm install --frozen-lockfile`, then `pnpm dev`. Try the saved-data demo at localhost:3000 first.
-2. Get a **TinyFish API key** with Agent credits and an **OpenAI API project key** with access to `gpt-6-luna` or another explicitly configured Structured Outputs-capable model. Store them only in `.env.local`.
-3. Start PostgreSQL using `docker compose up -d db`. Copy `.env.example` to `.env.local`, fill the keys and generate a team token of at least 24 characters. Run `pnpm db:migrate`.
-4. Run `pnpm worker` alongside `pnpm dev`. Select live mode and enter the team token. Keep the component requirements exact; the current DHT11 listing mismatch must be resolved rather than ignored.
-5. Qualify the retailers **before polishing the pitch**. Run `pnpm validate:live 560001` with the worker stopped. Inspect actual originals and run IDs, manually compare a product/pack/price/tax sample, and obtain a complete shipping estimate for a three-line basket. Record unknowns. Robu's blocking/policy gaps and Robocraze's shipping estimator require attention; Evelta is a researched fallback, not an enabled integration.
-6. Run `pnpm test`, `pnpm typecheck`, `pnpm build`. Follow `docs/DEPLOYMENT.md` for a shared database plus separate web/worker services.
-7. The public repository already exists under **Daksh909-design** as `PartsRoute---Every-Part-One-Complete-Cost.`. Push updates only after inspecting and preserving its current history:
+1. Open the [public sample](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./). This demonstrates the calculator, not live TinyFish execution.
+2. Read [keys and costs](docs/KEYS-AND-COSTS.md), then follow [LIVE-SETUP.md](docs/LIVE-SETUP.md) for local web, worker and PostgreSQL. Hosted `render.yaml` uses paid services; do not provision it for a zero-budget demo. Enter the TinyFish/Gemini API keys privately.
+3. Open the actual server URL, choose **Live quote**, enter the generated team token and check the connection. All readiness checks must pass. Run `pnpm doctor --providers` from the configured stack for account/model checks.
+4. Resolve the DHT11 breakout-versus-bare-sensor mismatch and qualify both retailers. Run `pnpm validate:live 560001` with the regular worker stopped, inspect original observations and manually compare sources.
+5. Obtain shipping for the exact complete basket and manually calculate the landed total. Unknown shipping remains unknown; the sample fixture does not satisfy this step.
+6. Run tests, typecheck, production build and HTTP checks. Review [REVIEW.md](docs/REVIEW.md) and [VALIDATION.md](docs/VALIDATION.md) before recording the pitch.
 
-```sh
-# From the local repository, with GitHub authentication configured.
-git remote -v
-git fetch origin
-git log --oneline --graph --all -10
-# After integrating any existing remote commits:
-git push -u origin main
-```
+No complete live basket, real AI extraction, human review or hosted live server is claimed. The remaining account/credential steps cannot be completed by publishing static files to GitHub Pages.
 
-Expected remote: `https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost..git`. The double dot before `git` is intentional: the repository name itself ends in a dot. Do not force-push over remote changes or create a second repository. GitHub-plugin access and local Git push authentication may require separate sign-in.
-
-For the hackathon demo: show live collection, original TinyFish evidence, the run ID, a correctly matched complete basket and its verified landed total. Use the synthetic demonstration separately to explain the optimizer. Do not call a shipping-unknown subtotal a complete quote.
+The repository belongs to **Daksh909-design**. Its name ends in a dot; the Git URL is `https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost..git`. Preserve existing history and never force-push over team changes.

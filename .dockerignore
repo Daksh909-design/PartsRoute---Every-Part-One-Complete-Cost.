@@ -1,5 +1,6 @@
 node_modules
 .next
+.pages-build
 .git
 .env*
 !.env.example
