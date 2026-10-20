@@ -2,6 +2,10 @@
 
 Research date: **20 October 2026**. Earlier calls used the connected TinyFish tools. The debugging revision also exercised actual application API keys. Original and sanitized captures are in `docs/evidence`; the sections below distinguish those surfaces.
 
+**Latest status:** Robu's correct `/shipping-and-refund-policy/` URL was retrieved through TinyFish on 20 October at 16:49 UTC. It contains a policy but no applicable shipping charge. The previous placeholder referred to the old URL. A complete verified delivered basket is still unavailable; the latest fresh public run took 46.189 seconds and failed the ten-second limit. See [current collector report](COLLECTOR-UPDATE.md).
+
+## Initial research observations (historical)
+
 | Check                                 | Observation                                                                                                                                                                      |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Robu DHT11                            | SKU 28586, ₹59 including GST, in stock, breakout-module description and one-unit package. Pin count not reliably established.                                                    |
