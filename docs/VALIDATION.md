@@ -58,3 +58,5 @@ The primary live button now starts a new collection rather than a cached compari
 
 One fresh public-server benchmark made two new TinyFish Fetch requests and four successful new Gemini requests, followed by a model timeout. It **failed** the seven-second requirement and finished partial after roughly 152 seconds, without a verified plan. TinyFish alone took 15.8–17.8 seconds. [Full report](evidence/fresh-cache-bypass-2026-10-20.json). The later eager-persistence adjustment was fixture-tested without repeating live consumption. Earlier cached timings remain historical and do not qualify.
 
+Pages release **92b0ee1247e4fd6331fa57ee15541099bf95c035** built successfully from source **db4755e**. Public HTML, JavaScript and CSS returned 200. In the deployed browser, Live quote exposed the primary fresh action and separate saved-data button, displayed the connected backend address, and authenticated readiness returned Worker ready with database connected. [Browser proof](fresh-collection-connected.png). The browser connection check did not start another provider quote; the public fresh benchmark above is the actual provider-call evidence.
+
