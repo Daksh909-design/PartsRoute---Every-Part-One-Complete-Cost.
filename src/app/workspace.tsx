@@ -221,6 +221,7 @@ export default function Workspace() {
           elapsedMs:
             (running ? Date.now() : Date.parse(current.updated_at)) - startedAt,
           finished: !running,
+          recovered: true,
         });
       }
       setJob(current);
@@ -958,7 +959,9 @@ export default function Workspace() {
                   <>
                     <p className="response-note">
                       {collectionClock.recovered
-                        ? "Resumed collection"
+                        ? collectionClock.finished
+                          ? "Saved quote duration"
+                          : "Resumed collection"
                         : "Fresh collection"}{" "}
                       · {(collectionClock.elapsedMs / 1000).toFixed(1)} s
                       {job && (
