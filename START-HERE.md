@@ -6,17 +6,15 @@
 4. Run `pnpm worker` alongside `pnpm dev`. Select live mode and enter the team token. Keep the component requirements exact; the current DHT11 listing mismatch must be resolved rather than ignored.
 5. Qualify the retailers **before polishing the pitch**. Run `pnpm validate:live 560001` with the worker stopped. Inspect actual originals and run IDs, manually compare a product/pack/price/tax sample, and obtain a complete shipping estimate for a three-line basket. Record unknowns. Robu's blocking/policy gaps and Robocraze's shipping estimator require attention; Evelta is a researched fallback, not an enabled integration.
 6. Run `pnpm test`, `pnpm typecheck`, `pnpm build`. Follow `docs/DEPLOYMENT.md` for a shared database plus separate web/worker services.
-7. Publish the local repository when you are ready. These commands require your GitHub authentication and your own repository URL:
+7. Publish the repository publicly under **Daksh909-design**. These commands require GitHub CLI and authentication to that account:
 
 ```sh
-# From this repository; replace YOUR_GITHUB_NAME.
+# From this repository. Confirm that gh auth status shows Daksh909-design.
 gh auth login
-gh repo create partsroute --private --source=. --remote=origin --push
-# Or create an empty repo on GitHub, then:
-git remote add origin https://github.com/YOUR_GITHUB_NAME/partsroute.git
-git push -u origin main
+gh auth status
+gh repo create Daksh909-design/partsroute --public --source=. --remote=origin --push
 ```
 
-Use one publishing method. No GitHub repository has been created for you.
+The requested owner is Daksh909-design; do not publish under a different signed-in account. No GitHub repository has been created yet. If the name already exists, inspect it before continuing; do not overwrite an existing project.
 
 For the hackathon demo: show live collection, original TinyFish evidence, the run ID, a correctly matched complete basket and its verified landed total. Use the synthetic demonstration separately to explain the optimizer. Do not call a shipping-unknown subtotal a complete quote.

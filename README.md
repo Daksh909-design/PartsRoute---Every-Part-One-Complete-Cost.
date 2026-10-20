@@ -4,6 +4,20 @@ Compare the **complete cost** of a small electronics parts list across Indian re
 
 This repository contains a Next.js App Router application, a PostgreSQL-backed quote queue, a separate Node worker, direct TinyFish Fetch/Agent integration, OpenAI Structured Outputs, a deterministic purchasing-plan calculator, labelled synthetic fixtures and tests. It does not buy anything.
 
+## Team REsynced
+
+Built for the AI/ML track of Kritical Hacks by **Team REsynced**, NSUT.
+
+| Member | Role |
+|---|---|
+| [Daksh Sachdev](https://github.com/Daksh909-design) | Team Leader |
+| Niyati Jain | Team Member |
+| Parth | Team Member |
+| Tashi Saxena | Team Member |
+| Ritesh Kumar | Team Member |
+
+GitHub owner: [Daksh909-design](https://github.com/Daksh909-design). The intended repository visibility is **public**; publication status is recorded below.
+
 ## Current status
 
 The saved-data application is runnable without provider credentials. Live collection and worker code are implemented but the application's direct-key end-to-end path needs your credentials and PostgreSQL validation. **The first live milestone has not passed.** Do not present this as a completed hackathon submission yet.
