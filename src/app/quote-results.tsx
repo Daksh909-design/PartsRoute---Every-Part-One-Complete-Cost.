@@ -147,7 +147,7 @@ export default function QuoteResults({
       </p>
 
       {estimate && (
-        <article className="recommendation">
+        <article className="recommendation" style={{ padding: "1.5rem" }}>
           <span className="eyebrow">
             {estimate.complete
               ? "LISTED ITEM ESTIMATE"
