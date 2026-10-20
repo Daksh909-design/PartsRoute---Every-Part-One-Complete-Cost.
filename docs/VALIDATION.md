@@ -37,3 +37,8 @@ The final Pages release is verified separately after publishing. Historical publ
 - Public live hosting, Docker execution and process-kill recovery beyond SQL lease tests.
 
 Run pnpm test, pnpm typecheck, pnpm build, pnpm test:http and pnpm benchmark:http. The benchmark is read-only and requires a usable cache. Real provider checks are opt-in and may consume quota. See [performance](PERFORMANCE.md), [feasibility](FEASIBILITY.md) and [deployment](DEPLOYMENT.md).
+
+## Final public release check
+
+GitHub Pages reported commit **35d16916dbed288cd26896231c29d77cb3c06e7f** built successfully. The deployed HTML, hashed JavaScript and CSS returned HTTP 200. The actual public calculator changed quantity three to ₹370 and reset to ₹295, with no browser errors. Screenshot: [published release](pages-current-release.png). Source implementation: **9c24a4790858c916e7aeb2bb6afb27477b9ca77b**. The public release remains the static sample, with no live backend connected.
+
