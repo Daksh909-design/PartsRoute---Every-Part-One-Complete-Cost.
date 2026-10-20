@@ -43,3 +43,29 @@ it("retains content-cache reuse for non-refresh internal consumers", async () =>
   expect(await cachedAI(ai).policy("Fixture page", "560001")).toEqual(policy);
   expect(ai.policy).not.toHaveBeenCalled();
 });
+it("fresh product-detail extraction bypasses stored model output", async () => {
+  const details = {
+    model: null,
+    quantityBreaks: [],
+    specs: [],
+    minPacks: null,
+    multiplePacks: null,
+    support: [],
+  };
+  const ai = {
+    ...provider(),
+    productDetails: vi.fn().mockResolvedValue(details),
+  };
+  expect(
+    await cachedAI(ai, true).productDetails!(
+      "Fixture page",
+      "https://robu.in/product/test",
+      "TEST",
+      ["pins"],
+    ),
+  ).toEqual(details);
+  expect(ai.productDetails).toHaveBeenCalledOnce();
+  expect(query.mock.calls.some(([sql]) => sql.startsWith("SELECT"))).toBe(
+    false,
+  );
+});

@@ -489,8 +489,7 @@ export default function Workspace() {
             <Icon name="info" />
             <span>
               <strong>Temporary live server.</strong> The team computer must
-              stay online. Fresh collection can take longer than ten seconds; a
-              cached comparison is a separate operation.
+              stay online. Collection time depends on retailer availability.
             </span>
           </div>
         )}
@@ -981,14 +980,6 @@ export default function Workspace() {
                           ? " · Verified plan returned"
                           : " · No complete verified plan returned")}
                     </p>
-                    {collectionClock.elapsedMs >= 10000 && (
-                      <p className="notice warning" role="status">
-                        Ten-second target missed.{" "}
-                        {collectionClock.finished
-                          ? "This run does not satisfy the required time limit."
-                          : "Collection is still running; a queued request or partial prices do not count as a finished quote."}
-                      </p>
-                    )}
                   </>
                 )}
                 {result ? (

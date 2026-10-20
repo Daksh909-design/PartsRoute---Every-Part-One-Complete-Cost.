@@ -1,6 +1,16 @@
-# Collector correction and current ten-second target
+# Collector corrections and timing measurements
 
-The target is seven seconds, with ten seconds as the owner's fallback. The current implementation still has not passed either requirement for a complete fresh verified quote. Older reports remain historical evidence.
+The current target is **thirty seconds**, following the owner's latest request. The earlier seven- and ten-second checks below remain historical evidence. Removing the visible ten-second warning does not alter their results or make an incomplete quote verified.
+
+## Thirty-second revision
+
+The ten-second warning was removed from the interface as requested. Elapsed duration, collection progress, conditional prices and shipping uncertainty remain visible.
+
+Recognised product templates now use a smaller schema-constrained AI request for actual model, required specifications, explicit ordering rules and published bulk tiers. Directly read base prices, stock, pack quantities and tax inclusion are preserved. Exact excerpts still pass the same grounding and matching checks; unfamiliar templates use the complete extractor. Unlike the rejected batch experiment below, this runs per product and copies excerpts rather than generated line numbers. The provider interface and content cache support both paths, and fresh requests bypass both caches.
+
+Gemini concurrency now defaults to eight, bounded between one and eight, so the six product and two policy requests can proceed without a second queue wave. This changes concurrency, not calls per quote. Published numeric stock limits are preserved by the template reader; normalization version v5 invalidates older normalized offers. Model usage records identify the extraction operation.
+
+The strict benchmark defaults to 30000 ms. `passed` still requires a complete verified delivered plan. Separate `collectionFinished` and `collectionWithinBudget` fields report whether collection terminated, including partial results; neither field qualifies an incomplete purchasing plan. The first public validation attempt was refused by the existing hourly team quota and created no job. No provider-speed claim follows from that refusal. A fresh measurement will be recorded separately.
 
 ## Implemented changes
 

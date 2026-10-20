@@ -34,7 +34,7 @@ const Interaction = z.object({
 export class GeminiProvider extends StructuredAIProvider {
   readonly provider = "gemini" as const;
   private queue = new TaskPool(
-    Math.min(4, Math.max(1, Number(process.env.GEMINI_CONCURRENCY) || 4)),
+    Math.min(8, Math.max(1, Number(process.env.GEMINI_CONCURRENCY) || 8)),
   );
   private nextRequest = 0;
   private accessFailure: ProviderAccessError | null = null;
@@ -184,6 +184,7 @@ export class GeminiProvider extends StructuredAIProvider {
           usage: result.usage ?? null,
           state: "responded",
           latencyMs: Date.now() - started,
+          operation: _name,
           fingerprint: providerFingerprint("gemini", model, this.apiKey!),
         },
       });

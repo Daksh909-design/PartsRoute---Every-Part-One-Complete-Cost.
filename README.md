@@ -17,7 +17,7 @@ PartsRoute helps Indian student teams, makers and electronics teams compare the 
 
 **The first live milestone has not passed.** The Pages sample is not evidence of a live integration. See [feasibility](docs/FEASIBILITY.md) and [checks actually executed](docs/VALIDATION.md).
 
-See the [current collector correction, conditional totals and ten-second results](docs/COLLECTOR-UPDATE.md). Apply migration 006 before deploying this revision.
+See the [current collector changes, conditional totals and timing measurements](docs/COLLECTOR-UPDATE.md). The current target is thirty seconds; it still requires a fresh verified delivered plan to pass. Apply migration 006 before deploying this revision.
 
 ## Implemented
 

@@ -13,6 +13,7 @@ import { matchOffer } from "../domain/matching";
 import { finish } from "../domain/quote";
 export { finish } from "../domain/quote";
 import type { AIProvider } from "./ai";
+import { withProductDetails } from "./ai";
 import { createAIProvider } from "./ai-provider";
 import {
   db,
@@ -400,11 +401,18 @@ export async function processQuote(
                   finish(input, offers, rules, shipping, errors),
                 );
               }
-              const ex = await ai.product(
-                page.text,
-                page.final_url,
-                part.model,
-              );
+              const ex =
+                preliminary && ai.productDetails
+                  ? withProductDetails(
+                      preliminary,
+                      await ai.productDetails(
+                        page.text,
+                        page.final_url,
+                        part.model,
+                        part.requiredSpecs.map((spec) => spec.key),
+                      ),
+                    )
+                  : await ai.product(page.text, page.final_url, part.model);
               const offer = matchOffer(
                 part,
                 groundedOffer(

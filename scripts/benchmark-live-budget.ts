@@ -8,8 +8,8 @@ if (!process.env.APP_ACCESS_TOKEN)
   throw new Error("Configure the private team access token.");
 const start = performance.now();
 const budgetMs = Math.min(
-  10000,
-  Math.max(1000, Number(process.env.LIVE_BUDGET_MS) || 10000),
+  30000,
+  Math.max(1000, Number(process.env.LIVE_BUDGET_MS) || 30000),
 );
 const deadline = start + budgetMs;
 let quoteId: string | null = null;
@@ -80,6 +80,7 @@ try {
 }
 const elapsedMs = Math.round((performance.now() - start) * 100) / 100;
 const passed = completeVerifiedPlan && elapsedMs <= budgetMs;
+const collectionFinished = ["complete", "partial"].includes(state);
 const report = {
   checkedAt: new Date().toISOString(),
   requirement: `New live collection AND complete verified purchasing plan within ${budgetMs} ms`,
@@ -88,6 +89,8 @@ const report = {
   statusAtDeadline: state,
   elapsedMs,
   completeVerifiedPlan,
+  collectionFinished,
+  collectionWithinBudget: collectionFinished && elapsedMs <= budgetMs,
   passed,
   reason: passed ? null : reason,
   savedJobContinues: ["queued", "processing"].includes(state),
@@ -95,7 +98,7 @@ const report = {
 await writeFile("artifacts/live-budget.json", JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
 // Optional diagnostics keep following the SAME job after the strict deadline.
-// Later output never changes the failed seven-second verdict or starts a retry.
+// Later output never changes the strict deadline verdict or starts a retry.
 if (process.argv.includes("--follow") && quoteId) {
   const followDeadline = performance.now() + 240000;
   async function followRequest(path: string) {
@@ -132,6 +135,7 @@ if (process.argv.includes("--follow") && quoteId) {
         requestId: u.request_id,
         recordedAt: u.created_at,
         state: u.details?.state ?? null,
+        operation: u.details?.operation ?? null,
         latencyMs: u.details?.latencyMs ?? null,
         inputTokens: u.input_tokens,
         outputTokens: u.output_tokens,

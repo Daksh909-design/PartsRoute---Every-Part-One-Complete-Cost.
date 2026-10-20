@@ -25,6 +25,21 @@ function completed(value: unknown, extra = {}) {
   );
 }
 describe("Gemini adapter contracts (mocked HTTP, no API usage)", () => {
+  it("caps an oversized concurrency setting at eight requests", async () => {
+    vi.stubEnv("GEMINI_CONCURRENCY", "99");
+    const release: (() => void)[] = [];
+    const transport = vi.fn(async () => {
+      await new Promise<void>((resolve) => release.push(resolve));
+      return completed({ factIndices: [0] });
+    });
+    const provider = new GeminiProvider(async () => {}, "fixture-key", transport);
+    const jobs = Array.from({ length: 9 }, () => provider.explain(["fact"]));
+    await vi.waitFor(() => expect(transport).toHaveBeenCalledTimes(8));
+    release.shift()!();
+    await vi.waitFor(() => expect(transport).toHaveBeenCalledTimes(9));
+    release.splice(0).forEach((done) => done());
+    expect(await Promise.all(jobs)).toHaveLength(9);
+  });
   it("runs independent requests concurrently up to the configured limit", async () => {
     vi.stubEnv("GEMINI_CONCURRENCY", "2");
     let active = 0,

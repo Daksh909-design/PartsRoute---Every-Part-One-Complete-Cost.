@@ -43,6 +43,47 @@ export const ProductExtraction = z.object({
   ),
 });
 export type ProductExtraction = z.infer<typeof ProductExtraction>;
+export const ProductDetails = z.object({
+  model: ProductExtraction.shape.model,
+  specs: ProductExtraction.shape.specs,
+  quantityBreaks: z.array(
+    ProductExtraction.shape.priceBreaks.element.extend({
+      minPacks: z.number().int().min(2),
+    }),
+  ),
+  minPacks: ProductExtraction.shape.minPacks,
+  multiplePacks: ProductExtraction.shape.multiplePacks,
+  support: z.array(
+    z.object({
+      field: z.enum(["model", "minPacks", "multiplePacks"]),
+      excerpt: z.string(),
+    }),
+  ),
+});
+export type ProductDetails = z.infer<typeof ProductDetails>;
+export function withProductDetails(
+  base: ProductExtraction,
+  details: ProductDetails,
+): ProductExtraction {
+  for (const field of ["minPacks", "multiplePacks"] as const)
+    if (
+      base[field] !== null &&
+      details[field] !== null &&
+      base[field] !== details[field]
+    )
+      throw new Error(
+        "Source and AI ordering constraints contradict each other.",
+      );
+  return ProductExtraction.parse({
+    ...base,
+    model: details.model ?? base.model,
+    specs: [...base.specs, ...details.specs],
+    priceBreaks: [...base.priceBreaks, ...details.quantityBreaks],
+    minPacks: details.minPacks ?? base.minPacks,
+    multiplePacks: details.multiplePacks ?? base.multiplePacks,
+    support: [...base.support, ...details.support],
+  });
+}
 export const PolicyExtraction = z.object({
   summary: z.string(),
   excerpt: z.string(),
@@ -71,6 +112,12 @@ export interface AIProvider {
     url: string,
     requestedModel: string,
   ): Promise<ProductExtraction>;
+  productDetails?(
+    text: string,
+    url: string,
+    requestedModel: string,
+    requiredKeys: string[],
+  ): Promise<ProductDetails>;
   policy(text: string, pincode: string): Promise<PolicyExtraction>;
   explain(facts: string[]): Promise<string>;
 }
@@ -87,6 +134,24 @@ export abstract class StructuredAIProvider implements AIProvider {
       requestedModel,
       pageText: text.slice(0, 65000),
     });
+  }
+  productDetails(
+    text: string,
+    url: string,
+    requestedModel: string,
+    requiredKeys: string[],
+  ) {
+    return this.structured(
+      ProductDetails,
+      "product_details",
+      DETAIL_INSTRUCTIONS,
+      {
+        url,
+        requestedModel,
+        requiredKeys,
+        pageText: text.slice(0, 24000),
+      },
+    );
   }
   policy(text: string, pincode: string) {
     return this.structured(
@@ -117,6 +182,8 @@ const PRODUCT_INSTRUCTIONS =
   'Extract only the main product, never related listings or reviews. Every non-null known field needs a short EXACT verbatim supporting excerpt in support with the matching field name. Every specification and price break needs its own exact excerpt. Normalise spec keys to pins, connector, voltage, form, tie_points where relevant, and units to V/mm. Do not derive model from requestedModel. Bare DHT11 four-pin sensor is form="bare sensor"; an external breakout board is form="breakout module". A main-product statement that the module integrates the DHT11 sensor AND other required components on a compact PCB supports the breakout-module form; the sensor chip\'s internal electronics do not. Breadboard with exactly 400 total tie points may be normalised to model="breadboard400". Price is per purchasable pack in decimal INR; tier minPacks is number of packs, not units. No universal GST. Do not infer pack size/minimum/quantity multiple from related products. If quantity controls/default step are absent these fields stay null.';
 const POLICY_INSTRUCTIONS =
   "Extract only published shipping rules. Copy one exact excerpt covering ALL charges, threshold, tax and conditions you populate. Pincode applicability is unknown unless explicitly established by source; do not infer state/region from pincode. Distinguish above > from at least >=. No full address supplied. Summary must mention exclusions/uncertainty. Use null for fields not covered by the excerpt.";
+const DETAIL_INSTRUCTIONS =
+  'Extract the actual main-product model, specifications whose keys occur in requiredKeys, explicit minimum packs and quantity multiples, and quantityBreaks ONLY for explicitly published bulk-price tiers with minPacks>=2. Missing facts stay null/omitted. Copy short EXACT supporting excerpts, never line references. Preserve model suffixes/versions, never derive model from requestedModel. Exactly 400 total breadboard tie points can be model="breadboard400". Keep contradictory specifications; do not change facts to match. Normalise voltage to V and connector names/units. pins means a published TOTAL physical pin COUNT, never signal names or model knowledge. DHT11 on a compact PCB integrating other required components supports form="breakout module". tie_points means total tie points. Do not infer order rules from package contents, prices, loyalty points, related products or absent HTML controls. Known model and ordering fields need exact excerpts in support. Bulk prices are decimal INR per purchasable pack, tier quantities are packs. Base price, stock, taxes, title and pack contents are handled separately; do not repeat them.';
 
 export class OpenAIProvider extends StructuredAIProvider {
   readonly provider = "openai" as const;

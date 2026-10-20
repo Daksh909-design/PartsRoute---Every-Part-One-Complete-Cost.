@@ -69,6 +69,10 @@ export function retailerProduct(
   ];
   if (skuMatch) support.push({ field: "sku", excerpt: skuMatch[0] });
   if (stockMatch) support.push({ field: "stock", excerpt: stockMatch[0] });
+  const availablePacks =
+    stockMatch && /^\d+$/.test(stockMatch[1]) ? Number(stockMatch[1]) : null;
+  if (availablePacks !== null)
+    support.push({ field: "availablePacks", excerpt: stockMatch![0] });
   if (units && packageLine)
     support.push({ field: "unitsPerPack", excerpt: packageLine });
   if (tax) support.push({ field: "taxStatus", excerpt: tax[0] });
@@ -90,7 +94,7 @@ export function retailerProduct(
     taxStatus: tax ? "included" : "unknown",
     taxRateBps: null,
     stock,
-    availablePacks: null,
+    availablePacks,
     support,
   };
 }

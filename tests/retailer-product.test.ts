@@ -77,6 +77,7 @@ it("reads current price and explicit pack contents while ignoring crossed-out, s
   expect(offer.unitsPerPack).toBe(2);
   expect(offer.taxStatus).toBe("included");
   expect(offer.stock).toBe("in_stock");
+  expect(offer.availablePacks).toBe(3);
   expect(offer.minPacks).toBeNull();
   expect(offer.multiplePacks).toBeNull();
   expect(offer.specs).toEqual([]);

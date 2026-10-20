@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
-import { ProductExtraction, PolicyExtraction, type AIProvider } from "./ai";
+import {
+  ProductExtraction,
+  ProductDetails,
+  PolicyExtraction,
+  type AIProvider,
+} from "./ai";
 import { aiConfig } from "./ai-provider";
 import { db } from "./db";
 import { extractionContent } from "./content";
@@ -12,7 +17,7 @@ export function extractionKey(
 ) {
   // Bump this version when the prompt, schema or grounding contract changes.
   return createHash("sha256")
-    .update(JSON.stringify(["extraction-v3", provider, model, kind, args]))
+    .update(JSON.stringify(["extraction-v4", provider, model, kind, args]))
     .digest("hex");
 }
 export function cachedAI(ai: AIProvider, refresh = false): AIProvider {
@@ -38,6 +43,28 @@ export function cachedAI(ai: AIProvider, refresh = false): AIProvider {
   }
   return {
     provider: ai.provider,
+    ...(ai.productDetails
+      ? {
+          productDetails(
+            text: string,
+            url: string,
+            model: string,
+            requiredKeys: string[],
+          ) {
+            const main = extractionContent(text);
+            return get(
+              extractionKey(
+                "details",
+                [main, url, model, requiredKeys],
+                config.provider,
+                config.model,
+              ),
+              (v) => ProductDetails.parse(v),
+              () => ai.productDetails!(main, url, model, requiredKeys),
+            );
+          },
+        }
+      : {}),
     product(text, url, model) {
       const main = extractionContent(text);
       return get(

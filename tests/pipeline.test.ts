@@ -80,7 +80,7 @@ vi.mock("../src/server/db", () => ({
     for (const row of state.observations.values())
       if (row.id === id) {
         row.normalized = value;
-        row.normalization_version = "grounding-v4";
+        row.normalization_version = "grounding-v5";
       }
   }),
 }));
@@ -94,6 +94,54 @@ beforeEach(() => {
   state.sequence = 0;
 });
 describe("worker pipeline with explicitly mocked providers and persistence", () => {
+  it("uses narrow detail extraction for recognised templates and preserves source prices", async () => {
+    const tiny = {
+      fetchPages: vi.fn(
+        async (urls: string[], retailer: "robu" | "robocraze") => ({
+          results: urls.map((url) => {
+            const entry = catalogue.find((c) => c.urls[retailer] === url);
+            return {
+              url,
+              final_url: url,
+              text: entry
+                ? `# ${entry.name}\nSKU: TEST-${entry.id}\n${retailer === "robu" ? "₹ 80.00 (Incl. GST)\nAvailability: In Stock" : ": Rs 80/-\nIncl. GST\nOnly 5 left in stock"}\n## Package Includes:\n1 x ${entry.name}\n${"Synthetic source fixture only. ".repeat(30)}`
+                : "Shipping Policy Page Content",
+            };
+          }),
+          errors: [],
+        }),
+      ),
+    };
+    const ai = {
+      product: vi.fn(),
+      productDetails: vi.fn(async () => ({
+        model: null,
+        quantityBreaks: [],
+        specs: [],
+        minPacks: null,
+        multiplePacks: null,
+        support: [],
+      })),
+      policy: vi.fn(),
+      explain: vi.fn(),
+    };
+    const result = await processQuote(
+      "details-fixture",
+      { parts: sampleParts, pincode: "560001", mode: "live", refresh: true },
+      tiny as unknown as TinyFishClient,
+      ai,
+    );
+    expect(ai.product).not.toHaveBeenCalled();
+    expect(ai.productDetails).toHaveBeenCalledTimes(6);
+    expect(result.offers).toHaveLength(6);
+    expect(
+      result.offers.every(
+        (offer) => offer.priceBreaks[0].packPricePaise === 8000,
+      ),
+    ).toBe(true);
+    expect(result.offers.every((offer) => offer.minPacks === null)).toBe(true);
+    expect(result.recommendedId).toBeNull();
+  });
   it("retains explicitly published prices and conditional arithmetic when AI extraction is unavailable", async () => {
     const tiny = {
       fetchPages: vi.fn(
