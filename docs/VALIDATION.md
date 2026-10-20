@@ -60,3 +60,9 @@ One fresh public-server benchmark made two new TinyFish Fetch requests and four 
 
 Pages release **92b0ee1247e4fd6331fa57ee15541099bf95c035** built successfully from source **db4755e**. Public HTML, JavaScript and CSS returned 200. In the deployed browser, Live quote exposed the primary fresh action and separate saved-data button, displayed the connected backend address, and authenticated readiness returned Worker ready with database connected. [Browser proof](fresh-collection-connected.png). The browser connection check did not start another provider quote; the public fresh benchmark above is the actual provider-call evidence.
 
+
+## Current collector and conditional total correction
+
+Independent product extraction now runs concurrently, bounded to four Gemini calls per quote. Identical active team jobs recover without duplication. Explicit source prices survive model outages; item estimates remain conditional. Migration 006 was applied to both databases. 94 mocked/fixture unit tests in 14 files and 13 real PostgreSQL checks passed. TypeScript, production Next build, Pages build and nine public HTTP checks passed. No paid hosting or billing was enabled.
+
+Two public fresh-quote checks of the ten-second target failed. The final reader-enabled run collected six offers and produced a conditional ₹248 item estimate for all three lines, finishing partial after 52.190 seconds. Shipping and required product/order gaps remain unresolved; no verified delivered total resulted. See [current collector changes and evidence](COLLECTOR-UPDATE.md). Older seven-second records remain historical.

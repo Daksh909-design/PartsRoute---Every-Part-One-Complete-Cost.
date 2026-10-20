@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GeminiProvider } from "../src/server/gemini";
 import { aiConfig, createAIProvider } from "../src/server/ai-provider";
 
-beforeEach(() => vi.stubEnv("GEMINI_REQUEST_INTERVAL_MS", "0"));
+beforeEach(() => {
+  vi.stubEnv("GEMINI_REQUEST_INTERVAL_MS", "0");
+  vi.stubEnv("GEMINI_CONCURRENCY", "1");
+});
 afterEach(() => vi.unstubAllEnvs());
 function completed(value: unknown, extra = {}) {
   return new Response(
@@ -22,6 +25,36 @@ function completed(value: unknown, extra = {}) {
   );
 }
 describe("Gemini adapter contracts (mocked HTTP, no API usage)", () => {
+  it("runs independent requests concurrently up to the configured limit", async () => {
+    vi.stubEnv("GEMINI_CONCURRENCY", "2");
+    let active = 0,
+      peak = 0;
+    const release: (() => void)[] = [];
+    const transport = vi.fn(async () => {
+      active++;
+      peak = Math.max(peak, active);
+      await new Promise<void>((resolve) => release.push(resolve));
+      active--;
+      return completed({ factIndices: [0] });
+    });
+    const provider = new GeminiProvider(
+      async () => {},
+      "fixture-key",
+      transport,
+    );
+    const jobs = [
+      provider.explain(["A"]),
+      provider.explain(["B"]),
+      provider.explain(["C"]),
+    ];
+    await vi.waitFor(() => expect(transport).toHaveBeenCalledTimes(2));
+    expect(peak).toBe(2);
+    release.shift()!();
+    await vi.waitFor(() => expect(transport).toHaveBeenCalledTimes(3));
+    release.splice(0).forEach((done) => done());
+    expect(await Promise.all(jobs)).toEqual(["A", "B", "C"]);
+    expect(peak).toBe(2);
+  });
   it("retries a temporary 503 once and records it as an outage, not a key denial", async () => {
     const record = vi.fn().mockResolvedValue(undefined);
     const transport = vi

@@ -86,6 +86,7 @@ vi.mock("../src/server/db", () => ({
 }));
 import { processQuote } from "../src/server/pipeline";
 import { ProviderAccessError } from "../src/server/provider-error";
+import { listedEstimate } from "../src/domain/listed-estimate";
 
 beforeEach(() => {
   state.observations.clear();
@@ -93,6 +94,84 @@ beforeEach(() => {
   state.sequence = 0;
 });
 describe("worker pipeline with explicitly mocked providers and persistence", () => {
+  it("retains explicitly published prices and conditional arithmetic when AI extraction is unavailable", async () => {
+    const tiny = {
+      fetchPages: vi.fn(
+        async (urls: string[], retailer: "robu" | "robocraze") => ({
+          results: urls.map((url) => {
+            const entry = catalogue.find((c) => c.urls[retailer] === url);
+            const text = entry
+              ? `# ${entry.name}\nSKU: TEST-${entry.id}\n${retailer === "robu" ? "₹ 80.00 (Incl. GST)\nAvailability: In Stock" : ": Rs 80/-\nIncl. GST\nOnly 5 left in stock"}\n## Package Includes:\n1 x ${entry.name}\n${"Synthetic source fixture only. ".repeat(30)}`
+              : "Shipping Policy Page Content";
+            return { url, final_url: url, text };
+          }),
+          errors: [],
+        }),
+      ),
+    };
+    const ai = {
+      product: vi.fn(async () => {
+        throw new Error("Synthetic model outage");
+      }),
+      policy: vi.fn(async () => {
+        throw new Error("Synthetic policy outage");
+      }),
+      explain: vi.fn(),
+    };
+    const result = await processQuote(
+      "source-reader-fixture",
+      { parts: sampleParts, pincode: "560001", mode: "live", refresh: true },
+      tiny as unknown as TinyFishClient,
+      ai,
+    );
+    expect(ai.product).toHaveBeenCalledTimes(6);
+    expect(result.offers).toHaveLength(6);
+    expect(
+      result.offers.every((o) => o.extractionMethod === "retailer-parser"),
+    ).toBe(true);
+    const estimate = listedEstimate(sampleParts, result.offers)!;
+    expect(estimate.itemTotalPaise).toBe(32000);
+    expect(estimate.landedTotalPaise).toBeNull();
+    expect(result.recommendedId).toBeNull();
+    expect(result.offers.every((o) => o.minPacks === null)).toBe(true);
+  });
+  it("starts independent product extraction together instead of awaiting each component", async () => {
+    const release: (() => void)[] = [];
+    const tiny = {
+      fetchPages: vi.fn(async (urls: string[]) => ({
+        results: urls.map((url) => ({
+          url,
+          final_url: url,
+          text: "Synthetic source only. ".repeat(40),
+        })),
+        errors: [],
+      })),
+    };
+    const ai = {
+      product: vi.fn(async () => {
+        await new Promise<void>((resolve) => release.push(resolve));
+        throw new Error("Synthetic controlled extraction failure");
+      }),
+      policy: vi.fn(async () => {
+        throw new Error("Synthetic policy unavailable");
+      }),
+      explain: vi.fn(),
+    };
+    const work = processQuote(
+      "parallel-fixture",
+      { parts: sampleParts, pincode: "560001", mode: "live", refresh: true },
+      tiny as unknown as TinyFishClient,
+      ai,
+    );
+    try {
+      await vi.waitFor(() => expect(ai.product).toHaveBeenCalledTimes(6));
+    } finally {
+      release.splice(0).forEach((done) => done());
+    }
+    const result = await work;
+    expect(result.recommendedId).toBeNull();
+    expect(tiny.fetchPages).toHaveBeenCalledTimes(2);
+  });
   it("stops collection after a fatal model account error, retaining the fetched originals", async () => {
     const tiny = {
       fetchPages: vi.fn(async (urls: string[]) => ({

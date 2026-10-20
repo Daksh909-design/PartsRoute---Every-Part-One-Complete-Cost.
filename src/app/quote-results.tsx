@@ -3,6 +3,7 @@ import { retailers } from "../domain/catalogue";
 import { money, when } from "./api-client";
 import { itemFirstComparison } from "../domain/comparison";
 import { collectionIssues } from "../domain/issues";
+import { listedEstimate } from "../domain/listed-estimate";
 
 export function BasketPlan({ plan, demo }: { plan: Plan; demo: boolean }) {
   return (
@@ -98,6 +99,8 @@ export default function QuoteResults({
       ? next.totalPaise! - recommendation.totalPaise
       : 0;
   const comparison = itemFirstComparison(result.plans, result.recommendedId);
+  const estimate =
+    !demo && !best ? listedEstimate(result.input.parts, result.offers) : null;
   return (
     <div className="quote-results">
       {result.dataStatus && (
@@ -136,12 +139,78 @@ export default function QuoteResults({
         </div>
       </div>
       <p className="muted">
-        {result.coverage.covered}/{result.coverage.requested} lines covered ·{" "}
+        {result.coverage.covered}/{result.coverage.requested}{" "}
+        {demo ? "lines covered" : "purchase-ready lines"} ·{" "}
         {result.plans.length} combinations checked ·{" "}
         {result.plans.filter((plan) => plan.verified).length}{" "}
         {demo ? "complete sample plans" : "verified plans"}
       </p>
 
+      {estimate && (
+        <article className="recommendation">
+          <span className="eyebrow">
+            {estimate.complete
+              ? "LISTED ITEM ESTIMATE"
+              : "PARTIAL ITEM ESTIMATE"}
+          </span>
+          <p className="quote-total">
+            {money(estimate.itemTotalPaise ?? estimate.itemsPaise)}
+          </p>
+          <p>
+            {estimate.pricedLines} of {estimate.requestedLines} component lines
+            priced
+            {estimate.itemTotalPaise === null
+              ? " · Additional tax unknown"
+              : " · Includes known item tax"}
+          </p>
+          <dl className="costs">
+            <div>
+              <dt>Listed items</dt>
+              <dd>{money(estimate.itemsPaise)}</dd>
+            </div>
+            <div>
+              <dt>Additional item tax</dt>
+              <dd>{money(estimate.addedTaxPaise)}</dd>
+            </div>
+            <div>
+              <dt>Shipping</dt>
+              <dd>Not verified</dd>
+            </div>
+            <div className="sum">
+              <dt>Delivered total</dt>
+              <dd>Unavailable</dd>
+            </div>
+          </dl>
+          <p className="notice warning">
+            This is an item-price estimate, not a verified purchase
+            recommendation. Shipping is excluded
+            {!estimate.complete &&
+              "; missing component lines are also excluded"}
+            .{" "}
+            {estimate.conditional &&
+              "Unpublished minimums and incomplete product specifications may change it."}
+          </p>
+          {estimate.lines.map((line) => (
+            <div className="purchase-line" key={line.partId}>
+              <div>
+                <a href={line.offer.url} target="_blank" rel="noreferrer">
+                  {line.name} ↗
+                </a>
+                <small>
+                  {retailers[line.offer.retailer].name} · {line.packs} ×{" "}
+                  {line.offer.unitsPerPack}-unit pack · need {line.quantity}
+                </small>
+                {line.assumptions.map((assumption) => (
+                  <small key={assumption}>{assumption}</small>
+                ))}
+              </div>
+              <strong>
+                {money(line.listedPayablePaise ?? line.itemsPaise)}
+              </strong>
+            </div>
+          ))}
+        </article>
+      )}
       {!demo && result.offers.length > 0 && (
         <section className="listed-offers" aria-label="Observed product prices">
           <h3>Listed prices</h3>
@@ -160,6 +229,8 @@ export default function QuoteResults({
                   {offer.unitsPerPack ?? "Unknown"} unit
                   {offer.unitsPerPack === 1 ? "" : "s"} / pack ·{" "}
                   {offer.stock.replaceAll("_", " ")}
+                  {offer.extractionMethod === "retailer-parser" &&
+                    " · Direct listing read; AI details unverified"}
                 </small>
               </div>
               <strong>
@@ -180,12 +251,12 @@ export default function QuoteResults({
                   ? "LOWEST COMPLETE SAMPLE"
                   : best.verified
                     ? "VERIFIED LANDED COST"
-                    : "INCOMPLETE ALTERNATIVE"}
+                    : "KNOWN ITEM SUBTOTAL"}
               </span>
               <p className="quote-total">
                 {best.verified
                   ? money(best.totalPaise)
-                  : "Total not yet verified"}
+                  : money(best.knownSubtotalPaise)}
               </p>
             </div>
             <span className="retailer-count">

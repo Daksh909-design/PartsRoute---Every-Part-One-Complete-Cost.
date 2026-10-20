@@ -50,6 +50,23 @@ try {
     ids[0] === ids[1],
     "concurrent duplicate submissions share one PostgreSQL job",
   );
+  const refreshedKey = randomUUID();
+  check(
+    (await enqueue(input, refreshedKey, actor)) === ids[0],
+    "a refreshed browser request recovers identical active team work",
+  );
+  await db().query("UPDATE quotes SET status='partial' WHERE id=$1", [ids[0]]);
+  check(
+    (await enqueue(input, refreshedKey, actor)) === ids[0],
+    "the recovered request stays idempotent after the job finishes",
+  );
+  const newId = await enqueue(input, randomUUID(), actor);
+  check(
+    newId !== ids[0],
+    "a deliberate new request after completion creates fresh work",
+  );
+  await db().query("DELETE FROM quotes WHERE id=$1", [newId]);
+  await db().query("UPDATE quotes SET status='queued' WHERE id=$1", [ids[0]]);
   const first = await saveObservation(
     ids[0],
     "synthetic-test",

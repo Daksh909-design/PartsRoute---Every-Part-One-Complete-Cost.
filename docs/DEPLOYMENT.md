@@ -78,3 +78,5 @@ Run migrations 004 and 005 before deploying this revision, then deploy web and w
 ## Account-free live preview
 
 The public interface was connected to the existing local backend through a temporary Cloudflare Quick Tunnel. This does not provision Render or permanent hosting. It depends on the team computer and all local services staying online. See [PUBLIC-PREVIEW.md](PUBLIC-PREVIEW.md) for lifecycle, authentication, recovery and the strict seven-second test result.
+
+Latest collector: apply migration 006 before restarting web and worker. GEMINI_CONCURRENCY defaults to four. See [COLLECTOR-UPDATE.md](COLLECTOR-UPDATE.md) for active-request recovery, conditional item estimates and the failed ten-second test.

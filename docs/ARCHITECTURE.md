@@ -27,7 +27,7 @@ flowchart LR
 - `rate_events`: durable private-team create quota. Creation is serialized under a PostgreSQL advisory transaction lock and limited to six per hour and three queued/running jobs.
 - `worker_heartbeats`: process presence refreshed every ten seconds. Authenticated readiness requires a heartbeat newer than 45 seconds and accessible migrated tables; configured keys alone do not mark the server ready.
 
-The worker claims jobs with `FOR UPDATE SKIP LOCKED`, renews a 60-second lease every ten seconds and caps recovery attempts at three. Retailer collectors run concurrently, with sequential requests within each, limiting Fetch/extraction concurrency to two. Browser finalist checks are sequential and limited to three distinct baskets across the three shortlisted plans. If a worker dies after submission but before saving the ID, reconcile with TinyFish dashboard and `recover:run`.
+The worker claims jobs with `FOR UPDATE SKIP LOCKED`, renews a 60-second lease every ten seconds and caps recovery attempts at three. Two retailer Fetch batches run concurrently. Independent product extractions start together, bounded to four Gemini requests per quote (configurable from one to four). Browser finalist checks remain limited to three distinct baskets and now share a 45-second polling window. Pending runs remain recoverable; the window does not cancel remote runs or guarantee full quote completion. If a worker dies after submission but before saving the ID, reconcile with TinyFish dashboard and `recover:run`.
 
 ## Trust and correctness boundaries
 
@@ -41,7 +41,7 @@ The supported-domain check accepts only exact HTTPS apex/www domains, rejects em
 
 ## Provider extension
 
-Gemini is the default AI provider; OpenAI remains an explicit optional adapter. Gemini calls use a serial queue with configurable spacing, schema-constrained JSON, Zod validation and recorded actual usage. A quota error does not trigger a paid provider. Controlled failure metadata records unknown token usage and a key/model fingerprint, never the key. Readiness blocks repeat creation for five minutes after an account-access failure for the same configuration; transient outages are recorded separately. Provider-supplied error bodies are not sent directly to the UI. Explicitly rejected Agent submissions are distinguished from ambiguous network submissions. `AIProvider` keeps extraction and explanation independent of the calculator. Automatic discovery would require TinyFish Search and a separate URL/specification review stage.
+Gemini is the default AI provider; OpenAI remains an explicit optional adapter. Gemini calls use a bounded task pool with configurable start spacing, schema-constrained JSON, Zod validation and recorded actual usage. A quota error does not trigger a paid provider. Controlled failure metadata records unknown token usage and a key/model fingerprint, never the key. Readiness blocks repeat creation for five minutes after an account-access failure for the same configuration; transient outages are recorded separately. Provider-supplied error bodies are not sent directly to the UI. Explicitly rejected Agent submissions are distinguished from ambiguous network submissions. `AIProvider` keeps extraction and explanation independent of the calculator. Automatic discovery would require TinyFish Search and a separate URL/specification review stage.
 
 ## Frontend and deployment boundary
 

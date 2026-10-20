@@ -17,6 +17,8 @@ PartsRoute helps Indian student teams, makers and electronics teams compare the 
 
 **The first live milestone has not passed.** The Pages sample is not evidence of a live integration. See [feasibility](docs/FEASIBILITY.md) and [checks actually executed](docs/VALIDATION.md).
 
+See the [current collector correction, conditional totals and ten-second results](docs/COLLECTOR-UPDATE.md). Apply migration 006 before deploying this revision.
+
 ## Implemented
 
 - Three curated component types with quantities, exact models, required specifications and a delivery pincode. Input schemas allow three to five lines; the current catalogue has three distinct entries.
@@ -25,6 +27,7 @@ PartsRoute helps Indian student teams, makers and electronics teams compare the 
 - Complete-assignment enumeration, verified-plan ranking and partial alternatives. Unknown shipping is never treated as free.
 - Fresh collection as the primary live action: new TinyFish Fetch requests with ttl=0 and new AI extraction, even if identical content was previously cached. A separate read-only saved-observations action shows observation ages.
 - Live quote jobs, leases, worker heartbeat, readiness checks, saved observations and provider run recovery.
+- Recovery of identical active team requests after browser refresh, bounded parallel extraction and direct reads of supported retailer price blocks while AI work is pending or unavailable. Conditional item estimates show priced-line coverage and never substitute for a verified delivered total.
 - Separate comparison and evidence views, retry states, protected live endpoints, bounded API requests and per-team live quotas.
 
 ## Retailers
@@ -123,7 +126,7 @@ The test fixtures are explicitly synthetic. The sample's manual totals are ₹25
 
 `pnpm build:pages` builds an isolated static sample export. Without a configured backend it shows a setup screen for live quotes. With an actual `NEXT_PUBLIC_API_BASE_URL` and allowed backend origin, it can call the protected server. API keys never enter this build. Custom CI is an optional template in `docs/ci-workflow.yml.example`.
 
-The main remaining gaps are extraction reliability, complete pincode shipping, two fully qualified retailers, human-reviewed extraction and real model evaluation. PostgreSQL persistence, concurrent claiming and expired-lease recovery have been exercised. Permanent public hosting is not provisioned. The Pages interface can now use a temporary protected live preview; see [preview setup](docs/PUBLIC-PREVIEW.md). No delivery deadline or guaranteed shipping fee is inferred from a banner or dispatch estimate.
+The updated ten-second target has also failed a real fresh check; showing an item estimate does not satisfy it. The main remaining gaps are extraction reliability, complete pincode shipping, two fully qualified retailers, human-reviewed extraction and real model evaluation. PostgreSQL persistence, concurrent claiming and expired-lease recovery have been exercised. Permanent public hosting is not provisioned. The Pages interface can now use a temporary protected live preview; see [preview setup](docs/PUBLIC-PREVIEW.md). No delivery deadline or guaranteed shipping fee is inferred from a banner or dispatch estimate.
 
 ## Roadmap
 

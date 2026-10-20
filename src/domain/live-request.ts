@@ -2,6 +2,7 @@ export type CollectionClock = {
   startedAt: number;
   elapsedMs: number;
   finished: boolean;
+  recovered?: boolean;
 };
 
 // Only an explicit saved comparison may use old observations. Keep the primary

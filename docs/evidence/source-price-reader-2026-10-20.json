@@ -1,0 +1,65 @@
+{
+  "checkedAt": "2026-10-20T16:18:00.509Z",
+  "sourceMode": "Reprocessing saved real TinyFish pages; not a new API collection",
+  "quoteId": "083b318a-fe1f-4361-985d-92d00c54b823",
+  "newProviderCalls": 0,
+  "offers": [
+    {
+      "url": "https://robocraze.com/products/dht11-humidity-temperature-sensor-module",
+      "model": "DHT11",
+      "packSize": 1,
+      "pricePaise": 5900,
+      "stock": "in_stock",
+      "minimum": null,
+      "multiple": null,
+      "match": "insufficient_information"
+    },
+    {
+      "url": "https://robocraze.com/products/hc-sr-04-ultrasonic-sensor",
+      "model": "HC-SR04",
+      "packSize": null,
+      "pricePaise": 7500,
+      "stock": "in_stock",
+      "minimum": null,
+      "multiple": null,
+      "match": "insufficient_information"
+    },
+    {
+      "url": "https://robu.in/product/dht11-digital-relative-humidity-temperature-sensor-module/",
+      "model": "DHT11",
+      "packSize": 1,
+      "pricePaise": 5900,
+      "stock": "in_stock",
+      "minimum": null,
+      "multiple": null,
+      "match": "insufficient_information"
+    },
+    {
+      "url": "https://robu.in/product/hc-sr04-ultrasonic-range-finder/",
+      "model": "HC-SR04",
+      "packSize": 1,
+      "pricePaise": 7900,
+      "stock": "in_stock",
+      "minimum": null,
+      "multiple": null,
+      "match": "insufficient_information"
+    },
+    {
+      "url": "https://robu.in/product/transparent-400-points-solderless-breadboard/",
+      "model": "breadboard400",
+      "packSize": 1,
+      "pricePaise": 10500,
+      "stock": "out_of_stock",
+      "minimum": null,
+      "multiple": null,
+      "match": "insufficient_information"
+    }
+  ],
+  "itemEstimate": {
+    "itemTotalPaise": 21700,
+    "pricedLines": 2,
+    "requestedLines": 3,
+    "conditional": true,
+    "landedTotalPaise": null
+  }
+}

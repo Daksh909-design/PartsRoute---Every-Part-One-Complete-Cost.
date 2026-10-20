@@ -23,6 +23,9 @@ import { liveRequest, type CollectionClock } from "../domain/live-request";
 
 type Job = {
   id: string;
+  input: QuoteInput;
+  created_at: string;
+  updated_at: string;
   status: string;
   phase: string;
   result: QuoteResult | null;
@@ -83,7 +86,15 @@ export default function Workspace() {
   const pollingStarted = useRef(0);
   const requestId = useRef<string | null>(null);
   useEffect(() => {
-    if (liveAvailable) setSavedId(storage.read());
+    if (liveAvailable) {
+      const reference =
+        new URLSearchParams(window.location.search).get("quote") || "";
+      if (/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(reference)) {
+        setSavedId(reference);
+        setMode("live");
+        setResult(null);
+      } else setSavedId(storage.read());
+    }
     return () => {
       generation.current++;
       if (timer.current) clearTimeout(timer.current);
@@ -188,7 +199,7 @@ export default function Workspace() {
       setChecking(false);
     }
   }
-  async function poll(id: string, version: number) {
+  async function poll(id: string, version: number, restore = false) {
     if (Date.now() - pollingStarted.current > 15 * 60 * 1000) {
       setBusy(false);
       stopClock();
@@ -200,7 +211,32 @@ export default function Workspace() {
     try {
       const current = (await requestApi(`/api/quotes/${id}`, token)) as Job;
       if (version !== generation.current) return;
+      if (restore && current.input) {
+        setParts(current.input.parts);
+        setPincode(current.input.pincode);
+        const startedAt = Date.parse(current.created_at);
+        const running = ["queued", "processing"].includes(current.status);
+        setCollectionClock({
+          startedAt,
+          elapsedMs:
+            (running ? Date.now() : Date.parse(current.updated_at)) - startedAt,
+          finished: !running,
+        });
+      }
       setJob(current);
+      if (!restore && current.created_at) {
+        setCollectionClock((clock) => {
+          const originalStart = Date.parse(current.created_at);
+          return clock && originalStart < clock.startedAt - 1000
+            ? {
+                ...clock,
+                startedAt: originalStart,
+                elapsedMs: Date.now() - originalStart,
+                recovered: true,
+              }
+            : clock;
+        });
+      }
       setPhase(current.phase);
       if (current.result) setResult(current.result);
       if (["queued", "processing"].includes(current.status)) {
@@ -208,7 +244,7 @@ export default function Workspace() {
         timer.current = setTimeout(() => void poll(id, version), 250);
       } else {
         setBusy(false);
-        stopClock();
+        if (!restore) stopClock();
         requestId.current = null;
         if (current.status === "failed")
           setError(
@@ -315,7 +351,9 @@ export default function Workspace() {
     if (!savedId || !token) return;
     cancelPolling();
     setBusy(true);
-    await poll(savedId, generation.current);
+    setError("");
+    setResponseMs(null);
+    await poll(savedId, generation.current, true);
   }
   async function retry() {
     if (!job) return;
@@ -450,8 +488,8 @@ export default function Workspace() {
             <Icon name="info" />
             <span>
               <strong>Temporary live server.</strong> The team computer must
-              stay online. Fresh collection can take longer than seven seconds;
-              a cached comparison is a separate operation.
+              stay online. Fresh collection can take longer than ten seconds; a
+              cached comparison is a separate operation.
             </span>
           </div>
         )}
@@ -919,8 +957,10 @@ export default function Workspace() {
                 {mode === "live" && collectionClock && (
                   <>
                     <p className="response-note">
-                      Fresh collection ·{" "}
-                      {(collectionClock.elapsedMs / 1000).toFixed(1)} s
+                      {collectionClock.recovered
+                        ? "Resumed collection"
+                        : "Fresh collection"}{" "}
+                      · {(collectionClock.elapsedMs / 1000).toFixed(1)} s
                       {job && (
                         <>
                           {" "}
@@ -938,9 +978,9 @@ export default function Workspace() {
                           ? " · Verified plan returned"
                           : " · No complete verified plan returned")}
                     </p>
-                    {collectionClock.elapsedMs >= 7000 && (
+                    {collectionClock.elapsedMs >= 10000 && (
                       <p className="notice warning" role="status">
-                        Seven-second target missed.{" "}
+                        Ten-second target missed.{" "}
                         {collectionClock.finished
                           ? "This run does not satisfy the required time limit."
                           : "Collection is still running; a queued request or partial prices do not count as a finished quote."}

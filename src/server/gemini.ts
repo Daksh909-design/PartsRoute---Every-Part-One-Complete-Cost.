@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { EVIDENCE_INSTRUCTIONS, StructuredAIProvider, type Usage } from "./ai";
 import { ProviderAccessError, providerFingerprint } from "./provider-error";
+import { TaskPool } from "./concurrency";
 
 const Interaction = z.object({
   id: z.string().optional(),
@@ -32,7 +33,9 @@ const Interaction = z.object({
 });
 export class GeminiProvider extends StructuredAIProvider {
   readonly provider = "gemini" as const;
-  private queue: Promise<unknown> = Promise.resolve();
+  private queue = new TaskPool(
+    Math.min(4, Math.max(1, Number(process.env.GEMINI_CONCURRENCY) || 4)),
+  );
   private nextRequest = 0;
   private accessFailure: ProviderAccessError | null = null;
   private serviceFailure: Error | null = null;
@@ -51,16 +54,19 @@ export class GeminiProvider extends StructuredAIProvider {
     instructions: string,
     data: unknown,
   ): Promise<z.infer<T>> {
-    const operation = this.queue.then(async () => {
+    return this.queue.run(async () => {
       if (this.accessFailure) throw this.accessFailure;
       if (this.serviceFailure) throw this.serviceFailure;
       const interval = Math.min(
         60000,
         Math.max(0, Number(process.env.GEMINI_REQUEST_INTERVAL_MS ?? 0) || 0),
       );
-      const delay = this.nextRequest - Date.now();
+      const scheduled = Math.max(Date.now(), this.nextRequest);
+      this.nextRequest = scheduled + interval;
+      const delay = scheduled - Date.now();
       if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
-      this.nextRequest = Date.now() + interval;
+      if (this.accessFailure) throw this.accessFailure;
+      if (this.serviceFailure) throw this.serviceFailure;
       const { $schema: _dialect, ...shape } = z.toJSONSchema(schema);
       let response: Response;
       const started = Date.now();
@@ -194,8 +200,6 @@ export class GeminiProvider extends StructuredAIProvider {
       if (!text) throw new Error("Gemini returned no structured extraction.");
       return schema.parse(JSON.parse(text));
     });
-    this.queue = operation.catch(() => undefined);
-    return operation;
   }
   private async recordFailure(httpStatus: number, detail: string) {
     const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";

@@ -7,12 +7,15 @@ const origin = process.env.SMOKE_ORIGIN || "http://localhost:3000";
 if (!process.env.APP_ACCESS_TOKEN)
   throw new Error("Configure the private team access token.");
 const start = performance.now();
-const deadline = start + 7000;
+const budgetMs = Math.min(
+  10000,
+  Math.max(1000, Number(process.env.LIVE_BUDGET_MS) || 10000),
+);
+const deadline = start + budgetMs;
 let quoteId: string | null = null;
 let state = "not_submitted";
 let completeVerifiedPlan = false;
-let reason =
-  "No complete verified purchasing plan was returned within seven seconds.";
+let reason = `No complete verified purchasing plan was returned within ${budgetMs} ms.`;
 async function request(path: string, init: RequestInit = {}) {
   const remaining = Math.floor(deadline - performance.now());
   if (remaining <= 0) throw new Error("Deadline reached");
@@ -76,11 +79,11 @@ try {
       : reason;
 }
 const elapsedMs = Math.round((performance.now() - start) * 100) / 100;
-const passed = completeVerifiedPlan && elapsedMs <= 7000;
+const passed = completeVerifiedPlan && elapsedMs <= budgetMs;
 const report = {
   checkedAt: new Date().toISOString(),
-  requirement:
-    "New live collection AND complete verified purchasing plan within 7000 ms",
+  requirement: `New live collection AND complete verified purchasing plan within ${budgetMs} ms`,
+  budgetMs,
   quoteId,
   statusAtDeadline: state,
   elapsedMs,
@@ -89,10 +92,7 @@ const report = {
   reason: passed ? null : reason,
   savedJobContinues: ["queued", "processing"].includes(state),
 };
-await writeFile(
-  "artifacts/live-seven-second-budget.json",
-  JSON.stringify(report, null, 2),
-);
+await writeFile("artifacts/live-budget.json", JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
 // Optional diagnostics keep following the SAME job after the strict deadline.
 // Later output never changes the failed seven-second verdict or starts a retry.
@@ -148,7 +148,7 @@ if (process.argv.includes("--follow") && quoteId) {
     };
     const fullReport = { ...report, followUp };
     await writeFile(
-      "artifacts/live-seven-second-budget.json",
+      "artifacts/live-budget.json",
       JSON.stringify(fullReport, null, 2),
     );
     console.log(JSON.stringify({ followUp }, null, 2));

@@ -70,5 +70,17 @@
   {
     "File": "fresh-cache-bypass-2026-10-20.json",
     "Hash": "FAC761740810CAE9109255A47120093DA1A1EFB42F9EB88AD6B6AF1BEE3A8B63"
+  },
+  {
+    "File": "parallel-ten-second-budget-2026-10-20.json",
+    "Hash": "B553C38CDDF3404969D87795F8860D491A1A00070A4FF2E03EB69785863E7CE7"
+  },
+  {
+    "File": "source-price-reader-2026-10-20.json",
+    "Hash": "2E18AC2A4B62A403AF7CFE88355E561BA84AB61A744D404F21F7CF7A19E8C4E6"
+  },
+  {
+    "File": "live-reader-ten-second-budget-2026-10-20.json",
+    "Hash": "41962D6C0EE3686FC93EAE8EA2C37BBF984F86FBC1A0A796B9F7EDE7F24BFF0D"
   }
 ]

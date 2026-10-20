@@ -232,6 +232,8 @@ export class TinyFishClient {
             use_vault: false,
             agent_config: { max_duration_seconds: 180, max_steps: 30 },
           },
+          false,
+          20000,
         ),
       );
     if (started.error || !started.run_id)
@@ -245,7 +247,8 @@ export class TinyFishClient {
       await this.request(
         `https://agent.tinyfish.ai/v1/runs/${encodeURIComponent(id)}`,
         undefined,
-        true,
+        false,
+        5000,
       ),
     );
   }

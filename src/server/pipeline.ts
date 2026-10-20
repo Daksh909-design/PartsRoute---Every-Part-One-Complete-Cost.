@@ -32,6 +32,7 @@ import { ProviderAccessError, RunRejectedError } from "./provider-error";
 import { cachedAI } from "./extraction-cache";
 import { observationTtl } from "./snapshot";
 import { NORMALIZATION_VERSION } from "../domain/normalization";
+import { retailerProduct } from "./retailer-product";
 import {
   checkedOrders,
   verificationCandidates,
@@ -121,6 +122,7 @@ async function verify(
   basket: Basket,
   pincode: string,
   tiny: TinyFishClient,
+  deadline: number,
 ): Promise<{ shipping: ShippingObservation | null; orders: CheckedOrder[] }> {
   const key = `basket:${createHash("sha256").update(basket.key).digest("hex")}`;
   const existingObservation = await observation(jobId, key);
@@ -189,12 +191,11 @@ async function verify(
     throw new Error(
       "An earlier basket run may exist. Attach its TinyFish run ID with recover:run; a duplicate was not started.",
     );
-  const deadline = Date.now() + 240000;
   let run = op.status === "complete" ? op.result : null;
   while (!run && Date.now() < deadline) {
     const next = await tiny.getRun(op.run_id);
     if (["COMPLETED", "FAILED", "CANCELLED"].includes(next.status)) run = next;
-    else await wait(5000);
+    else await wait(750);
   }
   if (!run)
     throw new Error(
@@ -333,80 +334,112 @@ export async function processQuote(
           );
           return original;
         })());
-      for (const part of input.parts) {
-        if (accessFailure) return;
-        const entry = catalogue.find((c) => c.id === part.catalogueId)!;
-        try {
-          const o = await pageObservation(
-            jobId,
-            retailer,
-            entry.urls[retailer],
-            input.refresh,
-            tiny,
-            fetchBatch,
-          );
-          if (
-            o.normalized &&
-            o.normalization_version === NORMALIZATION_VERSION
-          ) {
-            offers.push(matchOffer(part, Offer.parse(o.normalized)));
-            continue;
-          }
-          const response = FetchResponse.parse(o.original);
-          if (response.errors.some((e) => e.url === entry.urls[retailer]))
-            errors.push(
-              ...response.errors
-                .filter((e) => e.url === entry.urls[retailer])
-                .map(
-                  (e) =>
-                    `${retailers[retailer].name}: ${part.name} could not be retrieved (${String(e.error).slice(0, 160)}).`,
-                ),
-            );
-          const page = response.results.find(
-            (p) => p.url === entry.urls[retailer],
-          );
-          if (!page || page.text.length < 500) {
-            if (!response.errors.length)
-              errors.push(
-                `${retailers[retailer].name}: ${part.name} returned incomplete page content.`,
-              );
-            continue;
-          }
-          const ex = await ai.product(page.text, page.final_url, part.model);
-          const offer = matchOffer(
-            part,
-            groundedOffer(
-              ex,
-              page.text,
-              { ...evidence(o), sourceUrl: page.final_url },
+      await Promise.all(
+        input.parts.map(async (part) => {
+          if (accessFailure) return;
+          const entry = catalogue.find((c) => c.id === part.catalogueId)!;
+          try {
+            const o = await pageObservation(
+              jobId,
               retailer,
-              part.id,
-              `${retailer}:${entry.id}`,
-            ),
-          );
-          if (
-            !offer.unitsPerPack ||
-            !offer.minPacks ||
-            !offer.multiplePacks ||
-            !offer.priceBreaks.length
-          )
-            offer.reasons.push(orderingUnknown);
-          await normalizeObservation(o.id, offer);
-          offers.push(offer);
-          await saveResult(
-            jobId,
-            finish(input, offers, rules, shipping, errors),
-          );
-        } catch (error) {
-          if (error instanceof ProviderAccessError) {
-            accessFailure = error;
-            return;
+              entry.urls[retailer],
+              input.refresh,
+              tiny,
+              fetchBatch,
+            );
+            if (
+              o.normalized &&
+              o.normalization_version === NORMALIZATION_VERSION &&
+              Offer.parse(o.normalized).extractionMethod !== "retailer-parser"
+            ) {
+              offers.push(matchOffer(part, Offer.parse(o.normalized)));
+              return;
+            }
+            const response = FetchResponse.parse(o.original);
+            if (response.errors.some((e) => e.url === entry.urls[retailer]))
+              errors.push(
+                ...response.errors
+                  .filter((e) => e.url === entry.urls[retailer])
+                  .map(
+                    (e) =>
+                      `${retailers[retailer].name}: ${part.name} could not be retrieved (${String(e.error).slice(0, 160)}).`,
+                  ),
+              );
+            const page = response.results.find(
+              (p) => p.url === entry.urls[retailer],
+            );
+            if (!page || page.text.length < 500) {
+              if (!response.errors.length)
+                errors.push(
+                  `${retailers[retailer].name}: ${part.name} returned incomplete page content.`,
+                );
+              return;
+            }
+            const preliminary = retailerProduct(page.text, retailer);
+            if (preliminary) {
+              const offer = matchOffer(part, {
+                ...groundedOffer(
+                  preliminary,
+                  page.text,
+                  { ...evidence(o), sourceUrl: page.final_url },
+                  retailer,
+                  part.id,
+                  `${retailer}:${entry.id}`,
+                ),
+                extractionMethod: "retailer-parser",
+              });
+              const index = offers.findIndex(
+                (current) => current.id === offer.id,
+              );
+              if (index < 0) offers.push(offer);
+              else offers[index] = offer;
+              await normalizeObservation(o.id, offer);
+              await saveResult(
+                jobId,
+                finish(input, offers, rules, shipping, errors),
+              );
+            }
+            const ex = await ai.product(page.text, page.final_url, part.model);
+            const offer = matchOffer(
+              part,
+              groundedOffer(
+                ex,
+                page.text,
+                { ...evidence(o), sourceUrl: page.final_url },
+                retailer,
+                part.id,
+                `${retailer}:${entry.id}`,
+              ),
+            );
+            if (
+              !offer.unitsPerPack ||
+              !offer.minPacks ||
+              !offer.multiplePacks ||
+              !offer.priceBreaks.length
+            )
+              offer.reasons.push(orderingUnknown);
+            offer.extractionMethod = "ai";
+            await normalizeObservation(o.id, offer);
+            const index = offers.findIndex(
+              (current) => current.id === offer.id,
+            );
+            if (index < 0) offers.push(offer);
+            else offers[index] = offer;
+            await saveResult(
+              jobId,
+              finish(input, offers, rules, shipping, errors),
+            );
+          } catch (error) {
+            if (error instanceof ProviderAccessError) {
+              accessFailure = error;
+              return;
+            }
+            errors.push(
+              `${retailers[retailer].name}: ${part.name} ${offers.some((offer) => offer.id === `${retailer}:${entry.id}`) ? "AI details unverified; published listing facts retained." : "unavailable."} ${message(error)}`,
+            );
           }
-          errors.push(
-            `${retailers[retailer].name}: ${part.name} unavailable. ${message(error)}`,
-          );
-        }
-      }
+        }),
+      );
       if (accessFailure) return;
       try {
         const o = await pageObservation(
@@ -465,9 +498,16 @@ export async function processQuote(
     Math.max(1, Number(process.env.MAX_BROWSER_CHECKS) || 3),
   );
   let checks = 0;
+  const verificationDeadline = Date.now() + 45000;
   verification: for (const plan of shortlist) {
     for (const basket of plan.baskets) {
       if (seen.has(basket.key) || checks >= limit) continue;
+      if (Date.now() >= verificationDeadline) {
+        errors.push(
+          "Basket verification time budget reached. Resume saved runs rather than starting duplicates.",
+        );
+        break verification;
+      }
       seen.add(basket.key);
       checks++;
       await phase(
@@ -475,7 +515,13 @@ export async function processQuote(
         `Checking quantities, delivery and shipping (${checks} of ${limit})`,
       );
       try {
-        const inspected = await verify(jobId, basket, input.pincode, tiny);
+        const inspected = await verify(
+          jobId,
+          basket,
+          input.pincode,
+          tiny,
+          verificationDeadline,
+        );
         if (inspected.shipping) shipping.push(inspected.shipping);
         for (const order of inspected.orders) {
           const index = offers.findIndex((offer) => offer.id === order.offerId);

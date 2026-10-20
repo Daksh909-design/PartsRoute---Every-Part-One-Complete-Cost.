@@ -39,12 +39,26 @@ export async function enqueue(
       "SELECT pg_advisory_xact_lock(hashtext('partsroute-create'))",
     );
     const existing = await client.query(
-      "SELECT id FROM quotes WHERE idempotency_key=$1",
+      "SELECT id FROM quotes WHERE idempotency_key=$1 UNION ALL SELECT quote_id AS id FROM quote_requests WHERE request_key=$1 LIMIT 1",
       [key],
     );
     if (existing.rowCount) {
       await client.query("COMMIT");
       return existing.rows[0].id;
+    }
+    // A refreshed page has a new request key. Recover identical work that is
+    // still running for this team, rather than queueing another long paid run.
+    const active = await client.query(
+      "SELECT id FROM quotes WHERE actor=$1 AND input=$2::jsonb AND status IN ('queued','processing') ORDER BY created_at LIMIT 1",
+      [actor, JSON.stringify(input)],
+    );
+    if (active.rowCount) {
+      await client.query(
+        "INSERT INTO quote_requests(request_key,quote_id) VALUES($1,$2)",
+        [key, active.rows[0].id],
+      );
+      await client.query("COMMIT");
+      return active.rows[0].id;
     }
     const recent = await client.query(
       "SELECT count(*)::int AS n FROM rate_events WHERE actor=$1 AND created_at>now()-interval '1 hour'",
@@ -59,8 +73,8 @@ export async function enqueue(
       );
     const id = randomUUID();
     await client.query(
-      "INSERT INTO quotes(id,idempotency_key,input,status) VALUES($1,$2,$3,'queued')",
-      [id, key, JSON.stringify(input)],
+      "INSERT INTO quotes(id,idempotency_key,input,status,actor) VALUES($1,$2,$3,'queued',$4)",
+      [id, key, JSON.stringify(input), actor],
     );
     await client.query("INSERT INTO rate_events(actor) VALUES($1)", [actor]);
     await client.query(
