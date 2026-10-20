@@ -35,6 +35,21 @@ export function groundedOffer(
       const value = ex[s.field],
         q = s.excerpt.toLowerCase();
       if (value === null) return false;
+      if (
+        typeof value === "number" &&
+        (s.field === "minPacks" || s.field === "multiplePacks")
+      ) {
+        const label =
+          s.field === "minPacks"
+            ? "(?:min(?:imum)?(?:\\s+(?:order|packs|quantity))?|MOQ)"
+            : "(?:step|multiple(?:\\s+(?:of|packs|quantity))?)";
+        return (
+          new RegExp(
+            `\\b${label}[\\s:=\"']*(?:is\\s+|of\\s+)?${value}(?!\\d|\\.\\d)`,
+            "i",
+          ).test(q) && numberIn(q, value)
+        );
+      }
       if (typeof value === "number")
         return s.field === "taxRateBps"
           ? new RegExp(`${value / 100}\\s*%`).test(q)

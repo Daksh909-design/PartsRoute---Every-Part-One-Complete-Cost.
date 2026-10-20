@@ -82,5 +82,13 @@
   {
     "File": "live-reader-ten-second-budget-2026-10-20.json",
     "Hash": "41962D6C0EE3686FC93EAE8EA2C37BBF984F86FBC1A0A796B9F7EDE7F24BFF0D"
+  },
+  {
+    "File": "parallel-policy-ten-second-budget-2026-10-20.json",
+    "Hash": "0C216D7B9E7DB5E2BF125A709D7130E18BC129D6DB757E2AE282982FB2EF5FE9"
+  },
+  {
+    "File": "compact-enrichment-experiment-2026-10-20.json",
+    "Hash": "8BB29CB38DC556488750E6746A3C178A5D8C2C8A0C50BC3D4FCF89DB75D4EB01"
   }
 ]

@@ -13,6 +13,56 @@ const evidence = {
 // Labelled synthetic excerpts representing observed templates, not live prices.
 const page =
   "# Buy HC-SR04 Ultrasonic Sensor\n\n: Rs 75/-\n: Rs 75/-\n: ~~Rs 125/-~~\nSave Rs 50/-\nIncl. GST (No Hidden Charges)\nOnly 3 left in stock\nBuy it with\nRelated sensor Price ₹5\nSKU: TST001\n## Package Includes:\n* 2 x HC-SR04 Ultrasonic Sensor\n";
+it("requires ordering context rather than interpreting loyalty points or package counts as minimums", () => {
+  const original = retailerProduct(page, "robocraze")!;
+  for (const text of [
+    "Earn 1 Robu Points!",
+    "1 x HC-SR04 Ultrasonic Sensor",
+    "Minimum packs:10. Earn 1 point.",
+  ]) {
+    const parsed = {
+      ...original,
+      minPacks: 1,
+      multiplePacks: 1,
+      support: [
+        ...original.support,
+        { field: "minPacks" as const, excerpt: text },
+        { field: "multiplePacks" as const, excerpt: text },
+      ],
+    };
+    const offer = groundedOffer(
+      parsed,
+      page + text,
+      evidence,
+      "robocraze",
+      "part",
+      "offer",
+    );
+    expect(offer.minPacks).toBeNull();
+    expect(offer.multiplePacks).toBeNull();
+  }
+  const text = 'Minimum packs:1. <input min="1" step="2">';
+  const parsed = {
+    ...original,
+    minPacks: 1,
+    multiplePacks: 2,
+    support: [
+      ...original.support,
+      { field: "minPacks" as const, excerpt: text },
+      { field: "multiplePacks" as const, excerpt: text },
+    ],
+  };
+  const offer = groundedOffer(
+    parsed,
+    page + text,
+    evidence,
+    "robocraze",
+    "part",
+    "offer",
+  );
+  expect(offer.minPacks).toBe(1);
+  expect(offer.multiplePacks).toBe(2);
+});
 it("reads current price and explicit pack contents while ignoring crossed-out, savings and related prices", () => {
   const parsed = retailerProduct(page, "robocraze")!;
   const offer = groundedOffer(

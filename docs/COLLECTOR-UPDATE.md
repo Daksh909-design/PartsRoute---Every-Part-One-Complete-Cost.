@@ -1,6 +1,6 @@
 # Collector correction and current ten-second target
 
-The owner relaxed the original seven-second limit to ten seconds. The current implementation still has not passed the requirement for a complete fresh verified quote. Older seven-second reports remain historical evidence.
+The target is seven seconds, with ten seconds as the owner's fallback. The current implementation still has not passed either requirement for a complete fresh verified quote. Older reports remain historical evidence.
 
 ## Implemented changes
 
@@ -10,6 +10,18 @@ The owner relaxed the original seven-second limit to ten seconds. The current im
 - A narrow reader of the observed retailer templates publishes explicit listing prices, tax inclusion, stock and package contents before AI work. Exact excerpts still pass the grounding validator. Offers identify `extractionMethod=retailer-parser`; no unpublished ordering rule, physical pin count or shipping charge is inferred. AI extraction still runs. Pending source reads are reused only within that same job when it resumes.
 - The UI shows conditional item-price arithmetic and priced-line coverage when a complete optimizer plan is unavailable. Missing components, minimums, specifications, tax and shipping are explicit. An estimate is never a recommendation or a verified delivered total.
 - Protected saved quotes can be reopened with `?quote=<UUID>`. The link contains no token or provider key and needs team authentication. Reopening does not start another provider job.
+
+## Latest investigation and corrections
+
+Product and shipping-policy extraction now run independently under the same bounded model pool. Previously each retailer's policy waited for its products to finish. Robu's policy URL was corrected to `/shipping-and-refund-policy/`; a new TinyFish response confirmed the actual policy loads. It describes couriers and returns but publishes no applicable fee, so its shipping amount remains unknown.
+
+Ordering evidence must explicitly label a minimum/MOQ or multiple/step. A loyalty reward such as "1 Robu Points" or a package quantity can no longer supply an ordering minimum. Conflicting values for the same required specification reject a product regardless of which value appears first. Normalization version `grounding-v4` prevents old normalized observations being treated as current; historical originals are preserved.
+
+A separate compact extraction experiment asked for specifications and ordering rules for three saved product pages per model request. At a ten-second timeout both requests failed. With the normal allowance, responses took 19.722 and 22.751 seconds. One contained an out-of-range evidence reference; another mapped facts to unrelated lines. This experiment is **not used by live quotes**. Its schema/benchmark stay under `scripts/experiments` and `scripts/benchmark-enrichment.ts` for reproducibility. It consumes model quota, uses saved pages, and cannot establish fresh quote latency. [Recorded experiment](evidence/compact-enrichment-experiment-2026-10-20.json).
+
+The latest new public quote, `14c87a8c-30ae-4565-9e0d-78cc38208cf4`, was still processing at 10014.64 ms. It finished partial after **46.189 seconds** on the server. Both fresh TinyFish Fetch batches succeeded (3.154 and 15.270 seconds), as did all eight Gemini extractions (8.862–22.675 seconds). Six offers were saved, with zero purchase-ready lines and no verified delivered total. The conditional listed-item estimate remains ₹248. This is another **failed** ten-second result, not evidence of a guaranteed improvement over earlier variable provider timings. [Latest full benchmark](evidence/parallel-policy-ten-second-budget-2026-10-20.json).
+
+96 unit/fixture tests, 13 real PostgreSQL checks, TypeScript, production Next.js build, separate Pages build and nine public HTTP checks passed after these corrections. Shipping qualification and the full fresh timing target remain unfinished.
 
 ## Deployment
 

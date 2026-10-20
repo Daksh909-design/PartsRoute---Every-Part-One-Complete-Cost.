@@ -1,0 +1,88 @@
+{
+  "checkedAt": "2026-10-20T16:45:28.786Z",
+  "scope": "AI enrichment on saved pages only; no new TinyFish collection or shipping verification",
+  "sourceQuoteId": "1db549f1-1013-4f50-8e46-dcce8e633a99",
+  "freshQuote": false,
+  "reports": [
+    {
+      "retailer": "robocraze",
+      "products": 3,
+      "latencyMs": 19722,
+      "status": "failed",
+      "error": "AI returned an evidence line outside this product page."
+    },
+    {
+      "retailer": "robu",
+      "products": 3,
+      "inputCharacters": 15612,
+      "latencyMs": 22751,
+      "status": "responded",
+      "extractedSpecs": [
+        [
+          {
+            "key": "voltage",
+            "value": "5 V",
+            "excerpt": "Purchase this product now and earn 1 Robu Points!"
+          }
+        ],
+        [
+          {
+            "key": "form",
+            "value": "breakout module",
+            "excerpt": "7. It can detect the humidity and temperature of the surrounding environment"
+          },
+          {
+            "key": "voltage",
+            "value": "3.3V-5V",
+            "excerpt": "3. The output from the digital output"
+          }
+        ],
+        [
+          {
+            "key": "tie_points",
+            "value": "400",
+            "excerpt": "1. 400 tie points"
+          },
+          {
+            "key": "voltage",
+            "value": "300 V",
+            "excerpt": "* 0"
+          }
+        ]
+      ],
+      "ordering": [
+        {
+          "minPacks": 1,
+          "multiplePacks": null
+        },
+        {
+          "minPacks": 1,
+          "multiplePacks": null
+        },
+        {
+          "minPacks": 1,
+          "multiplePacks": null
+        }
+      ]
+    }
+  ],
+  "usage": [
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "requestId": null,
+      "inputTokens": 6928,
+      "outputTokens": 661
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "requestId": null,
+      "inputTokens": 4598,
+      "outputTokens": 350
+    }
+  ],
+  "acceptedIntoLivePipeline": false,
+  "qualityVerdict": "Rejected experiment: out-of-range references and mismatched source-line references. Returned structured fields were not accepted as live offer facts.",
+  "downstreamGroundingApplied": false
+}

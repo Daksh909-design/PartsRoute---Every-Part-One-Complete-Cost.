@@ -35,7 +35,7 @@ See the [current collector correction, conditional totals and ten-second results
 | Retailer          | Adapter       | Qualification gap                                                                                                       |
 | ----------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Robocraze         | Implemented   | Corrected DHT11 module candidate retrieved (TIFSS0029); complete pincode basket shipping remains unknown.               |
-| Robu              | Implemented   | Fresh HC-SR04/DHT11 pages retrieved; shipping page still contains a placeholder and checked breadboard is out of stock. |
+| Robu              | Implemented   | Correct shipping/refund policy retrieved; no applicable shipping charges published there. Checked breadboard is out of stock. |
 | Evelta            | Research only | Exact overlapping catalogue and guest shipping path need qualification.                                                 |
 | Amazon / Flipkart | Planned       | Seller, variant, stock and basket-shipping evidence must be established first.                                          |
 

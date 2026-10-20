@@ -80,7 +80,7 @@ vi.mock("../src/server/db", () => ({
     for (const row of state.observations.values())
       if (row.id === id) {
         row.normalized = value;
-        row.normalization_version = "grounding-v3";
+        row.normalization_version = "grounding-v4";
       }
   }),
 }));
@@ -165,6 +165,8 @@ describe("worker pipeline with explicitly mocked providers and persistence", () 
     );
     try {
       await vi.waitFor(() => expect(ai.product).toHaveBeenCalledTimes(6));
+      // Both policy calls must begin while all product calls remain blocked.
+      expect(ai.policy).toHaveBeenCalledTimes(2);
     } finally {
       release.splice(0).forEach((done) => done());
     }
@@ -210,7 +212,9 @@ describe("worker pipeline with explicitly mocked providers and persistence", () 
       ),
     ).rejects.toThrow("Google denied generation access");
     expect(tiny.fetchPages.mock.calls.length).toBeLessThanOrEqual(2);
-    expect(ai.policy).not.toHaveBeenCalled();
+    // Independent policy calls may already be in flight when a product reports
+    // an account failure; no second collection batch is started as a retry.
+    expect(ai.policy.mock.calls.length).toBeLessThanOrEqual(2);
     expect(state.observations.size).toBeGreaterThan(0);
   });
   it("retains partial retailer errors, verifies the other basket and reuses its saved run after resumption", async () => {

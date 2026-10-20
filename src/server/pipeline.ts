@@ -334,156 +334,170 @@ export async function processQuote(
           );
           return original;
         })());
-      await Promise.all(
-        input.parts.map(async (part) => {
-          if (accessFailure) return;
-          const entry = catalogue.find((c) => c.id === part.catalogueId)!;
-          try {
-            const o = await pageObservation(
-              jobId,
-              retailer,
-              entry.urls[retailer],
-              input.refresh,
-              tiny,
-              fetchBatch,
-            );
-            if (
-              o.normalized &&
-              o.normalization_version === NORMALIZATION_VERSION &&
-              Offer.parse(o.normalized).extractionMethod !== "retailer-parser"
-            ) {
-              offers.push(matchOffer(part, Offer.parse(o.normalized)));
-              return;
-            }
-            const response = FetchResponse.parse(o.original);
-            if (response.errors.some((e) => e.url === entry.urls[retailer]))
-              errors.push(
-                ...response.errors
-                  .filter((e) => e.url === entry.urls[retailer])
-                  .map(
-                    (e) =>
-                      `${retailers[retailer].name}: ${part.name} could not be retrieved (${String(e.error).slice(0, 160)}).`,
-                  ),
+      const collectProducts = async () => {
+        await Promise.all(
+          input.parts.map(async (part) => {
+            if (accessFailure) return;
+            const entry = catalogue.find((c) => c.id === part.catalogueId)!;
+            try {
+              const o = await pageObservation(
+                jobId,
+                retailer,
+                entry.urls[retailer],
+                input.refresh,
+                tiny,
+                fetchBatch,
               );
-            const page = response.results.find(
-              (p) => p.url === entry.urls[retailer],
-            );
-            if (!page || page.text.length < 500) {
-              if (!response.errors.length)
+              if (
+                o.normalized &&
+                o.normalization_version === NORMALIZATION_VERSION &&
+                Offer.parse(o.normalized).extractionMethod !== "retailer-parser"
+              ) {
+                offers.push(matchOffer(part, Offer.parse(o.normalized)));
+                return;
+              }
+              const response = FetchResponse.parse(o.original);
+              if (response.errors.some((e) => e.url === entry.urls[retailer]))
                 errors.push(
-                  `${retailers[retailer].name}: ${part.name} returned incomplete page content.`,
+                  ...response.errors
+                    .filter((e) => e.url === entry.urls[retailer])
+                    .map(
+                      (e) =>
+                        `${retailers[retailer].name}: ${part.name} could not be retrieved (${String(e.error).slice(0, 160)}).`,
+                    ),
                 );
-              return;
-            }
-            const preliminary = retailerProduct(page.text, retailer);
-            if (preliminary) {
-              const offer = matchOffer(part, {
-                ...groundedOffer(
-                  preliminary,
+              const page = response.results.find(
+                (p) => p.url === entry.urls[retailer],
+              );
+              if (!page || page.text.length < 500) {
+                if (!response.errors.length)
+                  errors.push(
+                    `${retailers[retailer].name}: ${part.name} returned incomplete page content.`,
+                  );
+                return;
+              }
+              const preliminary = retailerProduct(page.text, retailer);
+              if (preliminary) {
+                const offer = matchOffer(part, {
+                  ...groundedOffer(
+                    preliminary,
+                    page.text,
+                    { ...evidence(o), sourceUrl: page.final_url },
+                    retailer,
+                    part.id,
+                    `${retailer}:${entry.id}`,
+                  ),
+                  extractionMethod: "retailer-parser",
+                });
+                const index = offers.findIndex(
+                  (current) => current.id === offer.id,
+                );
+                if (index < 0) offers.push(offer);
+                else offers[index] = offer;
+                await normalizeObservation(o.id, offer);
+                await saveResult(
+                  jobId,
+                  finish(input, offers, rules, shipping, errors),
+                );
+              }
+              const ex = await ai.product(
+                page.text,
+                page.final_url,
+                part.model,
+              );
+              const offer = matchOffer(
+                part,
+                groundedOffer(
+                  ex,
                   page.text,
                   { ...evidence(o), sourceUrl: page.final_url },
                   retailer,
                   part.id,
                   `${retailer}:${entry.id}`,
                 ),
-                extractionMethod: "retailer-parser",
-              });
+              );
+              if (
+                !offer.unitsPerPack ||
+                !offer.minPacks ||
+                !offer.multiplePacks ||
+                !offer.priceBreaks.length
+              )
+                offer.reasons.push(orderingUnknown);
+              offer.extractionMethod = "ai";
+              await normalizeObservation(o.id, offer);
               const index = offers.findIndex(
                 (current) => current.id === offer.id,
               );
               if (index < 0) offers.push(offer);
               else offers[index] = offer;
-              await normalizeObservation(o.id, offer);
               await saveResult(
                 jobId,
                 finish(input, offers, rules, shipping, errors),
               );
+            } catch (error) {
+              if (error instanceof ProviderAccessError) {
+                accessFailure = error;
+                return;
+              }
+              errors.push(
+                `${retailers[retailer].name}: ${part.name} ${offers.some((offer) => offer.id === `${retailer}:${entry.id}`) ? "AI details unverified; published listing facts retained." : "unavailable."} ${message(error)}`,
+              );
             }
-            const ex = await ai.product(page.text, page.final_url, part.model);
-            const offer = matchOffer(
-              part,
-              groundedOffer(
-                ex,
-                page.text,
-                { ...evidence(o), sourceUrl: page.final_url },
-                retailer,
-                part.id,
-                `${retailer}:${entry.id}`,
-              ),
-            );
-            if (
-              !offer.unitsPerPack ||
-              !offer.minPacks ||
-              !offer.multiplePacks ||
-              !offer.priceBreaks.length
-            )
-              offer.reasons.push(orderingUnknown);
-            offer.extractionMethod = "ai";
-            await normalizeObservation(o.id, offer);
-            const index = offers.findIndex(
-              (current) => current.id === offer.id,
-            );
-            if (index < 0) offers.push(offer);
-            else offers[index] = offer;
-            await saveResult(
-              jobId,
-              finish(input, offers, rules, shipping, errors),
-            );
-          } catch (error) {
-            if (error instanceof ProviderAccessError) {
-              accessFailure = error;
-              return;
-            }
-            errors.push(
-              `${retailers[retailer].name}: ${part.name} ${offers.some((offer) => offer.id === `${retailer}:${entry.id}`) ? "AI details unverified; published listing facts retained." : "unavailable."} ${message(error)}`,
-            );
+          }),
+        );
+      };
+      const collectPolicy = async () => {
+        if (accessFailure) return;
+        try {
+          const o = await pageObservation(
+            jobId,
+            retailer,
+            retailers[retailer].policyUrl,
+            input.refresh,
+            tiny,
+            fetchBatch,
+          );
+          if (
+            o.normalized &&
+            o.normalization_version === NORMALIZATION_VERSION
+          ) {
+            rules.push(o.normalized as ShippingRule);
+            return;
           }
-        }),
-      );
-      if (accessFailure) return;
-      try {
-        const o = await pageObservation(
-          jobId,
-          retailer,
-          retailers[retailer].policyUrl,
-          input.refresh,
-          tiny,
-          fetchBatch,
-        );
-        if (o.normalized && o.normalization_version === NORMALIZATION_VERSION) {
-          rules.push(o.normalized as ShippingRule);
-          return;
-        }
-        const response = FetchResponse.parse(o.original),
-          page = response.results.find(
-            (p) => p.url === retailers[retailer].policyUrl,
+          const response = FetchResponse.parse(o.original),
+            page = response.results.find(
+              (p) => p.url === retailers[retailer].policyUrl,
+            );
+          if (
+            !page ||
+            response.errors.some((e) => e.url === retailers[retailer].policyUrl)
+          )
+            throw new Error("Shipping policy could not be retrieved");
+          if (page.text.includes("Shipping Policy Page Content"))
+            throw new Error(
+              "Retailer returned a placeholder rather than an applicable shipping policy.",
+            );
+          const rule = groundedRule(
+            await ai.policy(page.text, input.pincode),
+            page.text,
+            evidence(o),
+            retailer,
           );
-        if (
-          !page ||
-          response.errors.some((e) => e.url === retailers[retailer].policyUrl)
-        )
-          throw new Error("Shipping policy could not be retrieved");
-        if (page.text.includes("Shipping Policy Page Content"))
-          throw new Error(
-            "Retailer returned a placeholder rather than an applicable shipping policy.",
+          await normalizeObservation(o.id, rule);
+          rules.push(rule);
+        } catch (error) {
+          if (error instanceof ProviderAccessError) {
+            accessFailure = error;
+            return;
+          }
+          errors.push(
+            `${retailers[retailer].name}: shipping policy unavailable. ${message(error)}`,
           );
-        const rule = groundedRule(
-          await ai.policy(page.text, input.pincode),
-          page.text,
-          evidence(o),
-          retailer,
-        );
-        await normalizeObservation(o.id, rule);
-        rules.push(rule);
-      } catch (error) {
-        if (error instanceof ProviderAccessError) {
-          accessFailure = error;
-          return;
         }
-        errors.push(
-          `${retailers[retailer].name}: shipping policy unavailable. ${message(error)}`,
-        );
-      }
+      };
+      // Policy extraction is independent of product extraction. Do not add a
+      // further model timeout after all product requests have finished.
+      await Promise.all([collectProducts(), collectPolicy()]);
     }),
   );
   if (accessFailure) throw accessFailure;

@@ -6,7 +6,7 @@ export const retailers: Record<
   robu: {
     name: "Robu",
     domain: "robu.in",
-    policyUrl: "https://robu.in/shipping-policy/",
+    policyUrl: "https://robu.in/shipping-and-refund-policy/",
     cartUrl: "https://robu.in/cart/",
   },
   robocraze: {

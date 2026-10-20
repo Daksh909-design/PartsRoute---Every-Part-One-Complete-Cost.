@@ -12,21 +12,24 @@ export function matchOffer(part: PartRequest, offer: Offer): Offer {
   let missing = false,
     conflict = false;
   for (const required of part.requiredSpecs) {
-    const observed = offer.specs.find(
+    const observed = offer.specs.filter(
       (s) => canonical(s.key) === canonical(required.key),
     );
-    if (!observed) {
+    if (!observed.length) {
       missing = true;
       reasons.push(
         `${required.key}: required ${required.value}; not published.`,
       );
     } else if (
-      normaliseSpec(required.key, observed.value) !==
-      normaliseSpec(required.key, required.value)
+      observed.some(
+        (spec) =>
+          normaliseSpec(required.key, spec.value) !==
+          normaliseSpec(required.key, required.value),
+      )
     ) {
       conflict = true;
       reasons.push(
-        `${required.key}: required ${required.value}, observed ${observed.value}.`,
+        `${required.key}: required ${required.value}, observed ${observed.map((spec) => spec.value).join(" / ")}.`,
       );
     }
   }

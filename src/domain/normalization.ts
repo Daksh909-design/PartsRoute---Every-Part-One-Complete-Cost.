@@ -1,2 +1,2 @@
 // Cached offers must be re-grounded when extraction/matching rules change.
-export const NORMALIZATION_VERSION = "grounding-v3";
+export const NORMALIZATION_VERSION = "grounding-v4";

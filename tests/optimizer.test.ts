@@ -20,6 +20,19 @@ const part = (change: Partial<PartRequest> = {}): PartRequest => ({
   ...change,
 });
 describe("money, packs and price breaks", () => {
+  it("rejects contradictory published specifications in either source order", () => {
+    for (const pins of [
+      ["4", "3"],
+      ["3", "4"],
+    ]) {
+      const o = offer();
+      o.specs = [
+        { key: "voltage", value: "5 V" },
+        ...pins.map((value) => ({ key: "pins", value })),
+      ];
+      expect(matchOffer(part(), o).match).toBe("rejected");
+    }
+  });
   it("converts decimal money exactly and rejects ambiguous precision", () => {
     expect(paise("12.03")).toBe(1203);
     expect(() => paise("12.031")).toThrow();
