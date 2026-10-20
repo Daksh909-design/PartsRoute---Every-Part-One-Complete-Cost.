@@ -19,7 +19,7 @@
     "validate:live": "tsx --env-file-if-exists=.env.local scripts/validate-live.ts",
     "recover:run": "tsx --env-file-if-exists=.env.local scripts/recover-run.ts",
     "test:http": "tsx scripts/smoke-http.ts",
-    "format": "prettier --write src scripts tests *.json *.ts *.mjs *.yaml .github/workflows/*.yml"
+    "format": "prettier --write src scripts tests *.json *.ts *.mjs *.yaml"
   },
   "dependencies": {
     "next": "16.4.2",

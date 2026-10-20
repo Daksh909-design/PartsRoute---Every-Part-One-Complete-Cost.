@@ -16,6 +16,8 @@ Development date: **20 October 2026**. This file distinguishes observed checks f
 
 The refreshed interface passed the same 35 tests, TypeScript checking, production build and six HTTP smoke checks. Browser checks at a narrow viewport confirmed sample calculation (₹295), the calculated ₹25 difference from the next complete sample plan, the sample reset button, retailer coverage disclosure and integration/evidence navigation. `redesign-home.png` and `redesign-result.png` record the refreshed interface. Desktop-width visual QA remains outstanding.
 
+GitHub Actions is supplied as an optional template in `ci-workflow.yml.example`, rather than an enabled workflow. The initial push was refused because the signed-in OAuth grant does not include workflow permission; application publication does not require broadening that grant.
+
 Windows process sandboxing initially blocked Vite's Windows path detection and dependency postinstall. The tests/build were rerun with normal Windows process access and succeeded. Earlier dependency-download timeouts and the first failing pipeline test are not counted as passes.
 
 ## Not executed or not qualified

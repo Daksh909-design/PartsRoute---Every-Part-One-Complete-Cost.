@@ -186,6 +186,8 @@ The demo sample's manually calculated totals are ₹320 for all Robu, ₹295 for
 
 ## Architecture and deployment
 
+GitHub Actions is not enabled. An optional workflow is provided in `docs/ci-workflow.yml.example`; a repository owner can review it and copy it to `.github/workflows/ci.yml` when ready. Publishing the application did not request additional workflow permissions. Local test and build commands work independently of Actions.
+
 See [architecture](docs/ARCHITECTURE.md), [deployment/recovery](docs/DEPLOYMENT.md) and [getting started checklist](START-HERE.md). Web and worker deploy as separate Node services against one PostgreSQL database.
 
 ## Demo, presentation and GitHub
