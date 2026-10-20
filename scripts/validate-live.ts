@@ -9,9 +9,11 @@ for (const key of ["DATABASE_URL", "TINYFISH_API_KEY", aiConfig().keyName])
     throw new Error(`${key} is missing. No live validation performed.`);
 const input = {
   parts: sampleParts,
-  pincode: process.argv[2] || "560001",
+  pincode:
+    process.argv.slice(2).find((arg) => /^[1-9][0-9]{5}$/.test(arg)) ||
+    "560001",
   mode: "live" as const,
-  refresh: true,
+  refresh: !process.argv.includes("--reuse-pages"),
 };
 const id = await enqueue(input, randomUUID(), "live-validation-cli");
 await db().query(

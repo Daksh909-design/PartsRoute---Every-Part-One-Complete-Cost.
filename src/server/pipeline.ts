@@ -21,6 +21,7 @@ import {
   observation,
   saveObservation,
   normalizeObservation,
+  preserveObservationTime,
   saveResult,
   type Observation,
 } from "./db";
@@ -28,6 +29,9 @@ import { TinyFishClient, FetchResponse } from "./tinyfish";
 import { groundedOffer, groundedRule } from "./grounding";
 import { validateBasket } from "./shipping";
 import { ProviderAccessError, RunRejectedError } from "./provider-error";
+import { cachedAI } from "./extraction-cache";
+import { observationTtl } from "./snapshot";
+import { NORMALIZATION_VERSION } from "../domain/normalization";
 import {
   checkedOrders,
   verificationCandidates,
@@ -56,20 +60,24 @@ async function pageObservation(
   url: string,
   refresh: boolean,
   tiny: TinyFishClient,
+  fetchBatch?: () => Promise<FetchResponse>,
 ): Promise<Observation> {
   const key = `fetch:${url}`;
   const existing = await observation(jobId, key);
   if (existing) return existing;
-  const ttl = Math.min(
-    3600,
-    Math.max(0, Number(process.env.OBSERVATION_TTL_SECONDS || 900)),
-  );
+  const ttl = observationTtl();
   if (!refresh && Number.isFinite(ttl)) {
     const cached = await db().query(
-      "SELECT * FROM observations WHERE source_url=$1 AND method='tinyfish-fetch' AND original->'results'->0->>'text' IS NOT NULL AND retrieved_at>now()-($2 * interval '1 second') ORDER BY retrieved_at DESC LIMIT 1",
+      "SELECT * FROM observations WHERE source_url=$1 AND method='tinyfish-fetch' AND retrieved_at>now()-($2 * interval '1 second') ORDER BY retrieved_at DESC LIMIT 1",
       [url, ttl],
     );
-    if (cached.rowCount) {
+    if (
+      cached.rowCount &&
+      FetchResponse.safeParse(cached.rows[0].original).success &&
+      FetchResponse.parse(cached.rows[0].original).results.some(
+        (p) => p.url === url && p.text.length >= 500,
+      )
+    ) {
       const old = cached.rows[0] as Observation;
       const copy = await saveObservation(
         jobId,
@@ -79,14 +87,12 @@ async function pageObservation(
         "tinyfish-fetch",
         old.original,
       );
-      await db().query("UPDATE observations SET retrieved_at=$2 WHERE id=$1", [
-        copy.id,
-        old.retrieved_at,
-      ]);
+      await preserveObservationTime(copy.id, old.id);
       return { ...copy, retrieved_at: old.retrieved_at };
     }
   }
-  const original = await tiny.fetchPages([url], retailer, refresh);
+  const original = await (fetchBatch?.() ??
+    tiny.fetchPages([url], retailer, refresh));
   const saved = await saveObservation(
     jobId,
     key,
@@ -95,18 +101,19 @@ async function pageObservation(
     "tinyfish-fetch",
     original,
   );
-  await usage(jobId, {
-    provider: "tinyfish-fetch",
-    model: "fetch",
-    requestId: null,
-    inputTokens: null,
-    outputTokens: null,
-    raw: {
-      urls: [url],
-      usage: original.usage ?? null,
-      errors: original.errors,
-    },
-  });
+  if (!fetchBatch)
+    await usage(jobId, {
+      provider: "tinyfish-fetch",
+      model: "fetch",
+      requestId: null,
+      inputTokens: null,
+      outputTokens: null,
+      raw: {
+        urls: [url],
+        usage: original.usage ?? null,
+        errors: original.errors,
+      },
+    });
   return saved;
 }
 async function verify(
@@ -117,7 +124,10 @@ async function verify(
 ): Promise<{ shipping: ShippingObservation | null; orders: CheckedOrder[] }> {
   const key = `basket:${createHash("sha256").update(basket.key).digest("hex")}`;
   const existingObservation = await observation(jobId, key);
-  if (existingObservation?.normalized)
+  if (
+    existingObservation?.normalized &&
+    existingObservation.normalization_version === NORMALIZATION_VERSION
+  )
     return "shipping" in (existingObservation.normalized as object)
       ? (existingObservation.normalized as {
           shipping: ShippingObservation;
@@ -240,12 +250,43 @@ export async function processQuote(
     rules: ShippingRule[] = [],
     shipping: ShippingObservation[] = [],
     errors: string[] = [];
-  const ai = suppliedAI ?? createAIProvider((u) => usage(jobId, u));
+  const ai = suppliedAI ?? cachedAI(createAIProvider((u) => usage(jobId, u)));
   let accessFailure: ProviderAccessError | null = null;
   await phase(jobId, "Collecting product pages and shipping policies");
-  // Two independent retailer collectors, sequential requests within each: at most two Fetch/extraction calls at once.
+  // One Fetch batch per retailer; per-URL failures remain distinct. At most two
+  // batches run at once. Cached pages and saved runs are reused on resumption.
   await Promise.all(
     (["robu", "robocraze"] as const).map(async (retailer) => {
+      let batch: Promise<FetchResponse> | undefined;
+      const fetchBatch = () =>
+        (batch ??= (async () => {
+          const urls = [
+            ...input.parts.map(
+              (part) =>
+                catalogue.find((c) => c.id === part.catalogueId)!.urls[
+                  retailer
+                ],
+            ),
+            retailers[retailer].policyUrl,
+          ];
+          const original = await tiny.fetchPages(urls, retailer, input.refresh);
+          await usage(jobId, {
+            provider: "tinyfish-fetch",
+            model: "fetch",
+            requestId:
+              typeof original.request_id === "string"
+                ? original.request_id
+                : null,
+            inputTokens: null,
+            outputTokens: null,
+            raw: {
+              urls,
+              usage: original.usage ?? null,
+              errors: original.errors,
+            },
+          });
+          return original;
+        })());
       for (const part of input.parts) {
         if (accessFailure) return;
         const entry = catalogue.find((c) => c.id === part.catalogueId)!;
@@ -256,18 +297,24 @@ export async function processQuote(
             entry.urls[retailer],
             input.refresh,
             tiny,
+            fetchBatch,
           );
-          if (o.normalized) {
+          if (
+            o.normalized &&
+            o.normalization_version === NORMALIZATION_VERSION
+          ) {
             offers.push(matchOffer(part, Offer.parse(o.normalized)));
             continue;
           }
           const response = FetchResponse.parse(o.original);
-          if (response.errors.length)
+          if (response.errors.some((e) => e.url === entry.urls[retailer]))
             errors.push(
-              ...response.errors.map(
-                (e) =>
-                  `${retailers[retailer].name}: ${part.name} could not be retrieved (${String(e.error).slice(0, 160)}).`,
-              ),
+              ...response.errors
+                .filter((e) => e.url === entry.urls[retailer])
+                .map(
+                  (e) =>
+                    `${retailers[retailer].name}: ${part.name} could not be retrieved (${String(e.error).slice(0, 160)}).`,
+                ),
             );
           const page = response.results.find(
             (p) => p.url === entry.urls[retailer],
@@ -300,6 +347,10 @@ export async function processQuote(
             offer.reasons.push(orderingUnknown);
           await normalizeObservation(o.id, offer);
           offers.push(offer);
+          await saveResult(
+            jobId,
+            finish(input, offers, rules, shipping, errors),
+          );
         } catch (error) {
           if (error instanceof ProviderAccessError) {
             accessFailure = error;
@@ -318,14 +369,20 @@ export async function processQuote(
           retailers[retailer].policyUrl,
           input.refresh,
           tiny,
+          fetchBatch,
         );
-        if (o.normalized) {
+        if (o.normalized && o.normalization_version === NORMALIZATION_VERSION) {
           rules.push(o.normalized as ShippingRule);
           return;
         }
         const response = FetchResponse.parse(o.original),
-          page = response.results[0];
-        if (!page || response.errors.length)
+          page = response.results.find(
+            (p) => p.url === retailers[retailer].policyUrl,
+          );
+        if (
+          !page ||
+          response.errors.some((e) => e.url === retailers[retailer].policyUrl)
+        )
           throw new Error("Shipping policy could not be retrieved");
         if (page.text.includes("Shipping Policy Page Content"))
           throw new Error(
@@ -429,6 +486,7 @@ export async function processQuote(
   }
   await phase(jobId, "Explaining the checked options");
   result = finish(input, offers, rules, shipping, errors);
+  if (!result.recommendedId) return result;
   try {
     const facts = [
       result.explanation,

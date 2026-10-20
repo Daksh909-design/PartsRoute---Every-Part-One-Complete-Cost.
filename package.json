@@ -25,6 +25,7 @@
     "local:db": "node scripts/local-db.mjs",
     "local:start": "node scripts/start-local.mjs",
     "test:http": "tsx scripts/smoke-http.ts",
+    "benchmark:http": "tsx --env-file-if-exists=.env.local scripts/benchmark-http.ts",
     "format": "prettier --write src scripts tests *.json *.ts *.mjs *.yaml"
   },
   "dependencies": {

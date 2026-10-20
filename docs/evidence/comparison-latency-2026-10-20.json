@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-10-20T14:19:29.453Z",
+  "scope": "Local HTTP cached comparison only; excludes fresh collection and browser verification",
+  "samplesMs": [
+    301.95,
+    14.45,
+    30.12,
+    10.79,
+    17.92,
+    21.88,
+    10.8,
+    23.88,
+    15.91,
+    14.39
+  ],
+  "maxMs": 301.95,
+  "medianMs": 17.92,
+  "allUnderSevenSeconds": true,
+  "coverage": {
+    "requested": 3,
+    "covered": 0
+  },
+  "audit": {
+    "createdJobs": 0,
+    "newProviderUsageRecords": 0
+  }
+}

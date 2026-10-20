@@ -39,6 +39,7 @@ export class TinyFishClient {
     url: string,
     body?: unknown,
     retry = false,
+    timeoutMs = 150000,
   ): Promise<unknown> {
     if (!this.apiKey)
       throw new Error("TINYFISH_API_KEY is required for live mode");
@@ -51,7 +52,7 @@ export class TinyFishClient {
             "Content-Type": "application/json",
           },
           body: body ? JSON.stringify(body) : undefined,
-          signal: AbortSignal.timeout(150000),
+          signal: AbortSignal.timeout(timeoutMs),
           redirect: "error",
         });
         if (!response.ok) {
@@ -104,9 +105,10 @@ export class TinyFishClient {
           links: false,
           page_metadata: true,
           ttl: refresh ? 0 : 900,
-          per_url_timeout_ms: 45000,
+          per_url_timeout_ms: 30000,
         },
-        true,
+        false,
+        65000,
       ),
     );
     // HTTP 200 is not sufficient: the caller must handle each result and each error.

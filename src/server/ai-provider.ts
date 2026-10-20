@@ -10,7 +10,7 @@ export function aiConfig() {
     keyName: provider === "gemini" ? "GEMINI_API_KEY" : "OPENAI_API_KEY",
     model:
       provider === "gemini"
-        ? process.env.GEMINI_MODEL || "gemini-3.8-flash"
+        ? process.env.GEMINI_MODEL || "gemini-3.5-flash-lite"
         : process.env.OPENAI_MODEL || "gpt-6-luna",
   };
 }

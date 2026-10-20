@@ -37,10 +37,10 @@ export default function EvidenceView({
     <section className="panel evidence-panel">
       <div className="section-heading">
         <div>
-          <span className="overline">INTEGRATION RECORD</span>
+          <span className="eyebrow">INTEGRATION RECORD</span>
           <h2>Collection evidence</h2>
         </div>
-        {jobId && (
+        {(jobId || data) && (
           <button className="secondary" onClick={reload} disabled={busy}>
             {busy ? "Loading…" : "Reload evidence"}
           </button>
@@ -50,7 +50,7 @@ export default function EvidenceView({
         Live quotes retain the original TinyFish responses, normalized
         observations, browser run IDs and reported model usage.
       </p>
-      {!jobId ? (
+      {!jobId && !data && !busy ? (
         <div className="empty-panel">
           <h3>No live quote selected</h3>
           <p>
@@ -72,7 +72,13 @@ export default function EvidenceView({
         </div>
       ) : (
         <p className="source-note">
-          Quote <code>{jobId}</code>
+          {jobId ? (
+            <>
+              Quote <code>{jobId}</code>
+            </>
+          ) : (
+            "Cached retailer observations"
+          )}
         </p>
       )}
       {data && (

@@ -76,7 +76,10 @@ vi.mock("../src/server/db", () => ({
   ),
   normalizeObservation: vi.fn(async (id: string, value: unknown) => {
     for (const row of state.observations.values())
-      if (row.id === id) row.normalized = value;
+      if (row.id === id) {
+        row.normalized = value;
+        row.normalization_version = "grounding-v3";
+      }
   }),
 }));
 import { processQuote } from "../src/server/pipeline";
@@ -91,13 +94,11 @@ describe("worker pipeline with explicitly mocked providers and persistence", () 
   it("stops collection after a fatal model account error, retaining the fetched originals", async () => {
     const tiny = {
       fetchPages: vi.fn(async (urls: string[]) => ({
-        results: [
-          {
-            url: urls[0],
-            final_url: urls[0],
-            text: "Synthetic evidence only. ".repeat(50),
-          },
-        ],
+        results: urls.map((url) => ({
+          url,
+          final_url: url,
+          text: "Synthetic evidence only. ".repeat(50),
+        })),
         errors: [],
       })),
     };
@@ -141,12 +142,17 @@ describe("worker pipeline with explicitly mocked providers and persistence", () 
         retailer === "robu"
           ? {
               results: [],
-              errors: [{ url: urls[0], error: "synthetic retailer failure" }],
+              errors: urls.map((url) => ({
+                url,
+                error: "synthetic retailer failure",
+              })),
             }
           : {
-              results: [
-                { url: urls[0], final_url: urls[0], text: page(urls[0]) },
-              ],
+              results: urls.map((url) => ({
+                url,
+                final_url: url,
+                text: page(url),
+              })),
               errors: [],
             },
       ),

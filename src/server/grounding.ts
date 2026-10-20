@@ -59,6 +59,12 @@ export function groundedOffer(
   const specs = ex.specs.filter(
     (s) =>
       containsExcerpt(text, s.excerpt) &&
+      (s.key !== "pins" ||
+        (/^\d+$/.test(s.value) &&
+          new RegExp(
+            `(?:\\b${s.value}\\s*[- ]?pins?\\b|\\bpins?\\s*[:|=]\\s*${s.value}\\b)`,
+            "i",
+          ).test(s.excerpt))) &&
       (canonical(s.excerpt).includes(canonical(s.value)) ||
         (s.key === "form" &&
           s.value === "breakout module" &&

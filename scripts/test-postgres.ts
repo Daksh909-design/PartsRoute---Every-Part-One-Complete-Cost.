@@ -8,6 +8,7 @@ import {
   observation,
   saveResult,
   getJob,
+  preserveObservationTime,
 } from "../src/server/db";
 import { sampleParts } from "../src/domain/catalogue";
 import { demoQuote } from "../src/domain/demo";
@@ -58,6 +59,27 @@ try {
     { label: "Synthetic PostgreSQL persistence check", value: 1 },
   );
   const owners = [randomUUID(), randomUUID()];
+  const copied = await saveObservation(
+    ids[0],
+    "synthetic-time-copy",
+    "robocraze",
+    first.source_url,
+    "synthetic-fixture",
+    { label: "Synthetic PostgreSQL timestamp check" },
+  );
+  await db().query(
+    "UPDATE observations SET retrieved_at='2026-01-01T00:00:00.123456Z' WHERE id=$1",
+    [first.id],
+  );
+  await preserveObservationTime(copied.id, first.id);
+  const precision = await db().query(
+    "SELECT a.retrieved_at=b.retrieved_at AS same FROM observations a, observations b WHERE a.id=$1 AND b.id=$2",
+    [first.id, copied.id],
+  );
+  check(
+    precision.rows[0].same === true,
+    "cached observations preserve exact PostgreSQL source timestamps",
+  );
   const claims = await Promise.all(owners.map((owner) => claimJob(owner)));
   check(
     claims.filter(Boolean).length === 1 && claims.find(Boolean)?.id === ids[0],

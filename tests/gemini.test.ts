@@ -22,6 +22,51 @@ function completed(value: unknown, extra = {}) {
   );
 }
 describe("Gemini adapter contracts (mocked HTTP, no API usage)", () => {
+  it("retries a temporary 503 once and records it as an outage, not a key denial", async () => {
+    const record = vi.fn().mockResolvedValue(undefined);
+    const transport = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("busy", { status: 503 }))
+      .mockResolvedValueOnce(completed({ factIndices: [0] }));
+    const provider = new GeminiProvider(record, "fixture-key", transport);
+    expect(await provider.explain(["Validated fact"])).toBe("Validated fact");
+    expect(transport).toHaveBeenCalledTimes(2);
+    expect(record.mock.calls[0][0].raw.state).toBe("unavailable");
+  });
+  it("bounds an ongoing outage and stops subsequent queued calls", async () => {
+    const transport = vi
+      .fn()
+      .mockImplementation(async () => new Response("busy", { status: 503 }));
+    const provider = new GeminiProvider(
+      async () => {},
+      "fixture-key",
+      transport,
+    );
+    const results = await Promise.allSettled([
+      provider.explain(["fact"]),
+      provider.explain(["fact"]),
+    ]);
+    expect(results.every((r) => r.status === "rejected")).toBe(true);
+    expect(transport).toHaveBeenCalledTimes(2);
+    expect((results[0] as PromiseRejectedResult).reason.message).toContain(
+      "temporarily unavailable",
+    );
+    expect((results[0] as PromiseRejectedResult).reason.message).not.toContain(
+      "Check the key",
+    );
+  });
+  it("records transport timeouts with unknown usage and does not retry every component", async () => {
+    const record = vi.fn().mockResolvedValue(undefined);
+    const transport = vi
+      .fn()
+      .mockRejectedValue(new DOMException("timeout", "TimeoutError"));
+    const provider = new GeminiProvider(record, "fixture-key", transport);
+    await expect(provider.explain(["fact"])).rejects.toThrow("timed out");
+    await expect(provider.explain(["fact"])).rejects.toThrow("timed out");
+    expect(transport).toHaveBeenCalledOnce();
+    expect(record.mock.calls[0][0].inputTokens).toBeNull();
+    expect(record.mock.calls[0][0].raw.state).toBe("unavailable");
+  });
   it("stops queued requests after a project denial without exposing the provider's raw response", async () => {
     const transport = vi.fn().mockResolvedValue(
       new Response(

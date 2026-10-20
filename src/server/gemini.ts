@@ -35,6 +35,7 @@ export class GeminiProvider extends StructuredAIProvider {
   private queue: Promise<unknown> = Promise.resolve();
   private nextRequest = 0;
   private accessFailure: ProviderAccessError | null = null;
+  private serviceFailure: Error | null = null;
   constructor(
     private recordUsage: (usage: Usage) => Promise<void>,
     private apiKey = process.env.GEMINI_API_KEY,
@@ -52,41 +53,73 @@ export class GeminiProvider extends StructuredAIProvider {
   ): Promise<z.infer<T>> {
     const operation = this.queue.then(async () => {
       if (this.accessFailure) throw this.accessFailure;
+      if (this.serviceFailure) throw this.serviceFailure;
       const interval = Math.min(
         60000,
-        Math.max(
-          0,
-          Number(process.env.GEMINI_REQUEST_INTERVAL_MS ?? 12000) || 0,
-        ),
+        Math.max(0, Number(process.env.GEMINI_REQUEST_INTERVAL_MS ?? 0) || 0),
       );
       const delay = this.nextRequest - Date.now();
       if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
       this.nextRequest = Date.now() + interval;
       const { $schema: _dialect, ...shape } = z.toJSONSchema(schema);
-      const response = await this.transport(
-        "https://generativelanguage.googleapis.com/v1beta/interactions",
-        {
-          method: "POST",
-          redirect: "error",
-          signal: AbortSignal.timeout(60000),
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": this.apiKey!,
-          },
-          body: JSON.stringify({
-            model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
-            store: false,
-            system_instruction: `${EVIDENCE_INSTRUCTIONS} ${instructions}`,
-            input: JSON.stringify(data),
-            response_format: {
-              type: "text",
-              mime_type: "application/json",
-              schema: shape,
+      let response: Response;
+      const started = Date.now();
+      const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+      for (let attempt = 0; ; attempt++) {
+        try {
+          response = await this.transport(
+            "https://generativelanguage.googleapis.com/v1beta/interactions",
+            {
+              method: "POST",
+              redirect: "error",
+              signal: AbortSignal.timeout(
+                Math.min(
+                  30000,
+                  Math.max(
+                    2000,
+                    Number(process.env.GEMINI_TIMEOUT_MS) || 30000,
+                  ),
+                ),
+              ),
+              headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": this.apiKey!,
+              },
+              body: JSON.stringify({
+                model,
+                store: false,
+                system_instruction: `${EVIDENCE_INSTRUCTIONS} ${instructions}`,
+                input: JSON.stringify(data),
+                response_format: {
+                  type: "text",
+                  mime_type: "application/json",
+                  schema: shape,
+                },
+                generation_config: {
+                  max_output_tokens: 4500,
+                  thinking_level: /flash-lite/.test(model) ? "minimal" : "low",
+                },
+              }),
             },
-            generation_config: { max_output_tokens: 6000 },
-          }),
-        },
-      );
+          );
+        } catch {
+          this.serviceFailure = new Error(
+            "Product extraction timed out or could not reach Google. Collected pages remain saved; try refreshing later.",
+          );
+          await this.recordFailure(0, this.serviceFailure.message);
+          throw this.serviceFailure;
+        }
+        if ([502, 503, 504].includes(response.status) && attempt === 0) {
+          await this.recordFailure(
+            response.status,
+            "Google is temporarily unavailable; retrying once.",
+          );
+          await response.body?.cancel();
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          continue;
+        }
+        break;
+      }
       if (!response.ok) {
         if ([400, 401, 403, 404].includes(response.status)) {
           const error = await response.json().catch(() => null);
@@ -127,25 +160,25 @@ export class GeminiProvider extends StructuredAIProvider {
         const detail =
           response.status === 429
             ? "Gemini quota reached. Wait and retry the saved quote; no paid fallback was started."
-            : `Gemini returned HTTP ${response.status}. Check the key, account and model access.`;
+            : response.status >= 500
+              ? "Google's extraction service is temporarily unavailable. Your API key was not rejected. Collected pages remain saved."
+              : `Gemini returned HTTP ${response.status}. Check the request configuration.`;
         await this.recordFailure(response.status, detail);
+        if (response.status >= 500) this.serviceFailure = new Error(detail);
         throw new Error(detail);
       }
       const result = Interaction.parse(await response.json());
       await this.recordUsage({
         provider: "gemini",
-        model: result.model || process.env.GEMINI_MODEL || "gemini-3.8-flash",
+        model: result.model || model,
         requestId: result.id ?? null,
         inputTokens: result.usage?.total_input_tokens ?? null,
         outputTokens: result.usage?.total_output_tokens ?? null,
         raw: {
           usage: result.usage ?? null,
           state: "responded",
-          fingerprint: providerFingerprint(
-            "gemini",
-            process.env.GEMINI_MODEL || "gemini-3.8-flash",
-            this.apiKey!,
-          ),
+          latencyMs: Date.now() - started,
+          fingerprint: providerFingerprint("gemini", model, this.apiKey!),
         },
       });
       if (result.status !== "completed")
@@ -165,7 +198,7 @@ export class GeminiProvider extends StructuredAIProvider {
     return operation;
   }
   private async recordFailure(httpStatus: number, detail: string) {
-    const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+    const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
     await this.recordUsage({
       provider: "gemini",
       model,
@@ -173,7 +206,11 @@ export class GeminiProvider extends StructuredAIProvider {
       inputTokens: null,
       outputTokens: null,
       raw: {
-        state: "blocked",
+        state: [400, 401, 403, 404].includes(httpStatus)
+          ? "blocked"
+          : httpStatus === 429
+            ? "quota"
+            : "unavailable",
         httpStatus,
         detail,
         fingerprint: providerFingerprint("gemini", model, this.apiKey!),

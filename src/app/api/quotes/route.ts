@@ -10,6 +10,7 @@ import {
 import { enqueue, RequestLimit } from "../../../server/db";
 import { readiness } from "../../../server/readiness";
 import { aiConfig } from "../../../server/ai-provider";
+import { cachedComparison } from "../../../server/snapshot";
 export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
@@ -22,6 +23,14 @@ export async function POST(request: Request) {
     const input = QuoteInput.parse(await requestJson(request));
     if (input.mode !== "live")
       throw new AccessError(400, "Use the saved-data endpoint for the demo.");
+    // This path performs only bounded PostgreSQL reads and deterministic maths.
+    // Browser verification remains an explicit background refresh.
+    const cached = await cachedComparison(input);
+    if (cached)
+      return Response.json(
+        { id: null, status: "cached", result: cached },
+        { headers: { "Cache-Control": "no-store" } },
+      );
     const status = await readiness();
     if (!status.ready)
       throw new AccessError(

@@ -1,0 +1,360 @@
+{
+  "checkedAt": "2026-10-20T14:19:29.473Z",
+  "label": "Actual server-side provider responses and grounded partial observations; not synthetic fixtures, human verification or a complete landed quote",
+  "jobs": [
+    {
+      "id": "35b05a09-fe15-4481-8540-2722b847b320",
+      "status": "partial",
+      "errors": [
+        "Robu: HC-SR04 ultrasonic sensor could not be retrieved (timeout).",
+        "Robu: DHT11 temperature sensor module could not be retrieved (timeout).",
+        "Robu: 400-point solderless breadboard could not be retrieved (timeout).",
+        "Robu: shipping policy unavailable. Shipping policy could not be retrieved"
+      ]
+    },
+    {
+      "id": "9cad6411-aba5-4986-8256-22b9df2c1dfd",
+      "status": "partial",
+      "errors": [
+        "Robu: 400-point solderless breadboard unavailable. Product extraction timed out or could not reach Google. Collected pages remain saved; try refreshing later.",
+        "Robocraze: 400-point solderless breadboard unavailable. Product extraction timed out or could not reach Google. Collected pages remain saved; try refreshing later.",
+        "Robu: shipping policy unavailable. Retailer returned a placeholder rather than an applicable shipping policy.",
+        "Robocraze: shipping policy unavailable. Product extraction timed out or could not reach Google. Collected pages remain saved; try refreshing later."
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "source_url": "https://robocraze.com/products/hc-sr-04-ultrasonic-sensor",
+      "retrieved_at": "2026-10-20T14:00:04.459Z",
+      "normalized": {
+        "id": "robocraze:hcsr04",
+        "sku": "TIFSS0171",
+        "url": "https://robocraze.com/products/hc-sr-04-ultrasonic-sensor",
+        "match": "insufficient_information",
+        "model": "HC-SR04",
+        "specs": [
+          {
+            "key": "voltage",
+            "value": "5 V"
+          }
+        ],
+        "stock": "in_stock",
+        "title": "HC-SR04 Ultrasonic Distance Sensor Module",
+        "partId": "hcsr04",
+        "reasons": [
+          "pins: required 4; not published."
+        ],
+        "currency": "INR",
+        "evidence": [
+          {
+            "id": "4aff76c3-d916-4cd7-8bf0-f603378acb8c",
+            "runId": null,
+            "method": "tinyfish-fetch",
+            "excerpt": "HC-SR04 Ultrasonic Distance Sensor Module\nSKU:\nTIFSS0171\n1 x HC-SR04 Ultrasonic Distance Sensor Module\nIncl. GST (No Hidden Charges)\nPlease hurry! Only 1977 left in stock\nPower Supply | +5V DC |\nRs 75/-",
+            "sourceUrl": "https://robocraze.com/products/hc-sr-04-ultrasonic-sensor",
+            "retrievedAt": "2026-10-20T14:00:04.459Z",
+            "observationId": "4aff76c3-d916-4cd7-8bf0-f603378acb8c"
+          }
+        ],
+        "minPacks": 1,
+        "retailer": "robocraze",
+        "taxStatus": "included",
+        "taxRateBps": null,
+        "priceBreaks": [
+          {
+            "minPacks": 1,
+            "packPricePaise": 7500
+          }
+        ],
+        "unitsPerPack": 1,
+        "multiplePacks": null,
+        "availablePacks": 1977
+      },
+      "normalization_version": "grounding-v3"
+    },
+    {
+      "source_url": "https://robu.in/product/hc-sr04-ultrasonic-range-finder/",
+      "retrieved_at": "2026-10-20T14:03:18.564Z",
+      "normalized": {
+        "id": "robu:hcsr04",
+        "sku": "2444",
+        "url": "https://robu.in/product/hc-sr04-ultrasonic-range-finder/",
+        "match": "insufficient_information",
+        "model": "HC-SR04",
+        "specs": [
+          {
+            "key": "voltage",
+            "value": "5 V"
+          }
+        ],
+        "stock": "in_stock",
+        "title": "HC-SR04 Ultrasonic Range Finder Sensor Module for Arduino",
+        "partId": "hcsr04",
+        "reasons": [
+          "pins: required 4; not published."
+        ],
+        "currency": "INR",
+        "evidence": [
+          {
+            "id": "24245ff8-0293-41af-9bb6-1213cbaf4630",
+            "runId": null,
+            "method": "tinyfish-fetch",
+            "excerpt": "HC-SR04 Ultrasonic Range Finder Sensor Module for Arduino\nSKU: 2444\nModel No. / Name: | HC SR04 |\n1 x HC-SR04-Ultrasonic Range Finder\n₹ 79.00 (Incl. GST)\nAvailability: In Stock\nOperating Voltage: 5 V",
+            "sourceUrl": "https://robu.in/product/hc-sr04-ultrasonic-range-finder/",
+            "retrievedAt": "2026-10-20T14:03:18.564Z",
+            "observationId": "24245ff8-0293-41af-9bb6-1213cbaf4630"
+          }
+        ],
+        "minPacks": 1,
+        "retailer": "robu",
+        "taxStatus": "included",
+        "taxRateBps": null,
+        "priceBreaks": [
+          {
+            "minPacks": 1,
+            "packPricePaise": 7900
+          }
+        ],
+        "unitsPerPack": 1,
+        "multiplePacks": null,
+        "availablePacks": null
+      },
+      "normalization_version": "grounding-v3"
+    },
+    {
+      "source_url": "https://robu.in/product/dht11-digital-relative-humidity-temperature-sensor-module/",
+      "retrieved_at": "2026-10-20T14:03:18.569Z",
+      "normalized": {
+        "id": "robu:dht11",
+        "sku": "28586",
+        "url": "https://robu.in/product/dht11-digital-relative-humidity-temperature-sensor-module/",
+        "match": "exact",
+        "model": "DHT11",
+        "specs": [
+          {
+            "key": "voltage",
+            "value": "3.3 V-5 V"
+          },
+          {
+            "key": "form",
+            "value": "breakout module"
+          }
+        ],
+        "stock": "in_stock",
+        "title": "DHT11 Digital Temperature & Humidity Sensor Module",
+        "partId": "dht11",
+        "reasons": [],
+        "currency": "INR",
+        "evidence": [
+          {
+            "id": "d12cc3b4-bf4a-4a29-9744-1621ba80e69f",
+            "runId": null,
+            "method": "tinyfish-fetch",
+            "excerpt": "DHT11 Digital Temperature & Humidity Sensor Module\nSKU: 28586\nThe sensor adopts DHT11\n1 X DHT11 Digital Relative Humidity and Temperature Sensor Module.\n₹ 59.00 (Incl. GST)\nAvailability: In Stock\nWorking voltage 3.3V-5V\nDHT 11 break-out board is a very popular, low-cost sensor from Aosong, the breakout provides easy installation of the DHT11 sensor module.",
+            "sourceUrl": "https://robu.in/product/dht11-digital-relative-humidity-temperature-sensor-module/",
+            "retrievedAt": "2026-10-20T14:03:18.569Z",
+            "observationId": "d12cc3b4-bf4a-4a29-9744-1621ba80e69f"
+          }
+        ],
+        "minPacks": 1,
+        "retailer": "robu",
+        "taxStatus": "included",
+        "taxRateBps": null,
+        "priceBreaks": [
+          {
+            "minPacks": 1,
+            "packPricePaise": 5900
+          }
+        ],
+        "unitsPerPack": 1,
+        "multiplePacks": null,
+        "availablePacks": null
+      },
+      "normalization_version": "grounding-v3"
+    },
+    {
+      "source_url": "https://robocraze.com/products/dht11-humidity-temperature-sensor-module",
+      "retrieved_at": "2026-10-20T14:00:07.520Z",
+      "normalized": {
+        "id": "robocraze:dht11",
+        "sku": "TIFSS0029",
+        "url": "https://robocraze.com/products/dht11-humidity-temperature-sensor-module",
+        "match": "exact",
+        "model": "DHT11",
+        "specs": [
+          {
+            "key": "voltage",
+            "value": "3.3 V to 5.5 V DC"
+          },
+          {
+            "key": "form",
+            "value": "breakout module"
+          }
+        ],
+        "stock": "in_stock",
+        "title": "DHT11 Humidity and Temperature Sensor Module",
+        "partId": "dht11",
+        "reasons": [],
+        "currency": "INR",
+        "evidence": [
+          {
+            "id": "cac7ceee-6d5d-4f14-abb3-0535157a0161",
+            "runId": null,
+            "method": "tinyfish-fetch",
+            "excerpt": "DHT11 Humidity and Temperature Sensor Module\nSKU:\nTIFSS0029\nBuy DHT11 Digital Humidity and Temperature sensor Module\n1 x DHT11 Humidity and Temperature Sensor Module\nRs 59/-\nIncl. GST (No Hidden Charges)\nPlease hurry! Only 1433 left in stock\nOperating Voltage | 3.3V to 5.5V DC |\nthe module will come with three pins as shown above.\nThis sensor module integrates the dht 11 sensor and other required components on a compact PCB.",
+            "sourceUrl": "https://robocraze.com/products/dht11-humidity-temperature-sensor-module",
+            "retrievedAt": "2026-10-20T14:00:07.520Z",
+            "observationId": "cac7ceee-6d5d-4f14-abb3-0535157a0161"
+          }
+        ],
+        "minPacks": null,
+        "retailer": "robocraze",
+        "taxStatus": "included",
+        "taxRateBps": null,
+        "priceBreaks": [
+          {
+            "minPacks": 1,
+            "packPricePaise": 5900
+          }
+        ],
+        "unitsPerPack": 1,
+        "multiplePacks": null,
+        "availablePacks": 1433
+      },
+      "normalization_version": "grounding-v3"
+    }
+  ],
+  "usage": [
+    {
+      "provider": "tinyfish-fetch",
+      "model": "fetch",
+      "input_tokens": null,
+      "output_tokens": null,
+      "created_at": "2026-10-20T14:00:04.451Z",
+      "state": null,
+      "latency_ms": null,
+      "http_status": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "input_tokens": 3317,
+      "output_tokens": 440,
+      "created_at": "2026-10-20T14:00:07.502Z",
+      "state": "responded",
+      "latency_ms": "3033",
+      "http_status": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "input_tokens": 2836,
+      "output_tokens": 498,
+      "created_at": "2026-10-20T14:00:14.789Z",
+      "state": "responded",
+      "latency_ms": "7265",
+      "http_status": null
+    },
+    {
+      "provider": "tinyfish-fetch",
+      "model": "fetch",
+      "input_tokens": null,
+      "output_tokens": null,
+      "created_at": "2026-10-20T14:00:15.011Z",
+      "state": null,
+      "latency_ms": null,
+      "http_status": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "input_tokens": 2033,
+      "output_tokens": 402,
+      "created_at": "2026-10-20T14:00:23.256Z",
+      "state": "responded",
+      "latency_ms": "8453",
+      "http_status": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "input_tokens": 3974,
+      "output_tokens": 271,
+      "created_at": "2026-10-20T14:00:30.915Z",
+      "state": "responded",
+      "latency_ms": "7647",
+      "http_status": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "input_tokens": null,
+      "output_tokens": null,
+      "created_at": "2026-10-20T14:03:16.980Z",
+      "state": "unavailable",
+      "latency_ms": null,
+      "http_status": "0"
+    },
+    {
+      "provider": "tinyfish-fetch",
+      "model": "fetch",
+      "input_tokens": null,
+      "output_tokens": null,
+      "created_at": "2026-10-20T14:03:18.563Z",
+      "state": null,
+      "latency_ms": null,
+      "http_status": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "input_tokens": 2654,
+      "output_tokens": 453,
+      "created_at": "2026-10-20T14:05:34.043Z",
+      "state": "responded",
+      "latency_ms": "17221",
+      "http_status": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "input_tokens": 3458,
+      "output_tokens": 484,
+      "created_at": "2026-10-20T14:05:50.568Z",
+      "state": "responded",
+      "latency_ms": "16487",
+      "http_status": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "input_tokens": 2412,
+      "output_tokens": 511,
+      "created_at": "2026-10-20T14:06:04.585Z",
+      "state": "responded",
+      "latency_ms": "13984",
+      "http_status": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "input_tokens": 2977,
+      "output_tokens": 578,
+      "created_at": "2026-10-20T14:06:16.395Z",
+      "state": "responded",
+      "latency_ms": "11772",
+      "http_status": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "input_tokens": null,
+      "output_tokens": null,
+      "created_at": "2026-10-20T14:06:46.438Z",
+      "state": "unavailable",
+      "latency_ms": null,
+      "http_status": "0"
+    }
+  ]
+}

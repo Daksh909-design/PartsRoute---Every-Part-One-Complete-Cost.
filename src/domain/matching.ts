@@ -20,7 +20,10 @@ export function matchOffer(part: PartRequest, offer: Offer): Offer {
       reasons.push(
         `${required.key}: required ${required.value}; not published.`,
       );
-    } else if (canonical(observed.value) !== canonical(required.value)) {
+    } else if (
+      normaliseSpec(required.key, observed.value) !==
+      normaliseSpec(required.key, required.value)
+    ) {
       conflict = true;
       reasons.push(
         `${required.key}: required ${required.value}, observed ${observed.value}.`,
@@ -56,4 +59,13 @@ export function eligible(part: PartRequest, offer: Offer): boolean {
       part.equivalentAcceptable &&
       part.confirmedOfferIds.includes(offer.id))
   );
+}
+function normaliseSpec(key: string, value: string) {
+  if (canonical(key) === "voltage") {
+    const dc = /^\+?(\d+(?:\.\d+)?)\s*v(?:olts?)?\s*(?:dc)?$/i.exec(
+      value.trim(),
+    );
+    if (dc) return `${Number(dc[1])}v`;
+  }
+  return canonical(value);
 }

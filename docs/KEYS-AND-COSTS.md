@@ -9,7 +9,7 @@ Gemini is the default AI provider. OpenAI is optional and usage is paid separate
 3. A paid project is charged at paid prices even for a model also offered on the free tier. Use a separate free project instead. Do not unlink billing from a shared project without checking its other services.
 4. Create a key for the free project at [API keys](https://aistudio.google.com/api-keys). The application cannot discover your billing tier from the key or a successful model response.
 
-Google lists `gemini-3.8-flash` input/output as free on its free tier, subject to quota and eligibility. Quota exhaustion stops requests; this application does not switch to a paid provider. Request spacing limits bursts but does not guarantee quota availability or a spending cap on a paid project.
+Google lists `gemini-3.5-flash-lite` input/output as free on its free tier, subject to quota and eligibility. Quota exhaustion stops requests; this application does not switch to a paid provider. Request spacing limits bursts but does not guarantee quota availability or a spending cap on a paid project.
 
 ## Enter keys privately
 
@@ -18,7 +18,7 @@ Open `.env.local` in the repository root. If it does not exist, copy `.env.examp
 ```dotenv
 AI_PROVIDER=gemini
 GEMINI_API_KEY=REPLACE_WITH_YOUR_NEW_PRIVATE_KEY
-GEMINI_MODEL=gemini-3.8-flash
+GEMINI_MODEL=gemini-3.5-flash-lite
 TINYFISH_API_KEY=REPLACE_WITH_YOUR_NEW_PRIVATE_KEY
 ```
 

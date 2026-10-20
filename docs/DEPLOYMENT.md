@@ -70,3 +70,7 @@ The command refuses to overwrite known IDs and performs a basic goal/pincode che
 Run the real provider checks, manually review extraction, verify PostgreSQL migrations/concurrent claims/restart recovery, run tests/typecheck/build and browser-check desktop/mobile UI. Set API spending limits in the provider dashboards. A per-quote three-basket cap and six-quotes/hour shared quota are not a substitute for account-level budgets.
 
 The public Pages demo is separate from a live server deployment. See the README for the verified deployment link; a live server deployment still needs configuration and qualification.
+
+## Latency and preparation
+
+Run migrations 004 and 005 before deploying this revision, then deploy web and worker from the same commit. Compare latest observations uses the read-only `/api/comparisons` route. Warm the live catalogue before measuring it with `pnpm benchmark:http`; do not present an empty cache, synthetic sample or job acknowledgement as a completed seven-second live basket. Cold hosting starts and provider latency are not covered by local timings. [PERFORMANCE.md](PERFORMANCE.md) records the limits.

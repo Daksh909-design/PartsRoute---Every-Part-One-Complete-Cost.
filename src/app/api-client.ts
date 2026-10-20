@@ -21,7 +21,7 @@ export async function requestApi(
   try {
     response = await fetch(`${apiBase}${path}`, {
       ...init,
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(6000),
       credentials: "omit",
       headers: {
         "Content-Type": "application/json",
@@ -31,7 +31,7 @@ export async function requestApi(
     });
   } catch {
     throw new Error(
-      "Cannot reach the live server. Check that it is running and allows this site's origin, then try again.",
+      "The server did not respond within six seconds. Saved work is kept; use Resume before starting another collection.",
     );
   }
   if (!response.headers.get("content-type")?.includes("application/json"))

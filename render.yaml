@@ -21,7 +21,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
-        value: gemini-3.8-flash
+        value: gemini-3.5-flash-lite
       - key: APP_ACCESS_TOKEN
         generateValue: true
       - key: APP_ALLOWED_ORIGINS
@@ -47,7 +47,7 @@ services:
         fromService:
           { type: web, name: partsroute-web, envVarKey: GEMINI_API_KEY }
       - key: GEMINI_MODEL
-        value: gemini-3.8-flash
+        value: gemini-3.5-flash-lite
 databases:
   - name: partsroute-db
     plan: 0.1c-256mb

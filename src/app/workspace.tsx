@@ -70,6 +70,7 @@ export default function Workspace() {
   const [savedId, setSavedId] = useState("");
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState("");
+  const [responseMs, setResponseMs] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [evidence, setEvidence] = useState<EvidenceData | null>(null);
   const [evidenceBusy, setEvidenceBusy] = useState(false);
@@ -203,10 +204,17 @@ export default function Workspace() {
       );
       return;
     }
-    if (mode === "live" && !(await checkConnection())) return;
+    if (mode === "live" && !token) {
+      setError(
+        "Enter your team access token to compare retailer observations.",
+      );
+      return;
+    }
     cancelPolling();
     const version = generation.current;
     setBusy(true);
+    setResponseMs(null);
+    const submittedAt = performance.now();
     setPhase(
       mode === "demo"
         ? "Calculating sample combinations…"
@@ -226,15 +234,26 @@ export default function Workspace() {
         setBusy(false);
         setPhase("");
       } else {
-        if (refresh) requestId.current = null;
         requestId.current ??= crypto.randomUUID();
-        const created = await requestApi("/api/quotes", token, {
-          method: "POST",
-          headers: { "Idempotency-Key": requestId.current },
-          body: JSON.stringify(parsed.data),
-        });
+        const created = await requestApi(
+          refresh ? "/api/quotes" : "/api/comparisons",
+          token,
+          {
+            method: "POST",
+            headers: { "Idempotency-Key": requestId.current },
+            body: JSON.stringify(parsed.data),
+          },
+        );
         if (version !== generation.current) return;
-        setResult(null);
+        setResponseMs(Math.round(performance.now() - submittedAt));
+        if (created.result) {
+          setResult(created.result);
+          setJob(null);
+          setBusy(false);
+          setPhase("");
+          requestId.current = null;
+          return;
+        }
         setSavedId(created.id);
         storage.write(created.id);
         await poll(created.id, version);
@@ -250,7 +269,7 @@ export default function Workspace() {
     }
   }
   async function resume() {
-    if (!savedId || !(await checkConnection())) return;
+    if (!savedId || !token) return;
     cancelPolling();
     setBusy(true);
     await poll(savedId, generation.current);
@@ -269,10 +288,26 @@ export default function Workspace() {
   }
   async function inspect() {
     setView("evidence");
-    if (!job) return;
+    if (!job && !result?.dataStatus) return;
     setEvidenceBusy(true);
     try {
-      setEvidence(await requestApi(`/api/quotes/${job.id}/evidence`, token));
+      setEvidence(
+        job
+          ? await requestApi(`/api/quotes/${job.id}/evidence`, token)
+          : await requestApi("/api/observations", token, {
+              method: "POST",
+              body: JSON.stringify(
+                [
+                  ...new Set(
+                    [
+                      ...result!.offers.flatMap((o) => o.evidence),
+                      ...result!.shipping.flatMap((s) => s.evidence),
+                    ].map((e) => e.observationId),
+                  ),
+                ].slice(0, 20),
+              ),
+            }),
+      );
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "Cannot load evidence.",
@@ -318,11 +353,11 @@ export default function Workspace() {
       <main>
         <div className="page-heading">
           <div>
-            <span className="overline">ELECTRONICS PROCUREMENT</span>
-            <h1>Compare the whole basket.</h1>
+            <span className="eyebrow">PARTS WORKBENCH</span>
+            <h1>Plan your next build.</h1>
             <p>
-              Every part. One complete cost. Compare matched components, pack
-              quantities, shipping and tax before you buy.
+              Compare component orders from Robu and Robocraze, including pack
+              sizes, tax and delivery to your pincode.
             </p>
           </div>
           <span className="project-label">
@@ -345,7 +380,7 @@ export default function Workspace() {
               disabled={busy}
               onClick={() => switchMode("live")}
             >
-              Live quote{" "}
+              Retailer observations{" "}
               {!liveAvailable && <span className="small-tag">Setup</span>}
             </button>
           </div>
@@ -357,8 +392,8 @@ export default function Workspace() {
           <div className="demo-banner">
             <Icon name="info" />
             <span>
-              <strong>Sample data.</strong> Prices and shipping are invented to
-              demonstrate the calculator. No live collection runs in this mode.
+              <strong>Calculator example.</strong> Edit the quantities to see
+              how shipping changes the best basket. Prices here are synthetic.
             </span>
           </div>
         )}
@@ -380,7 +415,7 @@ export default function Workspace() {
               <section className="panel connection-panel">
                 <div className="section-heading">
                   <div>
-                    <span className="overline">LIVE CONNECTION</span>
+                    <span className="eyebrow">LIVE CONNECTION</span>
                     <h2>
                       {!liveAvailable
                         ? "Connect a server to collect live offers"
@@ -419,9 +454,8 @@ export default function Workspace() {
                 ) : (
                   <>
                     <p>
-                      Product collection uses TinyFish; extraction uses your
-                      configured AI provider. Check the database and worker
-                      before starting a quote.
+                      Compare recent retailer observations first. A fresh check
+                      runs separately and can take longer than seven seconds.
                     </p>
                     <div className="connection-controls">
                       <label htmlFor="team-token">
@@ -495,7 +529,7 @@ export default function Workspace() {
               <section className="panel parts-panel">
                 <div className="section-heading">
                   <div>
-                    <span className="overline">01 / REQUIREMENTS</span>
+                    <span className="eyebrow">BILL OF MATERIALS</span>
                     <h2>Your parts list</h2>
                   </div>
                   <button
@@ -732,20 +766,34 @@ export default function Workspace() {
                     <button
                       className="primary"
                       type="submit"
-                      disabled={
-                        mode === "live" && (!liveAvailable || !status?.ready)
-                      }
+                      disabled={mode === "live" && (!liveAvailable || !token)}
                     >
                       {busy
                         ? "Checking options…"
                         : mode === "demo"
                           ? "Calculate sample baskets"
-                          : status?.ready
-                            ? "Collect & compare live offers"
-                            : "Complete live setup first"}
+                          : token
+                            ? "Compare latest observations"
+                            : "Enter team token to compare"}
                       <Icon name="arrow" />
                     </button>
-                    {mode === "live" && !status?.ready && (
+                    {mode === "live" && liveAvailable && (
+                      <div className="refresh-row">
+                        <button
+                          type="button"
+                          className="text-button"
+                          disabled={!token}
+                          onClick={() => void submit(true)}
+                        >
+                          Refresh from retailers ↗
+                        </button>
+                        <span>
+                          Collects new evidence in the background. Uses API
+                          quota.
+                        </span>
+                      </div>
+                    )}
+                    {mode === "live" && !token && (
                       <p className="notice warning setup-blocker">
                         {error ||
                           (status
@@ -755,7 +803,7 @@ export default function Workspace() {
                                 .join(
                                   ", ",
                                 )}. Complete these checks in Live connection above.`
-                            : "Live collection has not started. Enter the team token and use Check connection above. API keys, a database and the worker must be ready first.")}
+                            : "Enter your team token in Live connection above.")}
                       </p>
                     )}
                   </fieldset>
@@ -792,11 +840,21 @@ export default function Workspace() {
                       <strong>{phase || "Checking the saved quote…"}</strong>
                       <p>
                         {mode === "live"
-                          ? "The worker saves observations as it goes. Refreshing this page does not start another browser run."
+                          ? "Fresh collection is running in the background. Saved results appear as they arrive. Resume retrieves this same job."
                           : "Calculating complete assignments from the synthetic fixture."}
                       </p>
                     </div>
                   </div>
+                )}
+                {mode === "live" && responseMs !== null && (
+                  <p className="response-note" role="status">
+                    {result?.dataStatus
+                      ? "Cached comparison"
+                      : "Collection accepted"}{" "}
+                    · {(responseMs / 1000).toFixed(2)} s
+                    {!result?.dataStatus &&
+                      " · Browser checks are still running"}
+                  </p>
                 )}
                 {result ? (
                   <QuoteResults
@@ -815,19 +873,19 @@ export default function Workspace() {
                 ) : (
                   !busy && (
                     <div className="empty-results">
-                      <span className="overline">02 / PURCHASING PLAN</span>
+                      <span className="eyebrow">02 / PURCHASING PLAN</span>
                       <h2>
                         {mode === "live"
                           ? job?.status === "failed"
                             ? "Collection needs attention."
-                            : "Live offers have not been collected yet."
+                            : "Compare saved retailer prices."
                           : "A lower item price can cost more at checkout."}
                       </h2>
                       <p>
                         {mode === "live"
                           ? job?.status === "failed"
                             ? "Review the error above. Any pages already collected remain saved with this quote; open Evidence to inspect them before retrying."
-                            : "The team token unlocks access only. The server must also have TinyFish and AI provider keys, a migrated database and an active worker before it can collect offers."
+                            : "Compare recent observations without waiting for new API calls. If none are available, choose Refresh from retailers to start a background collection."
                           : "Calculate this three-part prototype to compare complete baskets, including shipping once per retailer."}
                       </p>
                       <div className="empty-breakdown">
@@ -846,7 +904,7 @@ export default function Workspace() {
                       </div>
                       <p className="source-note">
                         {mode === "live"
-                          ? "Once the connection checks pass, start collection. Unknown shipping or product mismatches will remain visible rather than becoming a fabricated total."
+                          ? "A delivered total is recommended only after product requirements and exact-basket shipping have been checked."
                           : "The sample is a worked arithmetic example. Live recommendations require source evidence and verified shipping."}
                       </p>
                     </div>

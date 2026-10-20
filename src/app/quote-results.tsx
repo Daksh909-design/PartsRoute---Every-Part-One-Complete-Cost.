@@ -2,6 +2,7 @@ import type { Plan, QuoteResult } from "../domain/schema";
 import { retailers } from "../domain/catalogue";
 import { money, when } from "./api-client";
 import { itemFirstComparison } from "../domain/comparison";
+import { collectionIssues } from "../domain/issues";
 
 export function BasketPlan({ plan, demo }: { plan: Plan; demo: boolean }) {
   return (
@@ -99,6 +100,22 @@ export default function QuoteResults({
   const comparison = itemFirstComparison(result.plans, result.recommendedId);
   return (
     <div className="quote-results">
+      {result.dataStatus && (
+        <div className="observation-age">
+          <strong>Previously collected retailer data</strong>
+          <span>
+            Oldest product check: {when(result.dataStatus.oldestObservedAt)}. No
+            new API call was made for this comparison.
+          </span>
+          {result.dataStatus.missingUrls > 0 && (
+            <span>
+              {result.dataStatus.missingUrls} product page
+              {result.dataStatus.missingUrls === 1 ? " is" : "s are"} missing a
+              recent usable observation.
+            </span>
+          )}
+        </div>
+      )}
       {stale && (
         <p className="notice warning" role="status">
           Your inputs have changed. Recalculate before using these results.
@@ -106,15 +123,15 @@ export default function QuoteResults({
       )}
       <div className="section-heading">
         <div>
-          <span className="overline">
+          <span className="eyebrow">
             {demo ? "SAMPLE COMPARISON" : "CHECKED PURCHASING PLANS"}
           </span>
           <h2>
             {demo
-              ? "Your sample purchasing plan"
+              ? "Order comparison"
               : recommendation
                 ? "Best verified plan among checked options"
-                : "No complete verified plan yet"}
+                : "Products found; complete cost pending"}
           </h2>
         </div>
       </div>
@@ -124,11 +141,74 @@ export default function QuoteResults({
         {result.plans.filter((plan) => plan.verified).length}{" "}
         {demo ? "complete sample plans" : "verified plans"}
       </p>
-      {demo && (
-        <p className="sample-disclosure">
-          Invented prices and shipping, calculated from your inputs. These are
-          not current retailer offers.
-        </p>
+
+      {!demo && result.offers.length > 0 && (
+        <section className="listed-offers" aria-label="Observed product prices">
+          <h3>Listed prices</h3>
+          <p className="source-note">
+            Per pack, before any additional tax or shipping. A listing is
+            eligible only after all required details match.
+          </p>
+          {result.offers.map((offer) => (
+            <div className="offer-row" key={offer.id}>
+              <div>
+                <a href={offer.url} target="_blank" rel="noreferrer">
+                  {offer.title.replace(/^\[Synthetic\]\s*/, "")}
+                </a>
+                <small>
+                  {retailers[offer.retailer].name} ·{" "}
+                  {offer.unitsPerPack ?? "Unknown"} unit
+                  {offer.unitsPerPack === 1 ? "" : "s"} / pack ·{" "}
+                  {offer.stock.replaceAll("_", " ")}
+                </small>
+              </div>
+              <strong>
+                {offer.priceBreaks[0]
+                  ? money(offer.priceBreaks[0].packPricePaise)
+                  : "Unknown"}
+              </strong>
+            </div>
+          ))}
+        </section>
+      )}
+      {best ? (
+        <article className="recommendation">
+          <div className="recommendation-heading">
+            <div>
+              <span className="eyebrow">
+                {demo
+                  ? "LOWEST COMPLETE SAMPLE"
+                  : best.verified
+                    ? "VERIFIED LANDED COST"
+                    : "INCOMPLETE ALTERNATIVE"}
+              </span>
+              <p className="quote-total">
+                {best.verified
+                  ? money(best.totalPaise)
+                  : "Total not yet verified"}
+              </p>
+            </div>
+            <span className="retailer-count">
+              {best.baskets.length} retailer
+              {best.baskets.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          {saving > 0 && (
+            <p className="comparison-note">
+              {money(saving)} below the next complete{" "}
+              {demo ? "sample" : "verified"} plan.
+            </p>
+          )}
+          <BasketPlan plan={best} demo={demo} />
+        </article>
+      ) : (
+        <div className="empty-panel">
+          <h3>Some parts have no eligible offer.</h3>
+          <p>
+            Review the product matches below. A price alone is not enough when
+            specifications, stock or pack details are missing.
+          </p>
+        </div>
       )}
       {comparison && (
         <section
@@ -136,7 +216,7 @@ export default function QuoteResults({
           aria-label="Item prices versus complete basket cost"
         >
           <div className="strategy-heading">
-            <h3>Why the cheapest items can lose</h3>
+            <h3>Split order vs. complete basket</h3>
             <span>{demo ? "Sample arithmetic" : "Verified totals"}</span>
           </div>
           <div className="strategy-row">
@@ -173,45 +253,6 @@ export default function QuoteResults({
             cost more.
           </p>
         </section>
-      )}
-      {best ? (
-        <article className="recommendation">
-          <div className="recommendation-heading">
-            <div>
-              <span className="overline">
-                {demo
-                  ? "LOWEST COMPLETE SAMPLE"
-                  : best.verified
-                    ? "VERIFIED LANDED COST"
-                    : "INCOMPLETE ALTERNATIVE"}
-              </span>
-              <p className="quote-total">
-                {best.verified
-                  ? money(best.totalPaise)
-                  : "Total not yet verified"}
-              </p>
-            </div>
-            <span className="retailer-count">
-              {best.baskets.length} retailer
-              {best.baskets.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-          {saving > 0 && (
-            <p className="comparison-note">
-              {money(saving)} below the next complete{" "}
-              {demo ? "sample" : "verified"} plan.
-            </p>
-          )}
-          <BasketPlan plan={best} demo={demo} />
-        </article>
-      ) : (
-        <div className="empty-panel">
-          <h3>Some parts have no eligible offer.</h3>
-          <p>
-            Review the product matches below. A price alone is not enough when
-            specifications, stock or pack details are missing.
-          </p>
-        </div>
       )}
       {alternatives.length > 0 && (
         <section className="alternatives">
@@ -306,17 +347,23 @@ export default function QuoteResults({
         ))}
       </section>
       {result.errors.length > 0 && (
-        <details className="collection-errors">
-          <summary>
-            {result.errors.length} collection issue
-            {result.errors.length !== 1 ? "s" : ""}
-          </summary>
-          <ul className="issues">
-            {result.errors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </details>
+        <section className="collection-summary" aria-label="Incomplete checks">
+          <h3>Still to check</h3>
+          {collectionIssues(result.errors).map((group) => (
+            <div className="issue-group" key={group.title}>
+              <strong>{group.title}</strong>
+              <p>{group.action}</p>
+              <details>
+                <summary>Details ({group.details.length})</summary>
+                <ul className="issues">
+                  {group.details.map((detail) => (
+                    <li key={detail}>{detail}</li>
+                  ))}
+                </ul>
+              </details>
+            </div>
+          ))}
+        </section>
       )}
       <div className="result-footer">
         <button type="button" className="text-button" onClick={inspect}>

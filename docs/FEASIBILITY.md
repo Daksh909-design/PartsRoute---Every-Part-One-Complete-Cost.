@@ -61,3 +61,9 @@ Agent run [0719d7ea-f349-4c37-8e5d-82783e1b5558](https://agent.tinyfish.ai/runs/
 5. If Robu remains unsuitable, qualify Evelta with real overlapping product URLs, tax evidence and its actual checkout threshold basis. Add an adapter only after obtaining evidence; do not substitute synthetic offers.
 
 The reproducible synthetic fixture separately has a hand-calculated complete ₹295 example. It is useful for business-logic tests, not live milestone acceptance.
+
+## Later debugging validation, 20 October 2026
+
+The replacement Gemini key restored generation. Flash-Lite structured extraction recovered Robocraze HC-SR04 ₹75 and DHT11 module ₹59, and Robu HC-SR04 ₹79 and DHT11 module ₹59, each backed by exact stored excerpts. This supersedes the earlier account-block status, not the historical captures. The HC-SR04 total pin count was not established by the retrieved text, ordering constraints were unknown, and later extraction attempts timed out. No complete verified plan resulted. A shortened Robu Fetch attempt timed out for all four URLs; later retrieval recovered the product text, while its policy still returned a placeholder.
+
+Cached comparisons now avoid provider calls. They are a distinct evidence-reuse path and are not proof of a new live collection. See [PERFORMANCE.md](PERFORMANCE.md).

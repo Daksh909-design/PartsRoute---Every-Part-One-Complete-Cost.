@@ -158,4 +158,10 @@ export type QuoteResult = {
   explanation: string;
   explanationSource: "deterministic" | "openai-validated" | "gemini-validated";
   generatedAt: string;
+  dataStatus?: {
+    kind: "cached";
+    oldestObservedAt: string;
+    expiresAt: string;
+    missingUrls: number;
+  };
 };

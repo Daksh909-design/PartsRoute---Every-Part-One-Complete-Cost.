@@ -2,6 +2,7 @@ import { Pool } from "pg";
 import { randomUUID } from "node:crypto";
 import type { QuoteInput, QuoteResult } from "../domain/schema";
 import type { Usage } from "./ai";
+import { NORMALIZATION_VERSION } from "../domain/normalization";
 
 let instance: Pool | undefined;
 export function db(): Pool {
@@ -10,7 +11,7 @@ export function db(): Pool {
   return (instance ??= new Pool({
     connectionString: process.env.DATABASE_URL,
     max: 5,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 1500,
     statement_timeout: 10000,
   }));
 }
@@ -118,6 +119,8 @@ export type Observation = {
   retrieved_at: Date;
   original: unknown;
   normalized: unknown;
+  normalization_version?: string | null;
+  normalized_at?: Date | null;
 };
 export async function observation(
   jobId: string,
@@ -150,8 +153,19 @@ export async function saveObservation(
   ).rows[0];
 }
 export async function normalizeObservation(id: string, normalized: unknown) {
-  await db().query("UPDATE observations SET normalized=$2 WHERE id=$1", [
-    id,
-    JSON.stringify(normalized),
-  ]);
+  await db().query(
+    "UPDATE observations SET normalized=$2,normalization_version=$3,normalized_at=now() WHERE id=$1",
+    [id, JSON.stringify(normalized), NORMALIZATION_VERSION],
+  );
+}
+export async function preserveObservationTime(
+  copyId: string,
+  sourceId: string,
+) {
+  // Preserve PostgreSQL's microseconds. Round-tripping through JS Date loses
+  // precision and can make an old normalization appear newer than its copy.
+  await db().query(
+    "UPDATE observations copy SET retrieved_at=source.retrieved_at FROM observations source WHERE copy.id=$1 AND source.id=$2",
+    [copyId, sourceId],
+  );
 }

@@ -32,3 +32,7 @@ The synthetic sample demonstrates calculator behavior. It does not establish liv
 ## Validation limits
 
 See `VALIDATION.md` for executed checks. Direct-key Fetch/Agent and real SQL checks ran. Successful real AI extraction, the new order-control response path, complete shipping, broader process-crash recovery, human review and Docker/hosted deployment remain unverified.
+
+## Latency/debugging revision
+
+The account block was resolved with a replacement key; transient model failures remain. The application now separates read-only cached comparisons from explicit background collection, versions normalized observations, caches structured extraction, batches Fetch, correctly labels transient 503s, and groups incomplete checks in the UI. The default model is Flash-Lite rather than Flash with a 12-second request delay. The result total comes before the explanatory example, and the old `overline` CSS name was replaced because it collided with a Tailwind text-decoration utility. A fresh seven-second fully verified live basket and public backend remain unqualified.
