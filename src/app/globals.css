@@ -4,7 +4,7 @@
   --ink: #172329;
   --muted: #52616a;
   --line: #dce2e5;
-  --paper: #f4f6f7;
+  --paper: #f5f3ee;
   --green: #155d48;
   --soft: #eef5f1;
   --amber: #775315;
@@ -142,8 +142,8 @@ small {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 24px 0;
-  border-bottom: 1px solid var(--line);
+  padding: 22px 0;
+  border-bottom: 2px solid var(--ink);
 }
 .brand {
   color: var(--ink);
@@ -196,7 +196,7 @@ main {
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 .page-heading p {
   color: var(--muted);
@@ -293,6 +293,85 @@ main {
   border-radius: 6px;
   padding: 25px;
   min-width: 0;
+}
+.parts-panel {
+  border-top: 3px solid #243b36;
+}
+.results-panel {
+  border-top: 3px solid #b4843c;
+}
+.bom-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 18px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+  margin-bottom: 16px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.bom-summary strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  color: var(--ink);
+}
+.strategy-comparison {
+  margin: 18px 0 22px;
+  border: 1px solid #d8dfd8;
+  border-radius: 4px;
+  background: #f8faf7;
+  overflow: hidden;
+}
+.strategy-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #d8dfd8;
+}
+.strategy-heading h3 {
+  font-size: 12px;
+}
+.strategy-heading > span {
+  font-size: 9px;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.strategy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  font-size: 12px;
+}
+.strategy-row strong {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.4px;
+  white-space: nowrap;
+}
+.strategy-row small {
+  font-size: 10px;
+  margin-top: 3px;
+}
+.strategy-winner {
+  border-top: 1px solid #d8dfd8;
+  background: #eaf2ec;
+  color: #154e3d;
+}
+.strategy-comparison > p {
+  padding: 9px 14px;
+  font-size: 11px;
+  color: var(--green);
+  border-top: 1px solid #d8dfd8;
+}
+@media (prefers-reduced-motion: reduce) {
+  .activity {
+    animation: none;
+  }
 }
 .section-heading {
   display: flex;

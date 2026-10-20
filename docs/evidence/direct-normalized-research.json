@@ -1,0 +1,80 @@
+{
+  "label": "Actual Fetch observations, manually inspected by the coding agent. Unqualified research, never used as saved live offers or frontend fixture prices.",
+  "observations": [
+    {
+      "partId": "hcsr04",
+      "retailer": "robocraze",
+      "sku": "TIFSS0171",
+      "sourceUrl": "https://robocraze.com/products/hc-sr-04-ultrasonic-sensor",
+      "retrievedAt": "2026-10-20T12:38:39.743Z",
+      "originalObservation": "direct-robocraze-2026-10-20.json",
+      "unitsPerPack": 1,
+      "minPacks": null,
+      "multiplePacks": null,
+      "pricePaise": 7500,
+      "taxStatus": "included",
+      "requestedQuantity": 2,
+      "inspectionStatus": "coding-agent source inspection; not human review or Gemini extraction",
+      "excerpts": {
+        "sku": "TIFSS0171",
+        "price": "Rs 75/-",
+        "pack": "1 x HC-SR04 Ultrasonic Distance Sensor Module",
+        "tax": "Incl. GST (No Hidden Charges)"
+      }
+    },
+    {
+      "partId": "dht11",
+      "retailer": "robocraze",
+      "sku": "TIFSS0029",
+      "sourceUrl": "https://robocraze.com/products/dht11-humidity-temperature-sensor-module",
+      "retrievedAt": "2026-10-20T12:41:37.071Z",
+      "originalObservation": "dht11-candidates-2026-10-20.json",
+      "unitsPerPack": 1,
+      "minPacks": null,
+      "multiplePacks": null,
+      "pricePaise": 5900,
+      "taxStatus": "included",
+      "requestedQuantity": 1,
+      "inspectionStatus": "coding-agent source inspection; not human review or Gemini extraction",
+      "excerpts": {
+        "sku": "TIFSS0029",
+        "price": "Rs 59/-",
+        "pack": "1 x DHT11 Humidity and Temperature Sensor Module",
+        "tax": "Incl. GST (No Hidden Charges)"
+      }
+    },
+    {
+      "partId": "breadboard400",
+      "retailer": "robocraze",
+      "sku": "TIFEC0055",
+      "sourceUrl": "https://robocraze.com/products/half-breadboard",
+      "retrievedAt": "2026-10-20T12:38:39.743Z",
+      "originalObservation": "direct-robocraze-2026-10-20.json",
+      "unitsPerPack": 1,
+      "minPacks": null,
+      "multiplePacks": null,
+      "pricePaise": 3900,
+      "taxStatus": "included",
+      "requestedQuantity": 1,
+      "inspectionStatus": "coding-agent source inspection; not human review or Gemini extraction",
+      "excerpts": {
+        "sku": "TIFEC0055",
+        "price": "Rs 39/-",
+        "pack": "1 x 400 Tie Points Solderless Breadboard",
+        "tax": "Incl. GST (No Hidden Charges)"
+      }
+    }
+  ],
+  "itemArithmetic": {
+    "itemsPaise": 24800,
+    "additionalItemTaxPaise": 0,
+    "shippingPaise": null,
+    "landedTotalPaise": null
+  },
+  "limitations": [
+    "Required specifications and ordering controls are not all qualified by this summary.",
+    "Gemini generation access is denied.",
+    "Agent did not establish pincode shipping or a verified basket.",
+    "Human review and a complete live landed basket remain open."
+  ]
+}

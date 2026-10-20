@@ -33,7 +33,7 @@ The worker claims jobs with `FOR UPDATE SKIP LOCKED`, renews a 60-second lease e
 
 Retrieved content is untrusted data. The model receives no API tools, database credentials or purchase capability. It must provide schema-constrained fields and exact source excerpts. Grounding checks monetary strings and supported facts; deterministic matching rejects contrary models/attributes. This does not eliminate extraction error: human sample review and a labelled extraction evaluation are still required.
 
-Live shipping policy extraction is stored and displayed, but pincode applicability is never inferred from a nationwide banner. Tests exercise threshold arithmetic using explicit synthetic rules. Actual live ranking requires exact basket verification, matching quantities/pincode/subtotal, serviceability and a displayed arithmetic-consistent complete total.
+Live shipping policy extraction is stored and displayed, but pincode applicability is never inferred from a nationwide banner. Tests exercise threshold arithmetic using explicit synthetic rules. Actual live ranking requires exact basket verification, matching quantities/pincode/subtotal, serviceability and a displayed arithmetic-consistent complete total. If only ordering minima/multiples are missing, a separate provisional candidate can select an Agent inspection. Those proposed defaults never enter public results or saved offers. Only exact-SKU/product controls with min/step source evidence can establish missing constraints; conflicts remain ineligible and offset steps such as min=3/step=2 stay unsupported. The same maximum of three browser checks covers those inspections and shipping.
 
 Missing costs are null, not zero. A verified plan must cover every requested line and every participating retailer basket. Alternative plans may remain unknown or estimated. Ranking does not claim market-wide cheapest purchase.
 
@@ -41,7 +41,7 @@ The supported-domain check accepts only exact HTTPS apex/www domains, rejects em
 
 ## Provider extension
 
-Gemini is the default AI provider; OpenAI remains an explicit optional adapter. Gemini calls use a serial queue with configurable spacing, schema-constrained JSON, Zod validation and recorded actual usage. A quota error does not trigger a paid provider. `AIProvider` keeps extraction and explanation independent of the calculator. Automatic discovery would require TinyFish Search and a separate URL/specification review stage.
+Gemini is the default AI provider; OpenAI remains an explicit optional adapter. Gemini calls use a serial queue with configurable spacing, schema-constrained JSON, Zod validation and recorded actual usage. A quota error does not trigger a paid provider. Controlled failure metadata records unknown token usage and a key/model fingerprint, never the key. Readiness blocks repeat creation for five minutes after a recorded failure for the same configuration. Provider-supplied error bodies are not sent directly to the UI. Explicitly rejected Agent submissions are distinguished from ambiguous network submissions. `AIProvider` keeps extraction and explanation independent of the calculator. Automatic discovery would require TinyFish Search and a separate URL/specification review stage.
 
 ## Frontend and deployment boundary
 

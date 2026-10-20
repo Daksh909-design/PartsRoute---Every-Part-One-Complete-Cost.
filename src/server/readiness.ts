@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { aiConfig } from "./ai-provider";
+import { providerFingerprint } from "./provider-error";
 
 export type Readiness = {
   ready: boolean;
@@ -37,8 +38,26 @@ export async function readiness(): Promise<Readiness> {
   if (process.env.DATABASE_URL) {
     try {
       const result = await db().query(
-        "SELECT EXISTS(SELECT 1 FROM worker_heartbeats WHERE last_seen > now() - interval '45 seconds') AS worker, to_regclass('public.quotes') IS NOT NULL AND to_regclass('public.observations') IS NOT NULL AND to_regclass('public.provider_operations') IS NOT NULL AS migrated",
+        "SELECT EXISTS(SELECT 1 FROM worker_heartbeats WHERE last_seen > now() - interval '45 seconds') AS worker, to_regclass('public.quotes') IS NOT NULL AND to_regclass('public.observations') IS NOT NULL AND to_regclass('public.provider_operations') IS NOT NULL AS migrated, (SELECT details FROM provider_usage WHERE provider=$1 AND details->>'fingerprint'=$2 AND created_at>now()-interval '5 minutes' ORDER BY id DESC LIMIT 1) AS provider_check",
+        [
+          ai.provider,
+          providerFingerprint(
+            ai.provider,
+            ai.model,
+            process.env[ai.keyName] || "",
+          ),
+        ],
       );
+      const providerCheck = result.rows[0].provider_check;
+      if (providerCheck?.state === "blocked")
+        checks[1] = {
+          name: ai.name,
+          ok: false,
+          detail: `${providerCheck.detail} Further live quotes are blocked for five minutes to avoid repeated failed calls. A changed key or model is checked separately.`,
+        };
+      else if (providerCheck?.state === "responded")
+        checks[1].detail =
+          "The configured model recently responded. Product matching and complete basket verification are separate checks.";
       checks[2] = {
         name: "Database",
         ok: result.rows[0].migrated === true,

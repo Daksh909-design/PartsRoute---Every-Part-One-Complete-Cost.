@@ -17,11 +17,19 @@ const command =
     : action === "stop"
       ? ["-D", config.data, "-m", "fast", "-w", "stop"]
       : ["-D", config.data, "status"];
-const run = spawnSync(join(config.bin, "pg_ctl.exe"), command, {
-  stdio: "inherit",
-  windowsHide: true,
-  timeout: 45000,
-});
+const alreadyRunning =
+  action === "start" &&
+  spawnSync(join(config.bin, "pg_ctl.exe"), ["-D", config.data, "status"], {
+    stdio: "ignore",
+    windowsHide: true,
+  }).status === 0;
+const run = alreadyRunning
+  ? { status: 0 }
+  : spawnSync(join(config.bin, "pg_ctl.exe"), command, {
+      stdio: "inherit",
+      windowsHide: true,
+      timeout: 45000,
+    });
 if (run.status !== 0) {
   console.error(
     "Database command did not complete. Run this helper from your own Windows terminal, outside the coding sandbox.",

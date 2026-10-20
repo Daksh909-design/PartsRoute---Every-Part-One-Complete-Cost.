@@ -1,6 +1,6 @@
 # Live feasibility and first-milestone status
 
-Research date: **20 October 2026**. Calls were made through the connected TinyFish tools, with Fetch cache tolerance `ttl: 0`. Original responses and a normalized research summary are in `docs/evidence`.
+Research date: **20 October 2026**. Earlier calls used the connected TinyFish tools. The debugging revision also exercised actual application API keys. Original and sanitized captures are in `docs/evidence`; the sections below distinguish those surfaces.
 
 | Check                                 | Observation                                                                                                                                                                      |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -25,6 +25,16 @@ Landed total: unknown
 
 This is a valid partial calculation, **not a complete landed basket**. No deadline is promised from the page's delivery estimate.
 
+## Direct-key debugging follow-up
+
+Actual API-key Fetch calls returned all three curated product pages and the policy URL from both retailers. Robu HC-SR04 now returned SKU 2444 at ₹79 including GST; the earlier blocked page is a historical observation. The Robu shipping response still contains a placeholder, and its checked breadboard remains out of stock. Transport success does not qualify content.
+
+The incorrect Robocraze DHT11 URL was replaced by https://robocraze.com/products/dht11-humidity-temperature-sensor-module after actual Fetch established SKU TIFSS0029, ₹59 including GST, a one-module package and the statement that the sensor and other components are on a compact PCB. Ordering constraints and full match validation still require their evidence path.
+
+Direct-key Agent run **52d7ca78-5076-4dbd-a08b-760a3d67c08c** completed a research cart containing two HC-SR04 sensors, one corrected DHT11 module and one 400-point breadboard. It reported ₹248 in items, but no usable shipping/serviceability and a mismatching-basket flag. Validation correctly retained an unknown landed total. The prompt was subsequently clarified so expected INR line totals cannot be confused with per-pack prices. The direct probe did not exercise the later order-control extension.
+
+The actual Next.js/worker pipeline saved TinyFish originals and then failed with Google's generation-access HTTP 403. This is evidence of a working collection path and an external model-account block, not a successful AI quote. See the sanitized captures and live-quote failure record in docs/evidence.
+
 ## Milestone acceptance
 
 ### Debugging follow-up
@@ -40,7 +50,7 @@ Agent run [0719d7ea-f349-4c37-8e5d-82783e1b5558](https://agent.tinyfish.ai/runs/
 - Two qualified full retailer integrations: **not yet**.
 - Applicable complete shipping for the sample: **not obtained**.
 - One complete verified three-line live basket: **not obtained**.
-- Application direct-key TinyFish/selected-AI pipeline: **not run without credentials**.
+- Application direct-key pipeline: **executed**. TinyFish product originals persisted; Gemini generation failed with project-denied HTTP 403. This is not a successful extraction or quote.
 
 ## Human review to perform
 

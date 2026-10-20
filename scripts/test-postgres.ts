@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { spawnSync } from "node:child_process";
+import { applyMigrations } from "../src/server/migrations";
 import {
   db,
   enqueue,
@@ -11,6 +11,7 @@ import {
 } from "../src/server/db";
 import { sampleParts } from "../src/domain/catalogue";
 import { demoQuote } from "../src/domain/demo";
+import { claimJob, completeJob } from "../src/server/queue";
 
 const connection = process.env.TEST_DATABASE_URL;
 if (!connection || !new URL(connection).pathname.endsWith("_test"))
@@ -31,15 +32,7 @@ function check(ok: boolean, label: string) {
 const actor = `synthetic-postgres-test:${randomUUID()}`;
 try {
   for (let run = 0; run < 2; run++) {
-    const migrated = spawnSync(
-      process.execPath,
-      ["node_modules/tsx/dist/cli.mjs", "scripts/migrate.ts"],
-      { env: { ...process.env, DATABASE_URL: connection }, encoding: "utf8" },
-    );
-    if (migrated.status !== 0)
-      throw new Error(
-        "Test database migration failed. Inspect the local test database; credentials are not printed.",
-      );
+    await applyMigrations(db());
   }
   check(
     (await db().query("SELECT name FROM schema_migrations")).rows.some(
@@ -63,6 +56,28 @@ try {
     "https://robocraze.com/products/half-breadboard",
     "synthetic-fixture",
     { label: "Synthetic PostgreSQL persistence check", value: 1 },
+  );
+  const owners = [randomUUID(), randomUUID()];
+  const claims = await Promise.all(owners.map((owner) => claimJob(owner)));
+  check(
+    claims.filter(Boolean).length === 1 && claims.find(Boolean)?.id === ids[0],
+    "two workers cannot claim the same PostgreSQL job concurrently",
+  );
+  const previousOwner = owners[claims.findIndex(Boolean)];
+  await db().query(
+    "UPDATE quotes SET lease_until=now()-interval '1 second' WHERE id=$1",
+    [ids[0]],
+  );
+  const replacementOwner = randomUUID();
+  const recovered = await claimJob(replacementOwner);
+  check(
+    recovered?.id === ids[0] && recovered.attempts === 2,
+    "expired PostgreSQL leases are recovered with an incremented attempt count",
+  );
+  check(
+    !(await completeJob(ids[0], previousOwner, "complete")) &&
+      (await completeJob(ids[0], replacementOwner, "partial")),
+    "a stale worker cannot finish a job after its lease changes owner",
   );
   const second = await saveObservation(
     ids[0],

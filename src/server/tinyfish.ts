@@ -2,6 +2,7 @@ import { z } from "zod";
 import { safeRetailerUrl } from "./urls";
 import type { Basket, Retailer } from "../domain/schema";
 import { retailers } from "../domain/catalogue";
+import { ProviderAccessError, RunRejectedError } from "./provider-error";
 
 const FetchResult = z
   .object({
@@ -54,6 +55,14 @@ export class TinyFishClient {
           redirect: "error",
         });
         if (!response.ok) {
+          if ([401, 402, 403].includes(response.status))
+            throw new ProviderAccessError(
+              "tinyfish",
+              `http_${response.status}`,
+              response.status === 402
+                ? "TinyFish has no usable credits for this request. Check the TinyFish dashboard; no replacement browser run was started."
+                : "TinyFish rejected account access. Check the server API key and its Fetch/Agent permissions in TinyFish.",
+            );
           if (
             retry &&
             attempt < 2 &&
@@ -126,10 +135,34 @@ export class TinyFishClient {
       url: safeRetailerUrl(l.offer.url, basket.retailer),
       packs: l.packs,
       expectedLinePaise: l.payablePaise,
+      expectedLineInr:
+        l.payablePaise === null ? null : (l.payablePaise / 100).toFixed(2),
     }));
     const output_schema = {
       type: "object",
       properties: {
+        order_controls: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              offerId: { type: "string" },
+              sku: { type: "string", nullable: true },
+              source_url: { type: "string" },
+              min_packs: { type: "integer", nullable: true },
+              multiple_packs: { type: "integer", nullable: true },
+              excerpt: { type: "string" },
+            },
+            required: [
+              "offerId",
+              "sku",
+              "source_url",
+              "min_packs",
+              "multiple_packs",
+              "excerpt",
+            ],
+          },
+        },
         pincode: { type: "string" },
         basket_matches: { type: "boolean" },
         serviceable: { type: "boolean", nullable: true },
@@ -159,6 +192,7 @@ export class TinyFishClient {
         obstacle: { type: "string" },
       },
       required: [
+        "order_controls",
         "pincode",
         "basket_matches",
         "serviceable",
@@ -189,17 +223,17 @@ export class TinyFishClient {
           "https://agent.tinyfish.ai/v1/automation/run-async",
           {
             url: retailers[basket.retailer].cartUrl,
-            goal,
+            goal: `${goal} expectedLineInr is the TOTAL for all packs on that line, already in INR; expectedLinePaise is that same total in integer paise (100 paise = INR 1). Do not divide the line total by the pack count when comparing it with the cart line total. Also inspect each exact product's quantity controls. Report order_controls with the actual published min and step attributes (or explicit minimum/multiple rule), SKU, canonical product URL and verbatim supporting excerpt. Missing controls stay null; never infer minimum or step as one. Proposed pack counts may be provisional: do not silently alter the cart or treat a proposed default as evidence. Inspect the selected variant only.`,
             output_schema,
             browser_profile: "lite",
             use_profile: false,
             use_vault: false,
-            agent_config: { max_duration_seconds: 180 },
+            agent_config: { max_duration_seconds: 180, max_steps: 30 },
           },
         ),
       );
     if (started.error || !started.run_id)
-      throw new Error(
+      throw new RunRejectedError(
         `TinyFish could not start the basket check (${started.error?.code || "missing_run_id"}). Check provider account access and credits. No replacement run was started.`,
       );
     return { run_id: started.run_id };

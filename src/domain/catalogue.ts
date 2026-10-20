@@ -38,7 +38,7 @@ export const catalogue = [
     urls: {
       robu: "https://robu.in/product/dht11-digital-relative-humidity-temperature-sensor-module/",
       robocraze:
-        "https://robocraze.com/products/dht11-temperature-and-humidity-sensor-module",
+        "https://robocraze.com/products/dht11-humidity-temperature-sensor-module",
     },
   },
   {

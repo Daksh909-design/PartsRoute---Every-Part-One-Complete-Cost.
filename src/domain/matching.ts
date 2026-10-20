@@ -30,7 +30,12 @@ export function matchOffer(part: PartRequest, offer: Offer): Offer {
   const modelSame =
     offer.model !== null && canonical(offer.model) === canonical(part.model);
   let match: Offer["match"] = "exact";
-  if (conflict) match = "rejected";
+  if (offer.orderingConflict) {
+    match = "insufficient_information";
+    reasons.push(
+      "Published and browser-observed ordering constraints conflict.",
+    );
+  } else if (conflict) match = "rejected";
   else if (missing || offer.model === null) match = "insufficient_information";
   else if (!modelSame) {
     match = part.equivalentAcceptable ? "needs_confirmation" : "rejected";

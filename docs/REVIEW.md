@@ -4,13 +4,14 @@ Reviewed against the stated PartsRoute requirements on 20 October 2026. These ar
 
 ## Blocking a credible live submission
 
-| Finding                                                           | Change made                                                                                                                   | Still required                                                                                   |
-| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Pages was mistaken for a live deployment                          | Explicit sample/live modes, a server connection screen, backend-origin build support, Render and local Compose configurations | Owner hosting sign-in, approved service charges, provider keys and a provisioned database/worker |
-| Configured keys could hide a stopped worker                       | Authenticated readiness endpoint, persistent worker heartbeat and a quote creation gate                                       | Execute migrations and verify worker recovery against PostgreSQL                                 |
-| Provider failures could appear as schema errors or absent results | Explicit HTTP-200 Agent rejection handling, missing Fetch URL errors, current documented Fetch timeout, Markdown collection   | Validate the application's direct-key path with actual credentials                               |
-| DHT11 product label suggests a false equivalent                   | Fresh TinyFish Agent inspection saved in evidence; matching still requires the breakout form attribute                        | Find and qualify the correct breakout product; do not relax requirements to make the demo pass   |
-| Complete shipping remains unknown for the checked live basket     | Unknown costs remain unknown; no fabricated recommendation                                                                    | One complete live three-line basket, two qualified retailers and human sample verification       |
+| Finding                                          | Implemented and checked                                                                                                                         | Remaining gap                                                                                  |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Static Pages cannot run the live worker/database | Separate sample/live modes; local Next.js, PostgreSQL and worker running; hosting configurations prepared                                       | Public backend hosting requires an owner account; no paid service provisioned                  |
+| Key presence did not prove working generation    | Actual Gemini call identified project-denied 403; actionable errors, recorded unknown usage and a five-minute repeat-creation gate              | An eligible Google project or permission repair, without enabling billing merely to retry      |
+| Worker/database readiness could be misleading    | Migrations, heartbeat, persistence, exclusive claims and expired-lease SQL checks ran against PostgreSQL                                        | More process-crash and deployment testing                                                      |
+| DHT11 URL pointed at a bare sensor               | Actual Fetch established a distinct module listing (TIFSS0029); catalogue corrected and old failure retained                                    | Human sample review and live structured extraction                                             |
+| Markdown omitted ordering controls               | Agent can inspect exact-SKU min/step; provisional candidates never become recommendations; conflicts/unsupported offset steps remain ineligible | Execute this new control path with working model access                                        |
+| Shipping was unknown                             | Direct Agent checked a three-line cart; its incomplete/mismatching result was correctly refused as shipping evidence                            | Exact pincode serviceability and a complete verified landed total from two qualified retailers |
 
 ## Product and presentation changes
 
@@ -30,4 +31,4 @@ The synthetic sample demonstrates calculator behavior. It does not establish liv
 
 ## Validation limits
 
-See `VALIDATION.md` for executed checks. Docker/Render execution, real AI extraction, direct-key application TinyFish calls, complete live shipping, PostgreSQL crash/concurrency behavior and human review remain unverified unless that record is updated after execution.
+See `VALIDATION.md` for executed checks. Direct-key Fetch/Agent and real SQL checks ran. Successful real AI extraction, the new order-control response path, complete shipping, broader process-crash recovery, human review and Docker/hosted deployment remain unverified.

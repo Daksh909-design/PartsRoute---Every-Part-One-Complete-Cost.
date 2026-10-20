@@ -97,8 +97,9 @@ export default function EvidenceView({
                 </a>
               ) : (
                 <span>
-                  Submission uncertain. Recover the existing run before
-                  retrying.
+                  {operation.status === "rejected"
+                    ? "TinyFish rejected this request; no run was created."
+                    : "Submission uncertain. Recover the existing run before retrying."}
                 </span>
               )}
             </div>

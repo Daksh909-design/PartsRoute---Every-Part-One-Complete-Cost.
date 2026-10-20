@@ -22,6 +22,50 @@ function completed(value: unknown, extra = {}) {
   );
 }
 describe("Gemini adapter contracts (mocked HTTP, no API usage)", () => {
+  it("stops queued requests after a project denial without exposing the provider's raw response", async () => {
+    const transport = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: {
+            message:
+              "Your project has been denied access. Please contact support.",
+            private: "fixture-private-data",
+          },
+        }),
+        { status: 403 },
+      ),
+    );
+    const provider = new GeminiProvider(
+      async () => {},
+      "fixture-key",
+      transport,
+    );
+    const settled = await Promise.allSettled([
+      provider.explain(["fact"]),
+      provider.explain(["fact"]),
+    ]);
+    expect(settled.every((item) => item.status === "rejected")).toBe(true);
+    expect(transport).toHaveBeenCalledOnce();
+    const error = (settled[0] as PromiseRejectedResult).reason;
+    expect(error.code).toBe("project_denied");
+    expect(error.message).toContain("Google denied generation access");
+    expect(error.message).not.toContain("fixture-private-data");
+  });
+  it("does not mislabel an unsupported request schema as an account denial", async () => {
+    const provider = new GeminiProvider(
+      async () => {},
+      "fixture-key",
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ error: { message: "Invalid schema" } }),
+            { status: 400 },
+          ),
+        ),
+    );
+    await expect(provider.explain(["fact"])).rejects.toThrow("HTTP 400");
+  });
   it("defaults to Gemini and never falls back to a configured paid OpenAI key", () => {
     vi.stubEnv("AI_PROVIDER", "");
     vi.stubEnv("GEMINI_API_KEY", "");

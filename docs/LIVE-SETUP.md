@@ -40,7 +40,7 @@ docker compose -f compose.yaml -f compose.live.yaml logs -f worker
 
 The override starts the database, applies migrations, then starts web and worker. Container database URLs use `db`, not `localhost`. The web port is bound to `127.0.0.1:3000`. If another local preview occupies that port, stop it first. Docker execution is not yet verified on the development machine because Docker is unavailable there.
 
-Alternatively, with an existing local PostgreSQL service:
+For a prepared local installation, `pnpm local:start` runs migrations, builds Next.js and starts web/worker in one terminal. It does not provision paid hosting and refuses to duplicate an already-running PartsRoute web service. On Windows its build uses the supported TypeScript 6 compiler API/thread path. Individual processes can also be started with an existing PostgreSQL service:
 
 ```sh
 pnpm db:migrate
@@ -60,7 +60,7 @@ pnpm doctor --providers
 
 The first command checks local configuration, database schema and worker heartbeat. `--providers` additionally performs one live TinyFish product Fetch and asks the selected AI model for a small schema-validated response. It can consume provider quota. Neither check substitutes for structured extraction and a complete basket test. Failed checks exit nonzero and do not print secrets.
 
-The default is `AI_PROVIDER=gemini`, `GEMINI_MODEL=gemini-3.8-flash`. Google lists free input/output for this model on its free tier, subject to account eligibility and quotas. Keep your project on the free tier if you want to avoid paid model usage. Quota failures require waiting/retrying; there is no automatic paid fallback. Actual access has not been tested with this team's key. Optional paid OpenAI requires explicitly setting `AI_PROVIDER=openai` and its key/model. TinyFish is the separate mandatory collection service; its credits and server hosting are separate costs.
+The default is `AI_PROVIDER=gemini`, `GEMINI_MODEL=gemini-3.8-flash`. Google lists free input/output for this model on its free tier, subject to account eligibility and quotas. Keep your project on the free tier if you want to avoid paid model usage. Quota failures require waiting/retrying; there is no automatic paid fallback. Actual access was tested with this team's key: model metadata succeeded but generation returned project-denied HTTP 403. That Google project must be made usable or replaced with another eligible free project before extraction can work. Do not enable paid billing merely to retry. Optional paid OpenAI requires explicitly setting `AI_PROVIDER=openai` and its key/model. TinyFish is the separate mandatory collection service; its credits and server hosting are separate costs.
 
 ## Acceptance before submission
 

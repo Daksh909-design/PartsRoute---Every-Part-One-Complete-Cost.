@@ -1,0 +1,86 @@
+{
+  "label": "Actual direct-key TinyFish Agent research probe. Not a complete application quote. Browser streaming/recording links and internal steps omitted; full original retained privately under artifacts/live-validation.",
+  "observedAt": "2026-10-20T12:50:48.375Z",
+  "run": {
+    "run_id": "52d7ca78-5076-4dbd-a08b-760a3d67c08c",
+    "status": "COMPLETED",
+    "result": {
+      "items": [
+        {
+          "sku": "TIFSS0171",
+          "packs": 2,
+          "offerId": "robocraze:hcsr04"
+        },
+        {
+          "sku": "TIFSS0029",
+          "packs": 1,
+          "offerId": "robocraze:dht11"
+        },
+        {
+          "sku": "TIFEC0055",
+          "packs": 1,
+          "offerId": "robocraze:breadboard400"
+        }
+      ],
+      "method": "guest_cart",
+      "excerpt": "Subtotal: Rs 248/-  TOTAL: ₹248/-",
+      "pincode": "560001",
+      "obstacle": "Pincode 560001 delivery serviceability could not be verified - the pincode checker exists on product pages but not on the cart page. No shipping charge is displayed on the cart. The cart contains all 3 items (HC-SR04 qty 2 at Rs 75 each, DHT11 qty 1 at Rs 59, half-breadboard qty 1 at Rs 39 = Rs 248 subtotal). Basket matches expected items/SKUs/quantities but pricing does not match expected line amounts: HC-SR04 expected Rs 150 (15000 paise / 2 packs) but actual is Rs 150 for 2 units (Rs 75 each - matches). DHT11 expected Rs 59 (5900 paise) matches Rs 59. Breadboard expected Rs 39 (3900 paise) matches Rs 39. However, no shipping fee, tax breakdown, or pincode serviceability confirmation is available on the cart page.",
+      "total_inr": "248.00",
+      "source_url": "https://robocraze.com/cart",
+      "tax_status": "unknown",
+      "serviceable": null,
+      "shipping_inr": null,
+      "tax_rate_bps": null,
+      "basket_matches": false,
+      "item_payable_inr": "248.00"
+    },
+    "error": null,
+    "created_at": "2026-10-20T12:42:53Z",
+    "started_at": "2026-10-20T12:42:57Z",
+    "finished_at": "2026-10-20T12:47:32Z",
+    "num_of_steps": 14
+  },
+  "normalized": {
+    "id": "direct-agent-probe",
+    "retailer": "robocraze",
+    "basketKey": "robocraze:560001:robocraze:breadboard400=1|robocraze:dht11=1|robocraze:hcsr04=2",
+    "items": [
+      {
+        "offerId": "robocraze:breadboard400",
+        "sku": "TIFEC0055",
+        "packs": 1
+      },
+      {
+        "offerId": "robocraze:dht11",
+        "sku": "TIFSS0029",
+        "packs": 1
+      },
+      {
+        "offerId": "robocraze:hcsr04",
+        "sku": "TIFSS0171",
+        "packs": 2
+      }
+    ],
+    "pincode": "560001",
+    "method": "guest_cart",
+    "chargePaise": null,
+    "taxStatus": "unknown",
+    "taxRateBps": null,
+    "serviceable": null,
+    "status": "unknown",
+    "conditions": "Shipping unverified. Pincode 560001 delivery serviceability could not be verified - the pincode checker exists on product pages but not on the cart page. No shipping charge is displayed on the cart. The cart contains all 3 items (HC-SR04 qty 2 at Rs 75 each, DHT11 qty 1 at Rs 59, half-breadboard qty 1 at Rs 39 = Rs 248 subtotal). Basket matches expected items/SKUs/quantities but pricing does not match expected line amounts: HC-SR04 expected Rs 150 (15000 paise / 2 packs) but actual is Rs 150 for 2 units (Rs 75 each - matches). DHT11 expected Rs 59 (5900 paise) matches Rs 59. Breadboard expected Rs 39 (3900 paise) matches Rs 39. However, no shipping fee, tax breakdown, or pincode serviceability confirmation is available on the cart page. Basket composition or pincode did not match.",
+    "observedAt": "2026-10-20T12:50:48.375Z",
+    "evidence": [
+      {
+        "id": "direct-agent-probe",
+        "sourceUrl": "https://robocraze.com/cart",
+        "retrievedAt": "2026-10-20T12:50:48.375Z",
+        "excerpt": "Subtotal: Rs 248/-  TOTAL: ₹248/-",
+        "method": "tinyfish-agent",
+        "runId": "52d7ca78-5076-4dbd-a08b-760a3d67c08c",
+        "observationId": "direct-agent-probe"
+      }
+    ]
+  }
+}

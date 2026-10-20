@@ -1,47 +1,39 @@
 # Validation actually performed
 
-Development date: **20 October 2026**. This file distinguishes observed checks from setup still required.
+Checked on **20 October 2026**. A successful sample or HTTP response does not establish a complete live purchasing recommendation.
 
-## Latest debugging revision
+## Automated checks that passed
 
-- **49 tests passed across six files**, using `node node_modules/vitest/vitest.mjs run --configLoader native`. This includes Gemini mocked HTTP schemas, usage recording, incomplete/invalid output rejection and quota failure without a paid fallback. The JavaScript Vitest config and native loader avoid Windows config bundling subprocess restrictions.
-- TypeScript checking passed after the Gemini integration and readiness/interface changes. Prettier ran on edited sources and documentation.
-- Before adding Gemini, the workbench/readiness revision passed a production build, static export and nine HTTP checks (the original six plus approved-origin CORS preflight, foreign-origin rejection and authenticated readiness). Browser interaction checked recalculation from two to three HC-SR04 units, stale-result notice, reset and evidence navigation.
-- Fresh TinyFish connector Fetch succeeded for the Robocraze HC-SR04 product and shipping policy. Fresh connector Agent run `0719d7ea-f349-4c37-8e5d-82783e1b5558` established the checked DHT11 is a bare four-pin sensor, not the requested breakout board. Original captures are saved as `debug-fetch-2026-10-20.json` and `debug-agent-2026-10-20.json`. Neither check establishes a complete pincode basket or direct-key application execution.
-- Subsequent builds under the current restricted Windows runtime failed with `spawn EPERM`. The newest Gemini revision has **not** passed a production/static build and has not been redeployed to Pages. Earlier successful builds below are historical, not a pass for this revision.
-- PostgreSQL 17.11 binaries were initialized locally, but startup failed under the runtime's interprocess-signalling restrictions. No SQL migration/integration pass is claimed. `test:postgres` supplies separate real-database checks for a dedicated `_test` database; they have not run successfully. The optional local helper needs machine-specific ignored configuration and execution in the user's own Windows terminal.
-- No calls were made with API keys shared in chat. Such keys must be revoked/replaced privately. Gemini account tier was checked only through the owner's report of **Set up billing** in AI Studio; no authenticated billing dashboard inspection or live extraction was performed.
-
-The following sections preserve earlier validation and release history.
-
-## Executed successfully
-
-- Pinned dependency installation, lockfile generation and the explicitly allowlisted esbuild postinstall. A repository formatting pass used pinned Prettier.
-- **35 Vitest tests across four files**: arithmetic/matching, TinyFish mocked HTTP contracts and basket validation, access boundaries, and a full pipeline/resumption test with mocked providers and persistence. The resumption test also exposed and led to a fix for punctuation after a quoted numeric quantity.
+- **60 Vitest tests across eight files** using `node node_modules/vitest/vitest.mjs run --configLoader native`. These use explicitly labelled synthetic fixtures or mocked HTTP. They cover pricing/matching, tax/thresholds, unknown shipping, provider contracts, resumption, account-error handling, readiness, candidate isolation and source-supported quantity controls.
 - TypeScript checking with `tsc --noEmit`.
-- Production compilation using `next build --webpack`.
-- Six HTTP smoke checks against a running production server: homepage, health, calculated eight-plan synthetic result with ₹295 best total, invalid pincode rejection, live-to-demo fallback refusal, and refusal of an unauthenticated/unconfigured live request.
-- Browser check of the saved-data submission and result: three eligible lines, eight sample plans, ₹255 listed items + ₹40 shipping = ₹295. Screenshot in `sample-preview.png` records the narrow viewport, with synthetic labelling visible.
-- Live **TinyFish connector** Fetch calls and one Agent run, preserved in `docs/evidence`; see `FEASIBILITY.md` for exact limitations.
+- Full Next.js production build with `PARTSROUTE_BUILD_THREADS=1`. TypeScript 6.0.3 supplies the compiler API for Next's thread path; type checking remains enabled. Default fork-based builds were blocked by this coding environment's `spawn EPERM`, not passed silently.
+- **Nine real PostgreSQL checks** against a separate `partsroute_test` database: repeated migrations, idempotent concurrent enqueue, exclusive worker claiming, expired-lease recovery, stale-owner completion refusal, original observation immutability, normalized persistence, calculated result persistence and worker heartbeat detection.
+- **Nine HTTP smoke checks** against the production web server: homepage, health, calculated sample, input validation, refusal of live-to-fixture fallback, authorization, approved-origin preflight, unrelated-origin refusal and protected readiness.
+- Shared static React/optimizer sample compiled with pinned esbuild through its native CLI and the prepare/finish build path. This is separate from the Next.js server build; the dependency manifest excludes server adapters, API routes and private environment files.
 
-## Interface refresh validation
+## Browser checks
 
-The refreshed interface passed the same 35 tests, TypeScript checking, production build and six HTTP smoke checks. Browser checks at a narrow viewport confirmed sample calculation (₹295), the calculated ₹25 difference from the next complete sample plan, the sample reset button, retailer coverage disclosure and integration/evidence navigation. `redesign-home.png` and `redesign-result.png` record the refreshed interface. Desktop-width visual QA remains outstanding.
+Desktop (1440 × 1000) and mobile (390 × 844) views were inspected. The sample is calculated on first load and explicitly labelled. Changing HC-SR04 quantity from two to three shows a stale-result notice, then recalculates the best sample total from **₹295 to ₹370**. The item-first comparison changes from **₹345 versus ₹295** to **₹410 versus ₹370**. Reset restores the sample. Desktop proof is in `workbench-desktop.png`.
 
-GitHub Actions is supplied as an optional template in `ci-workflow.yml.example`, rather than an enabled workflow. The initial push was refused because the signed-in OAuth grant does not include workflow permission; application publication does not require broadening that grant.
+Authenticated local readiness showed configured providers, migrated PostgreSQL and a current worker heartbeat. A real web/worker quote retained two TinyFish observations and failed with Google's generation-access denial rather than a fabricated offer. Retrying account failures is bounded; a recorded Gemini failure blocks repeat quote creation for five minutes for that same key/model fingerprint. Private keys are not in the browser or repository.
 
-Windows process sandboxing initially blocked Vite's Windows path detection and dependency postinstall. The tests/build were rerun with normal Windows process access and succeeded. Earlier dependency-download timeouts and the first failing pipeline test are not counted as passes.
+## Direct API observations
 
-## GitHub Pages deployment check
+- **TinyFish Fetch:** actual application-key calls retrieved all three curated product pages and the policy URL for each configured retailer, with zero per-URL transport errors in that check. Captures: `direct-robu-2026-10-20.json`, `direct-robocraze-2026-10-20.json`.
+- Page retrieval does not prove useful content: Robu's policy response still contains `Shipping Policy Page Content`. Its checked breadboard is out of stock. These are not qualified offers/rules.
+- Additional TinyFish Fetch calls established a distinct Robocraze DHT11 module listing, SKU **TIFSS0029**, with published PCB/package evidence. The catalogue now uses that URL. Old bare-sensor mismatch captures remain historical evidence.
+- **TinyFish Agent:** direct-key run **52d7ca78-5076-4dbd-a08b-760a3d67c08c** completed a three-line guest-cart research probe. It reported the expected quantities and ₹248 item subtotal, but did not establish pincode serviceability or shipping and marked the basket as mismatching. The validator correctly kept shipping and landed total unknown. A sanitized original is saved; browser-session/video links were excluded from the public copy. This probe did not test the subsequently added order-control fields.
+- **Gemini:** model metadata returned HTTP 200. Actual generation returned **HTTP 403**, with `Your project has been denied access. Please contact support.` Both Interactions and GenerateContent failed. The opt-in real extraction test therefore **failed**; no live AI extraction pass, accuracy result or successful model usage is claimed. The owner's report of `Set up billing` is not an authenticated billing audit.
 
-On 20 October 2026, `pnpm build:pages` completed successfully. The shared calculator extraction passed all 35 tests and TypeScript checking. GitHub reported the `gh-pages` release `be7cde9996071fc5fe5d00172bafaf73fd592126` as built. The public [Pages demo](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./) loaded in the browser, showed live mode disabled and calculated eight sample plans with a ₹295 best sample total. This was a deployment smoke check; a comprehensive code, documentation and UI review has not been performed. Pages does not validate the live provider or worker path.
+## Still open
 
-## Not executed or not qualified
+- Resolve Google project generation permissions without enabling paid billing merely to retry.
+- Run the full application extraction and new Agent order-control path with a working AI account; manually verify a source sample.
+- Obtain complete pincode-specific shipping, qualify two retailers and confirm one three-line landed total by hand.
+- Exercise process-kill recovery beyond the real SQL lease tests, Docker execution and actual hosted web/worker deployment.
 
-- No real Gemini or OpenAI extraction call, API account/model-access evaluation, accuracy/latency evaluation or paid usage measurement. Shared keys were not used; replacement private credentials are required.
-- No direct-key application TinyFish API call: no app API key available. Connector live evidence is a separate validation surface.
-- No PostgreSQL migration/worker integration test, concurrent-worker lease or process-crash test against PostgreSQL: no PostgreSQL/Docker service was available. In-memory persistence tests do not validate SQL.
-- No verified complete three-line live landed basket and no human review. Retailer qualification remains open.
-- No desktop-width visual QA, Docker image execution, live server deployment or custom CI workflow execution. The Pages deployment check above is limited to the static saved-data demo.
+The live milestone remains **incomplete**. GitHub Pages publishes a sample, not the live server. No paid hosting has been provisioned.
 
-Run `pnpm test`, `pnpm typecheck`, `pnpm build`, then `pnpm test:http` with `pnpm start` running. After configuring PostgreSQL/keys, run `pnpm db:migrate`, `pnpm validate:live 560001` with the regular worker stopped, and complete the human checklist in `FEASIBILITY.md`.
+## Reproduce
+
+Run `pnpm test`, `pnpm typecheck`, `pnpm build`, and `pnpm test:http` with `pnpm start` running. On a host needing the thread path, set `PARTSROUTE_BUILD_THREADS=1`. For real SQL, provide a dedicated `TEST_DATABASE_URL` ending in `_test` and run `pnpm test:postgres`. `pnpm validate:providers` deliberately calls live providers and may consume quota; it must remain separate from ordinary fixture tests. Follow `FEASIBILITY.md` before treating a basket as verified.

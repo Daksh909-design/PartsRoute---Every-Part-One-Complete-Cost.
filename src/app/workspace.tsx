@@ -17,6 +17,7 @@ import {
 import QuoteResults from "./quote-results";
 import EvidenceView, { type EvidenceData } from "./evidence-view";
 import { Icon } from "./ui-icons";
+import { demoQuote } from "../domain/demo";
 
 type Job = {
   id: string;
@@ -57,7 +58,14 @@ export default function Workspace() {
   const [token, setToken] = useState("");
   const [status, setStatus] = useState<Status | null>(null);
   const [checking, setChecking] = useState(false);
-  const [result, setResult] = useState<QuoteResult | null>(null);
+  const [result, setResult] = useState<QuoteResult | null>(() =>
+    demoQuote({
+      parts: structuredClone(sampleParts),
+      pincode: "560001",
+      mode: "demo",
+      refresh: false,
+    }),
+  );
   const [job, setJob] = useState<Job | null>(null);
   const [savedId, setSavedId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -92,7 +100,15 @@ export default function Workspace() {
   function switchMode(next: "demo" | "live") {
     cancelPolling();
     setMode(next);
-    setResult(null);
+    const sample = QuoteInput.safeParse({
+      parts,
+      pincode,
+      mode: "demo",
+      refresh: false,
+    });
+    setResult(
+      next === "demo" && sample.success ? demoQuote(sample.data) : null,
+    );
     setJob(null);
     setEvidence(null);
     setError("");
@@ -104,7 +120,16 @@ export default function Workspace() {
     cancelPolling();
     setParts(structuredClone(sampleParts));
     setPincode("560001");
-    setResult(null);
+    setResult(
+      mode === "demo"
+        ? demoQuote({
+            parts: structuredClone(sampleParts),
+            pincode: "560001",
+            mode: "demo",
+            refresh: false,
+          })
+        : null,
+    );
     setJob(null);
     setEvidence(null);
     setError("");
@@ -154,7 +179,8 @@ export default function Workspace() {
         requestId.current = null;
         if (current.status === "failed")
           setError(
-            "The quote stopped before completion. Review the collection evidence or retry the saved work.",
+            current.errors?.[0] ||
+              "The quote stopped before completion. Review the collection evidence or retry the saved work.",
           );
       }
     } catch (caught) {
@@ -295,8 +321,8 @@ export default function Workspace() {
             <span className="overline">ELECTRONICS PROCUREMENT</span>
             <h1>Compare the whole basket.</h1>
             <p>
-              Matched parts, pack quantities, shipping and tax. One purchasing
-              decision.
+              Every part. One complete cost. Compare matched components, pack
+              quantities, shipping and tax before you buy.
             </p>
           </div>
           <span className="project-label">
@@ -368,7 +394,9 @@ export default function Workspace() {
                       ? "Worker ready"
                       : !liveAvailable
                         ? "Server not connected"
-                        : "Not checked"}
+                        : status
+                          ? "Needs attention"
+                          : "Not checked"}
                   </span>
                 </div>
                 {!liveAvailable ? (
@@ -478,6 +506,20 @@ export default function Workspace() {
                   >
                     Reset sample
                   </button>
+                </div>
+                <div className="bom-summary" aria-label="Parts list summary">
+                  <span>
+                    <strong>{parts.length}</strong> component lines
+                  </span>
+                  <span>
+                    <strong>
+                      {parts.reduce((sum, part) => sum + part.quantity, 0)}
+                    </strong>{" "}
+                    units needed
+                  </span>
+                  <span>
+                    Deliver to <strong>{pincode || "—"}</strong>
+                  </span>
                 </div>
                 <form
                   onSubmit={(event) => {
@@ -776,12 +818,16 @@ export default function Workspace() {
                       <span className="overline">02 / PURCHASING PLAN</span>
                       <h2>
                         {mode === "live"
-                          ? "Live offers have not been collected yet."
+                          ? job?.status === "failed"
+                            ? "Collection needs attention."
+                            : "Live offers have not been collected yet."
                           : "A lower item price can cost more at checkout."}
                       </h2>
                       <p>
                         {mode === "live"
-                          ? "The team token unlocks access only. The server must also have TinyFish and AI provider keys, a migrated database and an active worker before it can collect offers."
+                          ? job?.status === "failed"
+                            ? "Review the error above. Any pages already collected remain saved with this quote; open Evidence to inspect them before retrying."
+                            : "The team token unlocks access only. The server must also have TinyFish and AI provider keys, a migrated database and an active worker before it can collect offers."
                           : "Calculate this three-part prototype to compare complete baskets, including shipping once per retailer."}
                       </p>
                       <div className="empty-breakdown">

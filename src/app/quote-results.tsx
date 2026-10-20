@@ -1,6 +1,7 @@
 import type { Plan, QuoteResult } from "../domain/schema";
 import { retailers } from "../domain/catalogue";
 import { money, when } from "./api-client";
+import { itemFirstComparison } from "../domain/comparison";
 
 export function BasketPlan({ plan, demo }: { plan: Plan; demo: boolean }) {
   return (
@@ -95,6 +96,7 @@ export default function QuoteResults({
     recommendation?.totalPaise !== undefined
       ? next.totalPaise! - recommendation.totalPaise
       : 0;
+  const comparison = itemFirstComparison(result.plans, result.recommendedId);
   return (
     <div className="quote-results">
       {stale && (
@@ -128,6 +130,50 @@ export default function QuoteResults({
           not current retailer offers.
         </p>
       )}
+      {comparison && (
+        <section
+          className="strategy-comparison"
+          aria-label="Item prices versus complete basket cost"
+        >
+          <div className="strategy-heading">
+            <h3>Why the cheapest items can lose</h3>
+            <span>{demo ? "Sample arithmetic" : "Verified totals"}</span>
+          </div>
+          <div className="strategy-row">
+            <span>
+              Buy each part at its lowest item cost
+              <small>
+                {money(
+                  comparison.baseline.itemsPaise +
+                    comparison.baseline.addedTaxPaise!,
+                )}{" "}
+                items + {money(comparison.baseline.shippingPaise)} shipping ·{" "}
+                {comparison.baseline.baskets.length} retailers
+              </small>
+            </span>
+            <strong>{money(comparison.baseline.totalPaise)}</strong>
+          </div>
+          <div className="strategy-row strategy-winner">
+            <span>
+              Use the best complete basket
+              <small>
+                {money(
+                  comparison.recommendation.itemsPaise +
+                    comparison.recommendation.addedTaxPaise!,
+                )}{" "}
+                items + {money(comparison.recommendation.shippingPaise)}{" "}
+                shipping · {comparison.recommendation.baskets.length} retailer
+                {comparison.recommendation.baskets.length === 1 ? "" : "s"}
+              </small>
+            </span>
+            <strong>{money(comparison.recommendation.totalPaise)}</strong>
+          </div>
+          <p>
+            {money(comparison.savingPaise)} lower overall, even though the items
+            cost more.
+          </p>
+        </section>
+      )}
       {best ? (
         <article className="recommendation">
           <div className="recommendation-heading">
@@ -142,7 +188,7 @@ export default function QuoteResults({
               <p className="quote-total">
                 {best.verified
                   ? money(best.totalPaise)
-                  : "Shipping not verified"}
+                  : "Total not yet verified"}
               </p>
             </div>
             <span className="retailer-count">

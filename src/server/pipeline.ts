@@ -27,8 +27,16 @@ import {
 import { TinyFishClient, FetchResponse } from "./tinyfish";
 import { groundedOffer, groundedRule } from "./grounding";
 import { validateBasket } from "./shipping";
+import { ProviderAccessError, RunRejectedError } from "./provider-error";
+import {
+  checkedOrders,
+  verificationCandidates,
+  type CheckedOrder,
+} from "./candidates";
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const orderingUnknown =
+  "Price, pack size or ordering constraints could not be established from source evidence.";
 const message = (error: unknown) =>
   error instanceof Error ? error.message : "Collection failed";
 function evidence(o: Observation, excerpt = ""): Evidence {
@@ -106,11 +114,19 @@ async function verify(
   basket: Basket,
   pincode: string,
   tiny: TinyFishClient,
-): Promise<ShippingObservation | null> {
+): Promise<{ shipping: ShippingObservation | null; orders: CheckedOrder[] }> {
   const key = `basket:${createHash("sha256").update(basket.key).digest("hex")}`;
   const existingObservation = await observation(jobId, key);
   if (existingObservation?.normalized)
-    return existingObservation.normalized as ShippingObservation;
+    return "shipping" in (existingObservation.normalized as object)
+      ? (existingObservation.normalized as {
+          shipping: ShippingObservation;
+          orders: CheckedOrder[];
+        })
+      : {
+          shipping: existingObservation.normalized as ShippingObservation,
+          orders: [],
+        };
   let op = (
     await db().query(
       "SELECT * FROM provider_operations WHERE quote_id=$1 AND operation_key=$2",
@@ -135,14 +151,30 @@ async function verify(
       op = { ...inserted.rows[0], run_id: started.run_id, status: "running" };
     } catch (error) {
       await db().query(
-        "UPDATE provider_operations SET status='uncertain',updated_at=now() WHERE quote_id=$1 AND operation_key=$2",
-        [jobId, key],
+        "UPDATE provider_operations SET status=$3,updated_at=now() WHERE quote_id=$1 AND operation_key=$2",
+        [
+          jobId,
+          key,
+          error instanceof RunRejectedError ||
+          error instanceof ProviderAccessError
+            ? "rejected"
+            : "uncertain",
+        ],
       );
+      if (
+        error instanceof RunRejectedError ||
+        error instanceof ProviderAccessError
+      )
+        throw error;
       throw new Error(
         `Basket run submission is uncertain. Recover its provider ID before retrying. ${message(error)}`,
       );
     }
   }
+  if (op.status === "rejected")
+    throw new Error(
+      "TinyFish explicitly rejected this basket run. Check account access before creating a refreshed quote; no existing run needs recovery.",
+    );
   if (!op.run_id)
     throw new Error(
       "An earlier basket run may exist. Attach its TinyFish run ID with recover:run; a duplicate was not started.",
@@ -193,8 +225,9 @@ async function verify(
       `TinyFish shipping run ${op.run_id} did not verify this basket.`,
     );
   const shipping = validateBasket(run.result, basket, pincode, evidence(o));
-  await normalizeObservation(o.id, shipping);
-  return shipping;
+  const orders = checkedOrders(run.result, basket, evidence(o));
+  await normalizeObservation(o.id, { shipping, orders });
+  return { shipping, orders };
 }
 export async function processQuote(
   jobId: string,
@@ -208,11 +241,13 @@ export async function processQuote(
     shipping: ShippingObservation[] = [],
     errors: string[] = [];
   const ai = suppliedAI ?? createAIProvider((u) => usage(jobId, u));
+  let accessFailure: ProviderAccessError | null = null;
   await phase(jobId, "Collecting product pages and shipping policies");
   // Two independent retailer collectors, sequential requests within each: at most two Fetch/extraction calls at once.
   await Promise.all(
     (["robu", "robocraze"] as const).map(async (retailer) => {
       for (const part of input.parts) {
+        if (accessFailure) return;
         const entry = catalogue.find((c) => c.id === part.catalogueId)!;
         try {
           const o = await pageObservation(
@@ -262,17 +297,20 @@ export async function processQuote(
             !offer.multiplePacks ||
             !offer.priceBreaks.length
           )
-            offer.reasons.push(
-              "Price, pack size or ordering constraints could not be established from source evidence.",
-            );
+            offer.reasons.push(orderingUnknown);
           await normalizeObservation(o.id, offer);
           offers.push(offer);
         } catch (error) {
+          if (error instanceof ProviderAccessError) {
+            accessFailure = error;
+            return;
+          }
           errors.push(
             `${retailers[retailer].name}: ${part.name} unavailable. ${message(error)}`,
           );
         }
       }
+      if (accessFailure) return;
       try {
         const o = await pageObservation(
           jobId,
@@ -289,6 +327,10 @@ export async function processQuote(
           page = response.results[0];
         if (!page || response.errors.length)
           throw new Error("Shipping policy could not be retrieved");
+        if (page.text.includes("Shipping Policy Page Content"))
+          throw new Error(
+            "Retailer returned a placeholder rather than an applicable shipping policy.",
+          );
         const rule = groundedRule(
           await ai.policy(page.text, input.pincode),
           page.text,
@@ -298,37 +340,88 @@ export async function processQuote(
         await normalizeObservation(o.id, rule);
         rules.push(rule);
       } catch (error) {
+        if (error instanceof ProviderAccessError) {
+          accessFailure = error;
+          return;
+        }
         errors.push(
           `${retailers[retailer].name}: shipping policy unavailable. ${message(error)}`,
         );
       }
     }),
   );
+  if (accessFailure) throw accessFailure;
   // Stable order keeps plan IDs and recovery keys reproducible across worker restarts.
   offers.sort((a, b) => a.id.localeCompare(b.id));
   let result = finish(input, offers, rules, shipping, errors);
   await saveResult(jobId, result);
-  const shortlist = result.plans.slice(0, 3),
+  const shortlist = verificationCandidates(input, offers, rules),
     seen = new Set<string>();
   const limit = Math.min(
     3,
     Math.max(1, Number(process.env.MAX_BROWSER_CHECKS) || 3),
   );
   let checks = 0;
-  for (const plan of shortlist) {
+  verification: for (const plan of shortlist) {
     for (const basket of plan.baskets) {
       if (seen.has(basket.key) || checks >= limit) continue;
       seen.add(basket.key);
       checks++;
       await phase(
         jobId,
-        `Checking delivery and shipping (${checks} of ${limit})`,
+        `Checking quantities, delivery and shipping (${checks} of ${limit})`,
       );
       try {
-        const s = await verify(jobId, basket, input.pincode, tiny);
-        if (s) shipping.push(s);
+        const inspected = await verify(jobId, basket, input.pincode, tiny);
+        if (inspected.shipping) shipping.push(inspected.shipping);
+        for (const order of inspected.orders) {
+          const index = offers.findIndex((offer) => offer.id === order.offerId);
+          if (index < 0) continue;
+          const offer = offers[index];
+          if (
+            (offer.minPacks !== null && offer.minPacks !== order.minPacks) ||
+            (offer.multiplePacks !== null &&
+              offer.multiplePacks !== order.multiplePacks)
+          ) {
+            offers[index] = {
+              ...offer,
+              match: "insufficient_information",
+              orderingConflict: true,
+              reasons: [
+                ...offer.reasons,
+                "Published and browser-observed ordering constraints conflict.",
+              ],
+              evidence: [...offer.evidence, order.evidence],
+            };
+          } else
+            offers[index] = {
+              ...offer,
+              minPacks: order.minPacks,
+              multiplePacks: order.multiplePacks,
+              evidence: [...offer.evidence, order.evidence],
+            };
+          const source = offers[index].evidence.find(
+            (source) => source.method === "tinyfish-fetch",
+          );
+          if (
+            offers[index].unitsPerPack &&
+            offers[index].minPacks &&
+            offers[index].multiplePacks &&
+            offers[index].priceBreaks.length
+          )
+            offers[index].reasons = offers[index].reasons.filter(
+              (reason) => reason !== orderingUnknown,
+            );
+          if (source)
+            await normalizeObservation(source.observationId, offers[index]);
+        }
       } catch (error) {
         errors.push(`${retailers[basket.retailer].name}: ${message(error)}`);
+        if (
+          error instanceof ProviderAccessError ||
+          error instanceof RunRejectedError
+        )
+          break verification;
       }
       result = finish(input, offers, rules, shipping, errors);
       await saveResult(jobId, result);

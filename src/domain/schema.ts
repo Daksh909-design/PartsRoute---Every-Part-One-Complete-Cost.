@@ -61,6 +61,7 @@ export const Offer = z.object({
   unitsPerPack: z.number().int().positive().nullable(),
   minPacks: z.number().int().positive().nullable(),
   multiplePacks: z.number().int().positive().nullable(),
+  orderingConflict: z.boolean().optional(),
   priceBreaks: z.array(
     z.object({ minPacks: z.number().int().positive(), packPricePaise: Money }),
   ),

@@ -62,7 +62,10 @@ export function groundedOffer(
       (canonical(s.excerpt).includes(canonical(s.value)) ||
         (s.key === "form" &&
           s.value === "breakout module" &&
-          /break[- ]?out\s+(?:board|module)/i.test(s.excerpt)) ||
+          (/break[- ]?out\s+(?:board|module)/i.test(s.excerpt) ||
+            /integrates\s+the\s+dht\s*11\s+sensor\s+and\s+other\s+required\s+components\s+on\s+a\s+compact\s+PCB/i.test(
+              whitespace(s.excerpt),
+            ))) ||
         (s.key === "form" &&
           s.value === "bare sensor" &&
           /4[- ]pin package/i.test(s.excerpt))),

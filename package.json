@@ -18,10 +18,12 @@
     "test:watch": "vitest --configLoader native",
     "typecheck": "tsc --noEmit",
     "validate:live": "tsx --env-file-if-exists=.env.local scripts/validate-live.ts",
+    "validate:providers": "vitest run --configLoader native --config vitest.live.config.mjs",
     "recover:run": "tsx --env-file-if-exists=.env.local scripts/recover-run.ts",
     "doctor": "tsx --env-file-if-exists=.env.local scripts/doctor.ts",
     "test:postgres": "tsx --env-file-if-exists=.env.local scripts/test-postgres.ts",
     "local:db": "node scripts/local-db.mjs",
+    "local:start": "node scripts/start-local.mjs",
     "test:http": "tsx scripts/smoke-http.ts",
     "format": "prettier --write src scripts tests *.json *.ts *.mjs *.yaml"
   },
@@ -39,11 +41,12 @@
     "@types/pg": "8.23.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
     "postcss": "8.5.31",
     "prettier": "3.9.10",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.15",
-    "typescript": "7.0.2",
+    "typescript": "6.0.3",
     "vitest": "5.0.5"
   }
 }

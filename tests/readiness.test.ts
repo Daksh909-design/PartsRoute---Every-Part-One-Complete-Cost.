@@ -9,6 +9,29 @@ afterEach(() => {
   query.mockReset();
 });
 describe("live service readiness", () => {
+  it("blocks repeated live quotes after a recent generation denial even while the worker runs", async () => {
+    vi.stubEnv("AI_PROVIDER", "gemini");
+    vi.stubEnv("GEMINI_API_KEY", "fixture-key");
+    vi.stubEnv("TINYFISH_API_KEY", "fixture-key");
+    vi.stubEnv("DATABASE_URL", "postgresql://test");
+    query.mockResolvedValue({
+      rows: [
+        {
+          migrated: true,
+          worker: true,
+          provider_check: {
+            state: "blocked",
+            httpStatus: 403,
+            detail: "Google denied generation access to this Gemini project.",
+          },
+        },
+      ],
+    });
+    const status = await readiness();
+    expect(status.ready).toBe(false);
+    expect(status.checks[1].detail).toContain("five minutes");
+    expect(JSON.stringify(status)).not.toContain("fixture-key");
+  });
   it("does not call an absent database or pretend missing keys are configured", async () => {
     vi.stubEnv("DATABASE_URL", "");
     vi.stubEnv("TINYFISH_API_KEY", "");

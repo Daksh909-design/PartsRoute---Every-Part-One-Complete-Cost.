@@ -82,7 +82,7 @@ describe("TinyFish HTTP contract with labelled mocked responses", () => {
     );
     const body = JSON.parse(transport.mock.calls[0][1]!.body as string);
     expect(body.output_schema).toBeDefined();
-    expect(body.agent_config.max_steps).toBeUndefined();
+    expect(body.agent_config.max_steps).toBe(30);
   });
   it("recovers an existing run with the documented status endpoint", async () => {
     const transport = vi.fn<typeof fetch>().mockResolvedValue(

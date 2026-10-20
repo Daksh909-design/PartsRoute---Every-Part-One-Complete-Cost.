@@ -80,6 +80,7 @@ vi.mock("../src/server/db", () => ({
   }),
 }));
 import { processQuote } from "../src/server/pipeline";
+import { ProviderAccessError } from "../src/server/provider-error";
 
 beforeEach(() => {
   state.observations.clear();
@@ -87,6 +88,42 @@ beforeEach(() => {
   state.sequence = 0;
 });
 describe("worker pipeline with explicitly mocked providers and persistence", () => {
+  it("stops collection after a fatal model account error, retaining the fetched originals", async () => {
+    const tiny = {
+      fetchPages: vi.fn(async (urls: string[]) => ({
+        results: [
+          {
+            url: urls[0],
+            final_url: urls[0],
+            text: "Synthetic evidence only. ".repeat(50),
+          },
+        ],
+        errors: [],
+      })),
+    };
+    const ai = {
+      product: vi.fn(async () => {
+        throw new ProviderAccessError(
+          "gemini",
+          "project_denied",
+          "Google denied generation access to this Gemini project.",
+        );
+      }),
+      policy: vi.fn(),
+      explain: vi.fn(),
+    };
+    await expect(
+      processQuote(
+        "denied-job",
+        { parts: sampleParts, pincode: "560001", mode: "live", refresh: true },
+        tiny as unknown as TinyFishClient,
+        ai,
+      ),
+    ).rejects.toThrow("Google denied generation access");
+    expect(tiny.fetchPages.mock.calls.length).toBeLessThanOrEqual(2);
+    expect(ai.policy).not.toHaveBeenCalled();
+    expect(state.observations.size).toBeGreaterThan(0);
+  });
   it("retains partial retailer errors, verifies the other basket and reuses its saved run after resumption", async () => {
     const prices: Record<string, string> = {
       hcsr04: "75.00",

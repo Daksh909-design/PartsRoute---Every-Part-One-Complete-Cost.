@@ -1,0 +1,74 @@
+{
+  "label": "Actual local web/worker failure check. This is not a successful live quote or an AI extraction accuracy result.",
+  "observedAt": "2026-10-20T12:57:14.780Z",
+  "quote": {
+    "id": "46b4e0c1-ca56-42a2-885f-19691d0a0faf",
+    "status": "failed",
+    "errors": [
+      "Google denied generation access to this Gemini project. Check the project in Google AI Studio or contact Google support. Enabling paid billing is not required by PartsRoute; do not enable it just to retry."
+    ]
+  },
+  "checks": {
+    "ready": false,
+    "checks": [
+      {
+        "name": "TinyFish",
+        "ok": true,
+        "detail": "Server API key configured; account access is checked when collecting."
+      },
+      {
+        "name": "Gemini",
+        "ok": false,
+        "detail": "Google denied generation access to this Gemini project. Check the project in Google AI Studio or contact Google support. Enabling paid billing is not required by PartsRoute; do not enable it just to retry. Automatic retries pause for five minutes; changing the key or model clears this cached check."
+      },
+      {
+        "name": "Database",
+        "ok": true,
+        "detail": "Connected and migrated."
+      },
+      {
+        "name": "Worker",
+        "ok": true,
+        "detail": "Worker heartbeat received."
+      }
+    ]
+  },
+  "originals": [
+    {
+      "id": "44c07435-0540-408a-91d2-0b13a6f64e72",
+      "source_url": "https://robocraze.com/products/hc-sr-04-ultrasonic-sensor",
+      "method": "tinyfish-fetch",
+      "retrieved_at": "2026-10-20T12:54:42.386Z"
+    },
+    {
+      "id": "bef755a7-02f1-48c5-b263-0ee2377dd43c",
+      "source_url": "https://robu.in/product/hc-sr04-ultrasonic-range-finder/",
+      "method": "tinyfish-fetch",
+      "retrieved_at": "2026-10-20T12:54:51.676Z"
+    }
+  ],
+  "usage": [
+    {
+      "provider": "tinyfish-fetch",
+      "model": "fetch",
+      "input_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "provider": "gemini",
+      "model": "gemini-3.8-flash",
+      "input_tokens": null,
+      "output_tokens": null
+    },
+    {
+      "provider": "tinyfish-fetch",
+      "model": "fetch",
+      "input_tokens": null,
+      "output_tokens": null
+    }
+  ],
+  "repeatCreation": {
+    "httpStatus": 503,
+    "createdAnotherJob": false
+  }
+}

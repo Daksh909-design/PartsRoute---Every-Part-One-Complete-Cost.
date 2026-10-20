@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { db, saveResult, type Job } from "./server/db";
+import { db, saveResult } from "./server/db";
+import { claimJob, completeJob } from "./server/queue";
 import { processQuote } from "./server/pipeline";
 import { aiConfig } from "./server/ai-provider";
 const owner = randomUUID();
@@ -28,13 +29,7 @@ const presence = setInterval(() => {
   });
 }, 10000);
 while (!stopping) {
-  const job = (
-    await db().query(
-      `WITH candidate AS (SELECT id FROM quotes WHERE (status='queued' OR (status='processing' AND lease_until<now())) AND attempts<3 ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1)
-    UPDATE quotes q SET status='processing',attempts=attempts+1,lease_owner=$1,lease_until=now()+interval '60 seconds',updated_at=now() FROM candidate WHERE q.id=candidate.id RETURNING q.*`,
-      [owner],
-    )
-  ).rows[0] as Job | undefined;
+  const job = await claimJob(owner);
   if (!job) {
     await db().query(
       "UPDATE quotes SET status='failed',phase='Worker recovery limit reached',updated_at=now() WHERE status='processing' AND lease_until<now() AND attempts>=3",
@@ -55,9 +50,10 @@ while (!stopping) {
   try {
     const result = await processQuote(job.id, job.input);
     await saveResult(job.id, result);
-    await db().query(
-      "UPDATE quotes SET status=$2,phase='Finished checking options',lease_until=NULL,lease_owner=NULL,updated_at=now() WHERE id=$1 AND lease_owner=$3",
-      [job.id, result.recommendedId ? "complete" : "partial", owner],
+    await completeJob(
+      job.id,
+      owner,
+      result.recommendedId ? "complete" : "partial",
     );
   } catch (error) {
     console.error(`Quote ${job.id} failed; inspect protected evidence.`);

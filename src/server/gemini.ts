@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EVIDENCE_INSTRUCTIONS, StructuredAIProvider, type Usage } from "./ai";
+import { ProviderAccessError, providerFingerprint } from "./provider-error";
 
 const Interaction = z.object({
   id: z.string().optional(),
@@ -33,6 +34,7 @@ export class GeminiProvider extends StructuredAIProvider {
   readonly provider = "gemini" as const;
   private queue: Promise<unknown> = Promise.resolve();
   private nextRequest = 0;
+  private accessFailure: ProviderAccessError | null = null;
   constructor(
     private recordUsage: (usage: Usage) => Promise<void>,
     private apiKey = process.env.GEMINI_API_KEY,
@@ -49,6 +51,7 @@ export class GeminiProvider extends StructuredAIProvider {
     data: unknown,
   ): Promise<z.infer<T>> {
     const operation = this.queue.then(async () => {
+      if (this.accessFailure) throw this.accessFailure;
       const interval = Math.min(
         60000,
         Math.max(
@@ -84,12 +87,50 @@ export class GeminiProvider extends StructuredAIProvider {
           }),
         },
       );
-      if (!response.ok)
-        throw new Error(
+      if (!response.ok) {
+        if ([400, 401, 403, 404].includes(response.status)) {
+          const error = await response.json().catch(() => null);
+          const reason = String(error?.error?.message || "");
+          const denied = /project has been denied access/i.test(reason);
+          const leaked = /reported as leaked/i.test(reason);
+          const invalid =
+            /API_KEY_INVALID|API key not valid|invalid API key/i.test(
+              reason + " " + JSON.stringify(error?.error?.details || []),
+            );
+          if (response.status !== 400 || invalid || leaked) {
+            this.accessFailure = new ProviderAccessError(
+              "gemini",
+              denied
+                ? "project_denied"
+                : leaked
+                  ? "key_leaked"
+                  : invalid
+                    ? "key_invalid"
+                    : `http_${response.status}`,
+              denied
+                ? "Google denied generation access to this Gemini project. Check the project in Google AI Studio or contact Google support. Enabling paid billing is not required by PartsRoute; do not enable it just to retry."
+                : leaked
+                  ? "Google rejected this Gemini key as leaked. Replace GEMINI_API_KEY privately and restart the worker."
+                  : invalid || response.status === 401
+                    ? "Google rejected the Gemini API key. Check GEMINI_API_KEY privately and restart the worker."
+                    : response.status === 404
+                      ? "The selected Gemini model or API endpoint is unavailable. Check GEMINI_MODEL and account access."
+                      : "Google refused generation access. Check the project's API permissions and regional availability in Google AI Studio.",
+            );
+            await this.recordFailure(
+              response.status,
+              this.accessFailure.message,
+            );
+            throw this.accessFailure;
+          }
+        }
+        const detail =
           response.status === 429
             ? "Gemini quota reached. Wait and retry the saved quote; no paid fallback was started."
-            : `Gemini returned HTTP ${response.status}. Check the key, account and model access.`,
-        );
+            : `Gemini returned HTTP ${response.status}. Check the key, account and model access.`;
+        await this.recordFailure(response.status, detail);
+        throw new Error(detail);
+      }
       const result = Interaction.parse(await response.json());
       await this.recordUsage({
         provider: "gemini",
@@ -97,7 +138,15 @@ export class GeminiProvider extends StructuredAIProvider {
         requestId: result.id ?? null,
         inputTokens: result.usage?.total_input_tokens ?? null,
         outputTokens: result.usage?.total_output_tokens ?? null,
-        raw: result.usage ?? null,
+        raw: {
+          usage: result.usage ?? null,
+          state: "responded",
+          fingerprint: providerFingerprint(
+            "gemini",
+            process.env.GEMINI_MODEL || "gemini-3.8-flash",
+            this.apiKey!,
+          ),
+        },
       });
       if (result.status !== "completed")
         throw new Error(
@@ -114,5 +163,21 @@ export class GeminiProvider extends StructuredAIProvider {
     });
     this.queue = operation.catch(() => undefined);
     return operation;
+  }
+  private async recordFailure(httpStatus: number, detail: string) {
+    const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+    await this.recordUsage({
+      provider: "gemini",
+      model,
+      requestId: null,
+      inputTokens: null,
+      outputTokens: null,
+      raw: {
+        state: "blocked",
+        httpStatus,
+        detail,
+        fingerprint: providerFingerprint("gemini", model, this.apiKey!),
+      },
+    });
   }
 }

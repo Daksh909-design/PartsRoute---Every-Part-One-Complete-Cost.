@@ -4,16 +4,16 @@
 
 PartsRoute helps Indian student teams, makers and electronics teams compare the complete cost of a small bill of materials. Buying each item from its cheapest listing can lose money once shipping, packs, minimum orders and tax are included. Similar product names can also hide a different connector or board version.
 
-[Try the sample calculator](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./) · [Live server setup](docs/LIVE-SETUP.md) · [Engineering review](docs/REVIEW.md)
+[Try the sample calculator](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./) · [Live server setup](docs/LIVE-SETUP.md) · [Engineering review](docs/REVIEW.md) · [Demo walkthrough](docs/DEMO-GUIDE.md)
 
 ## Status
 
-| Area               | Current state                                                                                                                                                      |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Sample calculator  | Deployed to GitHub Pages. Synthetic data, real quantity and basket calculations.                                                                                   |
-| Server application | Next.js API, PostgreSQL queue, worker, TinyFish and configurable AI adapters implemented. Latest checks and remaining runtime limits are recorded below.           |
-| Hosted live server | Deployment configuration prepared. Not provisioned; needs owner sign-in, API keys and approval of hosting charges.                                                 |
-| Live qualification | TinyFish connector Fetch and Agent observations saved. Direct-key application flow, human review and a complete verified three-line live basket remain unverified. |
+| Area               | Current state                                                                                                                                                                             |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sample calculator  | Deployed to GitHub Pages. Synthetic data, real quantity and basket calculations.                                                                                                          |
+| Server application | Next.js production server, PostgreSQL and worker running locally. Build, HTTP and real SQL checks passed.                                                                                 |
+| Hosted live server | Deployment configuration prepared. Not provisioned; needs owner sign-in, API keys and approval of hosting charges.                                                                        |
+| Live qualification | Direct-key TinyFish Fetch and Agent checked; original responses saved. Gemini generation returns project-denied HTTP 403. A complete verified landed basket and human review remain open. |
 
 **The first live milestone has not passed.** The Pages sample is not evidence of a live integration. See [feasibility](docs/FEASIBILITY.md) and [checks actually executed](docs/VALIDATION.md).
 
@@ -28,14 +28,14 @@ PartsRoute helps Indian student teams, makers and electronics teams compare the 
 
 ## Retailers
 
-| Retailer          | Adapter       | Qualification gap                                                                                     |
-| ----------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
-| Robocraze         | Implemented   | Exact DHT11 breakout not established; pincode-only complete basket shipping not obtained.             |
-| Robu              | Implemented   | Checked HC-SR04 page blocked/incomplete, shipping policy incomplete, checked breadboard out of stock. |
-| Evelta            | Research only | Exact overlapping catalogue and guest shipping path need qualification.                               |
-| Amazon / Flipkart | Planned       | Seller, variant, stock and basket-shipping evidence must be established first.                        |
+| Retailer          | Adapter       | Qualification gap                                                                                                       |
+| ----------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Robocraze         | Implemented   | Corrected DHT11 module candidate retrieved (TIFSS0029); complete pincode basket shipping remains unknown.               |
+| Robu              | Implemented   | Fresh HC-SR04/DHT11 pages retrieved; shipping page still contains a placeholder and checked breadboard is out of stock. |
+| Evelta            | Research only | Exact overlapping catalogue and guest shipping path need qualification.                                                 |
+| Amazon / Flipkart | Planned       | Seller, variant, stock and basket-shipping evidence must be established first.                                          |
 
-Retailer coverage is provisional. Product URLs are curated in `src/domain/catalogue.ts`; arbitrary-name discovery is not implemented. A fresh TinyFish Agent inspection confirmed the checked Robocraze DHT11 is a bare four-pin sensor, not the requested breakout board. Those products must not be treated as exact equivalents.
+Retailer coverage is provisional. Product URLs are curated in `src/domain/catalogue.ts`; arbitrary-name discovery is not implemented. The original Robocraze DHT11 URL led to a bare sensor. It was replaced with a retrieved module listing that explicitly describes a sensor and supporting components on a PCB. The old mismatch evidence is retained; distinct listings must not be treated as equivalents by name alone.
 
 ## Technology
 
@@ -52,7 +52,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open `http://localhost:3000`. The sample works without provider credentials. For live mode, fill `.env.local` privately and start the complete stack:
+Open `http://localhost:3000`. The sample works without provider credentials. For a prepared local PostgreSQL installation, `pnpm local:start` runs migrations, builds and starts web/worker. For a reproducible Docker stack, fill `.env.local` privately and run:
 
 ```sh
 docker compose -f compose.yaml -f compose.live.yaml up --build -d
@@ -68,7 +68,7 @@ Stop the development preview first if it occupies port 3000. Alternatively start
 | `TINYFISH_API_KEY`               | Mandatory server-side Fetch and Agent credential                               |
 | `AI_PROVIDER`                    | `gemini` by default; optional `openai`                                         |
 | `GEMINI_API_KEY`                 | Server-side Google AI Studio credential                                        |
-| `GEMINI_MODEL`                   | Default `gemini-3.8-flash`; account access unverified                          |
+| `GEMINI_MODEL`                   | Default `gemini-3.8-flash`; current project generation access denied (403)     |
 | `GEMINI_REQUEST_INTERVAL_MS`     | Delay between Gemini requests, default 12000; not a quota guarantee            |
 | `OPENAI_API_KEY`, `OPENAI_MODEL` | Only needed when explicitly selecting paid OpenAI                              |
 | `APP_ACCESS_TOKEN`               | Private team token, at least 24 characters, required for live API access       |
@@ -115,7 +115,7 @@ The test fixtures are explicitly synthetic. The sample's manual totals are ₹25
 
 `pnpm build:pages` builds an isolated static sample export. Without a configured backend it shows a setup screen for live quotes. With an actual `NEXT_PUBLIC_API_BASE_URL` and allowed backend origin, it can call the protected server. API keys never enter this build. Custom CI is an optional template in `docs/ci-workflow.yml.example`.
 
-The main remaining gaps are live hosting and credentials, complete pincode shipping, two qualified retailers, a human-reviewed extraction sample, real selected-provider evaluation and PostgreSQL recovery/concurrency verification. No delivery deadline or guaranteed shipping fee is inferred from a banner or dispatch estimate.
+The main remaining gaps are Google project generation access, complete pincode shipping, two fully qualified retailers, human-reviewed extraction and real model evaluation. PostgreSQL persistence, concurrent claiming and expired-lease recovery have been exercised. Public live hosting is not provisioned. No delivery deadline or guaranteed shipping fee is inferred from a banner or dispatch estimate.
 
 ## Roadmap
 
@@ -127,7 +127,7 @@ The main remaining gaps are live hosting and credentials, complete pincode shipp
 
 ## Team and links
 
-Made with love by **Team REsynced**, NSUT, for the AI/ML track of Kritical Hacks.
+Built by **Team REsynced**, NSUT, for the AI/ML track of Kritical Hacks.
 
 [Daksh Sachdev](https://github.com/Daksh909-design) — Team Leader; Niyati Jain, Parth, Tashi Saxena and Ritesh Kumar — Team Members.
 
