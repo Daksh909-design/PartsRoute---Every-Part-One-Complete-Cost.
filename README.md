@@ -193,3 +193,5 @@ See [architecture](docs/ARCHITECTURE.md), [deployment/recovery](docs/DEPLOYMENT.
 Public repository: [Daksh909-design / PartsRoute — Every Part. One Complete Cost.](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost.)
 
 No public hosted demo or presentation link is available yet. The app can run on localhost; see `START-HERE.md` for setup and existing-repository publishing instructions.
+
+Made with love by Team REsynced.
