@@ -46,6 +46,12 @@ During development, actual TinyFish connector calls fetched Robu/Robocraze produ
 
 Product URLs are curated in `src/domain/catalogue.ts`. There is no arbitrary-name discovery and **TinyFish Search is not used**. Never add a replacement retailer by filling synthetic offers into live mode. See [the feasibility report](docs/FEASIBILITY.md) and saved original responses.
 
+### Why not Amazon, Flipkart and every other store yet?
+
+They are expansion candidates, not excluded from the product idea. The initial scope deliberately starts with two electronics-retailer adapters so exact specifications and complete basket costs can be checked before expanding coverage. Evelta has been researched but is not an active adapter.
+
+Marketplace support also needs seller-specific offer identity, selected variants, pack contents, tax evidence and the actual delivery charges for that seller's basket and pincode. Adding a name or logo does not establish a working integration. Amazon and Flipkart should enter the optimizer only after a TinyFish feasibility check and verified basket examples; they are currently labelled **planned** in the interface. No claim is made that either site has been tested through TinyFish yet.
+
 ## Local setup
 
 Install Node.js **22.12 or newer**, pnpm **11.25.0**, and Docker Desktop (or an existing PostgreSQL server).
@@ -114,7 +120,7 @@ Official references reviewed on 20 October 2026: [TinyFish Fetch](https://docs.t
 
 ## AI responsibilities
 
-`AIProvider` in `src/server/ai.ts` separates extraction/explanation from provider choice. Only OpenAI is implemented. Its official SDK calls `responses.parse` with Zod-constrained Structured Outputs. It extracts main-product facts, normalizes names/units, and supplies specifications that deterministic code compares. Exact supporting excerpts and numeric checks ground commercially relevant fields. Unknown values remain null, and grounding is deliberately conservative.
+`AIProvider` in `src/server/ai.ts` isolates extraction/explanation from business logic. **OpenAI is the only AI provider used by this project.** Its official SDK calls `responses.parse` with Zod-constrained Structured Outputs. It extracts main-product facts, normalizes names/units, and supplies specifications that deterministic code compares. Exact supporting excerpts and numeric checks ground commercially relevant fields. Unknown values remain null, and grounding is deliberately conservative. `OPENAI_API_KEY` is the AI credential; the separately required `TINYFISH_API_KEY` enables the mandatory web collection service.
 
 For explanations the model selects only indices into facts already validated by the application. It cannot introduce new claims or amounts. Prices, quantities, taxes, shipping arithmetic and ranking are deterministic.
 
@@ -176,7 +182,7 @@ The demo sample's manually calculated totals are ₹320 for all Robu, ₹295 for
 |---|---|---|
 | MVP | App/worker/schema, two retailer adapters, TinyFish/OpenAI code, calculator, synthetic demo, evidence | Credentials, human review, reliable complete shipping and direct end-to-end qualification. |
 | Version 1 | Planned | Expand curated verified catalogue, qualify Evelta, retailer-specific quantity parsing, robust pincode mapping, extraction evaluation set, deployment monitoring and identity. |
-| Version 2 | Planned | TinyFish Search discovery, richer equivalence review, supplier inventory/lead-time evidence, split-line optimization, optional Gemini adapter and team BOM import. |
+| Version 2 | Planned | TinyFish Search discovery, qualified Amazon/Flipkart adapters, richer equivalence review, supplier inventory/lead-time evidence, split-line optimization and team BOM import. |
 
 ## Architecture and deployment
 
@@ -184,4 +190,6 @@ See [architecture](docs/ARCHITECTURE.md), [deployment/recovery](docs/DEPLOYMENT.
 
 ## Demo, presentation and GitHub
 
-No public demo, presentation or repository URL is available. The local Git repository and committed source are the deliverable; publishing commands are in `START-HERE.md`. Add real links only after publication succeeds.
+Public repository: [Daksh909-design / PartsRoute — Every Part. One Complete Cost.](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost.)
+
+No public hosted demo or presentation link is available yet. The app can run on localhost; see `START-HERE.md` for setup and existing-repository publishing instructions.

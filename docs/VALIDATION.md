@@ -12,6 +12,10 @@ Development date: **20 October 2026**. This file distinguishes observed checks f
 - Browser check of the saved-data submission and result: three eligible lines, eight sample plans, ₹255 listed items + ₹40 shipping = ₹295. Screenshot in `sample-preview.png` records the narrow viewport, with synthetic labelling visible.
 - Live **TinyFish connector** Fetch calls and one Agent run, preserved in `docs/evidence`; see `FEASIBILITY.md` for exact limitations.
 
+## Interface refresh validation
+
+The refreshed interface passed the same 35 tests, TypeScript checking, production build and six HTTP smoke checks. Browser checks at a narrow viewport confirmed sample calculation (₹295), the calculated ₹25 difference from the next complete sample plan, the sample reset button, retailer coverage disclosure and integration/evidence navigation. `redesign-home.png` and `redesign-result.png` record the refreshed interface. Desktop-width visual QA remains outstanding.
+
 Windows process sandboxing initially blocked Vite's Windows path detection and dependency postinstall. The tests/build were rerun with normal Windows process access and succeeded. Earlier dependency-download timeouts and the first failing pipeline test are not counted as passes.
 
 ## Not executed or not qualified
