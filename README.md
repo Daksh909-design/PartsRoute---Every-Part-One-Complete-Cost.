@@ -195,6 +195,6 @@ See [architecture](docs/ARCHITECTURE.md), [deployment/recovery](docs/DEPLOYMENT.
 
 Public repository: [Daksh909-design / PartsRoute — Every Part. One Complete Cost.](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost.)
 
-GitHub Pages deployment is being configured for the interactive saved-data demo. Pages does not host live API routes or the worker; live collection requires a server deployment. See [deployment instructions](docs/DEPLOYMENT.md). No presentation link is available yet.
+[Open the interactive GitHub Pages demo](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./). The deployed sample calculator was checked in the browser and returned ₹295 across eight synthetic plans. Pages does not host live API routes or the worker; live collection requires a server deployment. See [deployment instructions](docs/DEPLOYMENT.md). No presentation link is available yet.
 
 Made with love by Team REsynced.

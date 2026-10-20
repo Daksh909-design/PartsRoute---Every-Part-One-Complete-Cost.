@@ -20,12 +20,16 @@ GitHub Actions is supplied as an optional template in `ci-workflow.yml.example`,
 
 Windows process sandboxing initially blocked Vite's Windows path detection and dependency postinstall. The tests/build were rerun with normal Windows process access and succeeded. Earlier dependency-download timeouts and the first failing pipeline test are not counted as passes.
 
+## GitHub Pages deployment check
+
+On 20 October 2026, `pnpm build:pages` completed successfully. The shared calculator extraction passed all 35 tests and TypeScript checking. GitHub reported the `gh-pages` release `be7cde9996071fc5fe5d00172bafaf73fd592126` as built. The public [Pages demo](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./) loaded in the browser, showed live mode disabled and calculated eight sample plans with a ₹295 best sample total. This was a deployment smoke check; a comprehensive code, documentation and UI review has not been performed. Pages does not validate the live provider or worker path.
+
 ## Not executed or not qualified
 
 - No real OpenAI extraction call, API account/model-access evaluation, accuracy/latency evaluation or paid usage measurement: no API key available.
 - No direct-key application TinyFish API call: no app API key available. Connector live evidence is a separate validation surface.
 - No PostgreSQL migration/worker integration test, concurrent-worker lease or process-crash test against PostgreSQL: no PostgreSQL/Docker service was available. In-memory persistence tests do not validate SQL.
 - No verified complete three-line live landed basket and no human review. Retailer qualification remains open.
-- No desktop-width visual QA, Docker image execution, remote deployment, GitHub Actions execution or public hosting validation.
+- No desktop-width visual QA, Docker image execution, live server deployment or custom CI workflow execution. The Pages deployment check above is limited to the static saved-data demo.
 
 Run `pnpm test`, `pnpm typecheck`, `pnpm build`, then `pnpm test:http` with `pnpm start` running. After configuring PostgreSQL/keys, run `pnpm db:migrate`, `pnpm validate:live 560001` with the regular worker stopped, and complete the human checklist in `FEASIBILITY.md`.
