@@ -250,7 +250,12 @@ export async function processQuote(
     rules: ShippingRule[] = [],
     shipping: ShippingObservation[] = [],
     errors: string[] = [];
-  const ai = suppliedAI ?? cachedAI(createAIProvider((u) => usage(jobId, u)));
+  const ai =
+    suppliedAI ??
+    cachedAI(
+      createAIProvider((u) => usage(jobId, u)),
+      input.refresh,
+    );
   let accessFailure: ProviderAccessError | null = null;
   await phase(jobId, "Collecting product pages and shipping policies");
   // One Fetch batch per retailer; per-URL failures remain distinct. At most two
@@ -269,7 +274,29 @@ export async function processQuote(
             ),
             retailers[retailer].policyUrl,
           ];
-          const original = await tiny.fetchPages(urls, retailer, input.refresh);
+          const startedAt = new Date().toISOString();
+          const started = performance.now();
+          let original: FetchResponse;
+          try {
+            original = await tiny.fetchPages(urls, retailer, input.refresh);
+          } catch (error) {
+            await usage(jobId, {
+              provider: "tinyfish-fetch",
+              model: "fetch",
+              requestId: null,
+              inputTokens: null,
+              outputTokens: null,
+              raw: {
+                state: "failed",
+                startedAt,
+                latencyMs: Math.round(performance.now() - started),
+                urls,
+                refresh: input.refresh,
+                usage: null,
+              },
+            });
+            throw error;
+          }
           await usage(jobId, {
             provider: "tinyfish-fetch",
             model: "fetch",
@@ -280,11 +307,30 @@ export async function processQuote(
             inputTokens: null,
             outputTokens: null,
             raw: {
+              state: "responded",
+              startedAt,
+              latencyMs: Math.round(performance.now() - started),
+              refresh: input.refresh,
               urls,
               usage: original.usage ?? null,
               errors: original.errors,
             },
           });
+          // Persist the whole returned batch before extraction. Otherwise later
+          // pages appear to have been retrieved minutes after the HTTP response,
+          // and a model failure can leave already-fetched pages unsaved.
+          await Promise.all(
+            urls.map((url) =>
+              saveObservation(
+                jobId,
+                `fetch:${url}`,
+                retailer,
+                url,
+                "tinyfish-fetch",
+                original,
+              ),
+            ),
+          );
           return original;
         })());
       for (const part of input.parts) {

@@ -23,7 +23,7 @@ PartsRoute helps Indian student teams, makers and electronics teams compare the 
 - Exact matches, rejected specifications, unknown fields and explicitly confirmed equivalents. Confirmation cannot override contradictory requirements.
 - Integer-paise calculations for packs, minimum quantities, quantity multiples, price breaks, explicit tax treatment and consolidated retailer shipping.
 - Complete-assignment enumeration, verified-plan ranking and partial alternatives. Unknown shipping is never treated as free.
-- Read-only cached comparisons, versioned extraction reuse, visible observation ages and explicit background refresh.
+- Fresh collection as the primary live action: new TinyFish Fetch requests with ttl=0 and new AI extraction, even if identical content was previously cached. A separate read-only saved-observations action shows observation ages.
 - Live quote jobs, leases, worker heartbeat, readiness checks, saved observations and provider run recovery.
 - Separate comparison and evidence views, retry states, protected live endpoints, bounded API requests and per-team live quotas.
 
@@ -98,7 +98,7 @@ Deterministic code validates specifications, excludes insufficient stock, rounds
 
 ## Response time
 
-**Compare latest observations** uses PostgreSQL and the calculator without new provider calls. The final ten local requests measured 11–302 ms. A cache miss asks for an explicit **Refresh from retailers**, which runs in the background and can exceed seven seconds. This is not a seven-second guarantee for a newly collected, verified basket. The strict fresh-quote test was executed and **failed**: a new quote was still processing at seven seconds. See [measurements and the mentor requirement](docs/PERFORMANCE.md).
+**Collect & compare fresh offers** starts a new live quote, bypasses page and extraction caches and displays elapsed time through completion. `POST /api/quotes` always creates or recovers a fresh job; it never returns a cached comparison. The secondary **View saved observations** action calls a different read-only endpoint and makes no new provider calls. Its earlier fast timings do not satisfy the mentor's requirement. The strict fresh-quote test **failed**: a new quote was still processing at seven seconds. The interface flags this missed target rather than reporting queue acceptance as completion. See [measurements and the mentor requirement](docs/PERFORMANCE.md).
 
 ## Tests and diagnostics
 

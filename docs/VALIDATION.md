@@ -50,3 +50,11 @@ A Cloudflare Quick Tunnel exposed the existing backend temporarily. Public healt
 
 Pages release **9ee6f65206ce3033536a6e9438e92915a1141199** loaded the connected frontend successfully. In the actual public browser, team-token authentication reached the database and worker, and a cached comparison returned real retailer observations in 1.06 seconds. This was not a new collection and is not a strict-budget pass. All nine HTTP smoke checks also passed through the public tunnel. The refreshed budget-test quote later finished partial, with no complete verified plan. Proof: [connected frontend](public-backend-connected.png). The preview remains dependent on the team computer staying online.
 
+## Primary action freshness correction
+
+The primary live button now starts a new collection rather than a cached comparison. The collection endpoint always forces refresh=true, TinyFish gets ttl=0, and new quote jobs bypass content-based model reuse. Same-job recovery remains idempotent. Saved observations have a separate button. Full elapsed time and missed seven-second deadlines are visible; the interface also links to the connected server.
+
+**84 tests in 12 files passed**, including new authenticated fresh-endpoint, cache-bypass, idempotency-fingerprint and eager-original-persistence regressions. TypeScript, Next.js production build and the separate Pages build passed. All nine HTTP smoke checks passed through the public tunnel with the configured Pages origin. An initial smoke invocation used the tunnel itself as the CORS origin and failed the preflight expectation; it passed with SMOKE_ALLOWED_ORIGIN set to the actual permitted Pages origin. No origin restrictions were weakened.
+
+One fresh public-server benchmark made two new TinyFish Fetch requests and four successful new Gemini requests, followed by a model timeout. It **failed** the seven-second requirement and finished partial after roughly 152 seconds, without a verified plan. TinyFish alone took 15.8–17.8 seconds. [Full report](evidence/fresh-cache-bypass-2026-10-20.json). The later eager-persistence adjustment was fixture-tested without repeating live consumption. Earlier cached timings remain historical and do not qualify.
+

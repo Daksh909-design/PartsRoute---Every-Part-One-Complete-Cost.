@@ -15,18 +15,20 @@ export function extractionKey(
     .update(JSON.stringify(["extraction-v3", provider, model, kind, args]))
     .digest("hex");
 }
-export function cachedAI(ai: AIProvider): AIProvider {
+export function cachedAI(ai: AIProvider, refresh = false): AIProvider {
   const config = aiConfig();
   async function get<T>(
     key: string,
     parse: (value: unknown) => T,
     collect: () => Promise<T>,
   ): Promise<T> {
-    const cached = await db().query(
-      "SELECT extraction FROM extraction_cache WHERE cache_key=$1",
-      [key],
-    );
-    if (cached.rowCount) return parse(cached.rows[0].extraction);
+    if (!refresh) {
+      const cached = await db().query(
+        "SELECT extraction FROM extraction_cache WHERE cache_key=$1",
+        [key],
+      );
+      if (cached.rowCount) return parse(cached.rows[0].extraction);
+    }
     const value = parse(await collect());
     await db().query(
       "INSERT INTO extraction_cache(cache_key,extraction) VALUES($1,$2) ON CONFLICT DO NOTHING",

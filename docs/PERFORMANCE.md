@@ -4,8 +4,8 @@ PartsRoute separates two operations:
 
 | Operation                   | What happens                                                                          | Timing commitment                                                                         |
 | --------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Compare latest observations | PostgreSQL reads, current specification matching and deterministic basket calculation | Target under seven seconds with a warm server and usable cache; measured separately below |
-| Refresh from retailers      | TinyFish Fetch, Gemini extraction and bounded TinyFish Agent checks                   | Background work. No seven-second completion guarantee                                     |
+| Collect & compare fresh offers | New TinyFish Fetch, new Gemini extraction and bounded TinyFish Agent checks | Primary action. Must be measured through a complete verified result; seven-second requirement has not passed |
+| View saved observations | PostgreSQL reads, current specification matching and deterministic basket calculation | Explicit cache-only view; its timings do not qualify |
 
 `POST /api/comparisons` is protected and read-only. It never creates a job or calls a provider, including on a cache miss. A miss asks the user to refresh explicitly. The browser aborts API requests after six seconds and shows an actionable error. This timeout is not a guarantee of a successful result.
 
@@ -21,7 +21,17 @@ Real Flash-Lite extraction calls took **3.0–17.2 seconds**, and another call t
 
 To reproduce, warm observations once using the live worker or `pnpm validate:live 560001` with the worker stopped, then run `pnpm benchmark:http`. It makes ten read-only comparisons, writes `artifacts/http-latency.json`, and fails if any response exceeds seven seconds. It refuses to create new collection jobs on a cache miss. Keep these measurements separate from the synthetic calculator, which requires no APIs.
 
-If the mentor requires every **new, fully verified live basket** within seven seconds, the current external workflow does **not** meet that requirement. Confirm whether pre-collected, timestamped evidence is acceptable before presenting this as a qualifying demo.
+The mentor explicitly requires every **new, fully verified live basket** within seven seconds. The current external workflow does **not** meet that requirement. Pre-collected evidence does not qualify.
+
+## Freshness correction
+
+The original primary button read cached observations. It now starts `POST /api/quotes`, which forces refresh=true even if an older client sends false. New quote jobs bypass both PostgreSQL page reuse and content-based AI reuse; TinyFish receives ttl=0 and the AI provider is called again. Retries and refresh recovery still reuse the same job's saved work to avoid duplicate provider charges. A separate View saved observations button is the only UI cache path. Queue acceptance is no longer displayed as the fresh output duration. The full timer continues until terminal status, and the UI flags a missed seven-second deadline. Worker pickup delay was reduced from two seconds to 250 ms. TinyFish response records now include actual elapsed request time; Evidence also displays provider request IDs and response-record timestamps.
+
+`pnpm benchmark:live-budget --follow` retains the seven-second verdict and optionally follows the same saved job to terminal status, recording provider call IDs/timings without creating another job. It consumes provider quota once; later completion cannot turn a failed deadline into a pass.
+
+The corrected fresh endpoint was tested through the public tunnel on 20 October 2026: quote `b7379c68-e973-44b0-a86c-3999a4adcbaf` was still processing at 7007.5 ms and later finished partial, after about 152 seconds on the server. Two new TinyFish Fetch responses took **15,771 ms** and **17,802 ms**. Four new Gemini responses took **24,848–29,958 ms**, with actual token usage recorded; a subsequent extraction timed out. Four offers were extracted, but no complete verified plan qualified. Thus even Fetch alone exceeded the requirement in this run. This is a failed performance result, not a seven-second workaround. [Sanitised full report](evidence/fresh-cache-bypass-2026-10-20.json). Provider request IDs were not returned in these responses and remain null.
+
+After this check, batch persistence was also corrected: every fetched URL is saved before model work starts, preserving response-time provenance and preventing model failures from leaving collected pages unsaved. Its regression path was tested with mocked providers; no additional paid live run was made for this persistence-only change.
 
 ## Executed strict fresh-quote check
 

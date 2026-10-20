@@ -61,6 +61,8 @@ vi.mock("../src/server/db", () => ({
       original: unknown,
       runId: string | null = null,
     ) => {
+      const existing = state.observations.get(`${job}:${key}`);
+      if (existing) return existing;
       const row = {
         id: `observation-${++state.sequence}`,
         source_url: url,
@@ -104,6 +106,13 @@ describe("worker pipeline with explicitly mocked providers and persistence", () 
     };
     const ai = {
       product: vi.fn(async () => {
+        // All URLs from a returned batch must be durable before model work.
+        const urls = [...state.observations.values()].map(
+          (row) => row.source_url,
+        );
+        expect(
+          urls.some((url) => String(url).includes("shipping-policy")),
+        ).toBe(true);
         throw new ProviderAccessError(
           "gemini",
           "project_denied",

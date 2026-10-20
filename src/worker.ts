@@ -34,7 +34,7 @@ while (!stopping) {
     await db().query(
       "UPDATE quotes SET status='failed',phase='Worker recovery limit reached',updated_at=now() WHERE status='processing' AND lease_until<now() AND attempts>=3",
     );
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 250));
     continue;
   }
   const heartbeat = setInterval(() => {

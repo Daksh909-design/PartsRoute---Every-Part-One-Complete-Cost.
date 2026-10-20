@@ -20,6 +20,8 @@ export type EvidenceData = {
     model: string;
     input_tokens: number | null;
     output_tokens: number | null;
+    request_id?: string | null;
+    created_at?: string;
   }[];
 };
 export default function EvidenceView({
@@ -144,6 +146,8 @@ export default function EvidenceView({
                   <th>Model</th>
                   <th>Input tokens</th>
                   <th>Output tokens</th>
+                  <th>Response time</th>
+                  <th>Provider request ID</th>
                 </tr>
               </thead>
               <tbody>
@@ -153,6 +157,10 @@ export default function EvidenceView({
                     <td>{usage.model}</td>
                     <td>{usage.input_tokens ?? "Unknown"}</td>
                     <td>{usage.output_tokens ?? "Unknown"}</td>
+                    <td>
+                      {usage.created_at ? when(usage.created_at) : "Unknown"}
+                    </td>
+                    <td>{usage.request_id || "Not reported"}</td>
                   </tr>
                 ))}
               </tbody>

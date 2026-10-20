@@ -19,6 +19,7 @@ import QuoteResults from "./quote-results";
 import EvidenceView, { type EvidenceData } from "./evidence-view";
 import { Icon } from "./ui-icons";
 import { demoQuote } from "../domain/demo";
+import { liveRequest, type CollectionClock } from "../domain/live-request";
 
 type Job = {
   id: string;
@@ -72,6 +73,8 @@ export default function Workspace() {
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState("");
   const [responseMs, setResponseMs] = useState<number | null>(null);
+  const [collectionClock, setCollectionClock] =
+    useState<CollectionClock | null>(null);
   const [error, setError] = useState("");
   const [evidence, setEvidence] = useState<EvidenceData | null>(null);
   const [evidenceBusy, setEvidenceBusy] = useState(false);
@@ -86,6 +89,28 @@ export default function Workspace() {
       if (timer.current) clearTimeout(timer.current);
     };
   }, []);
+  useEffect(() => {
+    if (!collectionClock || collectionClock.finished) return;
+    const interval = setInterval(() => {
+      setCollectionClock((current) =>
+        current && !current.finished
+          ? { ...current, elapsedMs: Date.now() - current.startedAt }
+          : current,
+      );
+    }, 100);
+    return () => clearInterval(interval);
+  }, [collectionClock?.startedAt, collectionClock?.finished]);
+  function stopClock() {
+    setCollectionClock((current) =>
+      current
+        ? {
+            ...current,
+            elapsedMs: Date.now() - current.startedAt,
+            finished: true,
+          }
+        : null,
+    );
+  }
   function cancelPolling() {
     generation.current++;
     pollingStarted.current = Date.now();
@@ -116,6 +141,8 @@ export default function Workspace() {
     setError("");
     setBusy(false);
     setPhase("");
+    setResponseMs(null);
+    setCollectionClock(null);
     requestId.current = null;
   }
   function reset() {
@@ -136,6 +163,8 @@ export default function Workspace() {
     setEvidence(null);
     setError("");
     setPhase("");
+    setResponseMs(null);
+    setCollectionClock(null);
     setBusy(false);
     requestId.current = null;
   }
@@ -162,6 +191,7 @@ export default function Workspace() {
   async function poll(id: string, version: number) {
     if (Date.now() - pollingStarted.current > 15 * 60 * 1000) {
       setBusy(false);
+      stopClock();
       setError(
         "This quote is taking longer than expected. The server keeps the saved work; use Resume to check it again without starting a new quote.",
       );
@@ -175,9 +205,10 @@ export default function Workspace() {
       if (current.result) setResult(current.result);
       if (["queued", "processing"].includes(current.status)) {
         setBusy(true);
-        timer.current = setTimeout(() => void poll(id, version), 2500);
+        timer.current = setTimeout(() => void poll(id, version), 250);
       } else {
         setBusy(false);
+        stopClock();
         requestId.current = null;
         if (current.status === "failed")
           setError(
@@ -188,6 +219,7 @@ export default function Workspace() {
     } catch (caught) {
       if (version !== generation.current) return;
       setBusy(false);
+      stopClock();
       setError(
         caught instanceof Error
           ? caught.message
@@ -195,10 +227,16 @@ export default function Workspace() {
       );
     }
   }
-  async function submit(refresh = false) {
+  async function submit(fresh = true) {
     setError("");
     setEvidence(null);
-    const parsed = QuoteInput.safeParse({ parts, pincode, mode, refresh });
+    const action = liveRequest(fresh);
+    const parsed = QuoteInput.safeParse({
+      parts,
+      pincode,
+      mode,
+      refresh: action.refresh,
+    });
     if (!parsed.success) {
       setError(
         parsed.error.issues[0]?.message || "Check your parts and pincode.",
@@ -215,6 +253,13 @@ export default function Workspace() {
     const version = generation.current;
     setBusy(true);
     setResponseMs(null);
+    setResult(null);
+    setJob(null);
+    setCollectionClock(
+      mode === "live" && fresh
+        ? { startedAt: Date.now(), elapsedMs: 0, finished: false }
+        : null,
+    );
     const submittedAt = performance.now();
     setPhase(
       mode === "demo"
@@ -236,17 +281,13 @@ export default function Workspace() {
         setPhase("");
       } else {
         requestId.current ??= crypto.randomUUID();
-        const created = await requestApi(
-          refresh ? "/api/quotes" : "/api/comparisons",
-          token,
-          {
-            method: "POST",
-            headers: { "Idempotency-Key": requestId.current },
-            body: JSON.stringify(parsed.data),
-          },
-        );
+        const created = await requestApi(action.path, token, {
+          method: "POST",
+          headers: { "Idempotency-Key": requestId.current },
+          body: JSON.stringify(parsed.data),
+        });
         if (version !== generation.current) return;
-        setResponseMs(Math.round(performance.now() - submittedAt));
+        if (!fresh) setResponseMs(Math.round(performance.now() - submittedAt));
         if (created.result) {
           setResult(created.result);
           setJob(null);
@@ -262,6 +303,7 @@ export default function Workspace() {
     } catch (caught) {
       if (version !== generation.current) return;
       setBusy(false);
+      stopClock();
       setError(
         caught instanceof Error
           ? caught.message
@@ -381,7 +423,7 @@ export default function Workspace() {
               disabled={busy}
               onClick={() => switchMode("live")}
             >
-              Retailer observations{" "}
+              Live quote{" "}
               {!liveAvailable && <span className="small-tag">Setup</span>}
             </button>
           </div>
@@ -465,9 +507,21 @@ export default function Workspace() {
                 ) : (
                   <>
                     <p>
-                      Compare recent retailer observations first. A fresh check
-                      runs separately and can take longer than seven seconds.
+                      Collect new product pages and request new AI extraction.
+                      The timer measures the full quote, including verification.
                     </p>
+                    {apiBase && (
+                      <p className="source-note">
+                        Connected server:{" "}
+                        <a
+                          href={`${apiBase}/api/health`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {new URL(apiBase).hostname} ↗
+                        </a>
+                      </p>
+                    )}
                     <div className="connection-controls">
                       <label htmlFor="team-token">
                         Team access token
@@ -784,7 +838,7 @@ export default function Workspace() {
                         : mode === "demo"
                           ? "Calculate sample baskets"
                           : token
-                            ? "Compare latest observations"
+                            ? "Collect & compare fresh offers"
                             : "Enter team token to compare"}
                       <Icon name="arrow" />
                     </button>
@@ -794,13 +848,12 @@ export default function Workspace() {
                           type="button"
                           className="text-button"
                           disabled={!token}
-                          onClick={() => void submit(true)}
+                          onClick={() => void submit(false)}
                         >
-                          Refresh from retailers ↗
+                          View saved observations ↗
                         </button>
                         <span>
-                          Collects new evidence in the background. Uses API
-                          quota.
+                          Separate cache-only view. Makes no new API calls.
                         </span>
                       </div>
                     )}
@@ -859,13 +912,41 @@ export default function Workspace() {
                 )}
                 {mode === "live" && responseMs !== null && (
                   <p className="response-note" role="status">
-                    {result?.dataStatus
-                      ? "Cached comparison"
-                      : "Collection accepted"}{" "}
-                    · {(responseMs / 1000).toFixed(2)} s
-                    {!result?.dataStatus &&
-                      " · Browser checks are still running"}
+                    Saved comparison · {(responseMs / 1000).toFixed(2)} s · No
+                    new API calls
                   </p>
+                )}
+                {mode === "live" && collectionClock && (
+                  <>
+                    <p className="response-note">
+                      Fresh collection ·{" "}
+                      {(collectionClock.elapsedMs / 1000).toFixed(1)} s
+                      {job && (
+                        <>
+                          {" "}
+                          ·{" "}
+                          <button
+                            className="text-button"
+                            onClick={() => void inspect()}
+                          >
+                            Inspect this run ↗
+                          </button>
+                        </>
+                      )}
+                      {collectionClock.finished &&
+                        (job?.status === "complete" && result?.recommendedId
+                          ? " · Verified plan returned"
+                          : " · No complete verified plan returned")}
+                    </p>
+                    {collectionClock.elapsedMs >= 7000 && (
+                      <p className="notice warning" role="status">
+                        Seven-second target missed.{" "}
+                        {collectionClock.finished
+                          ? "This run does not satisfy the required time limit."
+                          : "Collection is still running; a queued request or partial prices do not count as a finished quote."}
+                      </p>
+                    )}
+                  </>
                 )}
                 {result ? (
                   <QuoteResults
@@ -889,14 +970,14 @@ export default function Workspace() {
                         {mode === "live"
                           ? job?.status === "failed"
                             ? "Collection needs attention."
-                            : "Compare saved retailer prices."
+                            : "Collect fresh retailer prices."
                           : "A lower item price can cost more at checkout."}
                       </h2>
                       <p>
                         {mode === "live"
                           ? job?.status === "failed"
                             ? "Review the error above. Any pages already collected remain saved with this quote; open Evidence to inspect them before retrying."
-                            : "Compare recent observations without waiting for new API calls. If none are available, choose Refresh from retailers to start a background collection."
+                            : "The main button starts new TinyFish requests and new AI extraction. Saved observations are available through a separate link and are never counted as a fresh quote."
                           : "Calculate this three-part prototype to compare complete baskets, including shipping once per retailer."}
                       </p>
                       <div className="empty-breakdown">

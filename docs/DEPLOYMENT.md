@@ -73,7 +73,7 @@ The public Pages demo is separate from a live server deployment. See the README 
 
 ## Latency and preparation
 
-Run migrations 004 and 005 before deploying this revision, then deploy web and worker from the same commit. Compare latest observations uses the read-only `/api/comparisons` route. Warm the live catalogue before measuring it with `pnpm benchmark:http`; do not present an empty cache, synthetic sample or job acknowledgement as a completed seven-second live basket. Cold hosting starts and provider latency are not covered by local timings. [PERFORMANCE.md](PERFORMANCE.md) records the limits.
+Run migrations 004 and 005 before deploying this revision, then deploy web and worker from the same commit. The primary Collect & compare fresh offers action always uses `/api/quotes` and bypasses both page and model caches. View saved observations uses the separate read-only `/api/comparisons` route. `pnpm benchmark:http` measures only that cache path; do not present it, synthetic data or a job acknowledgement as a completed seven-second live basket. `pnpm benchmark:live-budget --follow` measures a new job and retains a failed deadline even if the job finishes later. [PERFORMANCE.md](PERFORMANCE.md) records the failed strict result.
 
 ## Account-free live preview
 

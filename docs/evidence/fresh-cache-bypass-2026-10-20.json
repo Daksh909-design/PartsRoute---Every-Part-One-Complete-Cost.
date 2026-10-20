@@ -1,0 +1,159 @@
+{
+  "checkedAt": "2026-10-20T15:40:02.888Z",
+  "requirement": "New live collection AND complete verified purchasing plan within 7000 ms",
+  "quoteId": "b7379c68-e973-44b0-a86c-3999a4adcbaf",
+  "statusAtDeadline": "processing",
+  "elapsedMs": 7007.5,
+  "completeVerifiedPlan": false,
+  "passed": false,
+  "reason": "No complete verified purchasing plan was returned within seven seconds.",
+  "savedJobContinues": true,
+  "followUp": {
+    "status": "partial",
+    "observedAfterMs": 154720,
+    "serverDurationMs": 152143,
+    "refresh": true,
+    "offers": 4,
+    "coverage": {
+      "covered": 0,
+      "requested": 3
+    },
+    "verifiedPlan": false,
+    "errors": [
+      "Robu: 400-point solderless breadboard unavailable. Product extraction timed out or could not reach Google. Collected pages remain saved; try refreshing later.",
+      "Robocraze: 400-point solderless breadboard unavailable. Product extraction timed out or could not reach Google. Collected pages remain saved; try refreshing later.",
+      "Robu: shipping policy unavailable. Retailer returned a placeholder rather than an applicable shipping policy.",
+      "Robocraze: shipping policy unavailable. Product extraction timed out or could not reach Google. Collected pages remain saved; try refreshing later."
+    ],
+    "providerResponses": [
+      {
+        "provider": "tinyfish-fetch",
+        "model": "fetch",
+        "requestId": null,
+        "recordedAt": "2026-10-20T15:40:12.926Z",
+        "state": "responded",
+        "latencyMs": 15771,
+        "inputTokens": null,
+        "outputTokens": null
+      },
+      {
+        "provider": "tinyfish-fetch",
+        "model": "fetch",
+        "requestId": null,
+        "recordedAt": "2026-10-20T15:40:15.101Z",
+        "state": "responded",
+        "latencyMs": 17802,
+        "inputTokens": null,
+        "outputTokens": null
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T15:40:42.895Z",
+        "state": "responded",
+        "latencyMs": 29958,
+        "inputTokens": 2654,
+        "outputTokens": 447
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T15:41:07.753Z",
+        "state": "responded",
+        "latencyMs": 24848,
+        "inputTokens": 3458,
+        "outputTokens": 481
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T15:41:33.341Z",
+        "state": "responded",
+        "latencyMs": 25585,
+        "inputTokens": 2412,
+        "outputTokens": 514
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T15:41:59.072Z",
+        "state": "responded",
+        "latencyMs": 25730,
+        "inputTokens": 2977,
+        "outputTokens": 568
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T15:42:29.087Z",
+        "state": "unavailable",
+        "latencyMs": null,
+        "inputTokens": null,
+        "outputTokens": null
+      }
+    ],
+    "fetchObservations": [
+      {
+        "url": "https://robu.in/product/hc-sr04-ultrasonic-range-finder/",
+        "retrievedAt": "2026-10-20T15:40:12.930Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      },
+      {
+        "url": "https://robocraze.com/products/hc-sr-04-ultrasonic-sensor",
+        "retrievedAt": "2026-10-20T15:40:15.104Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      },
+      {
+        "url": "https://robu.in/product/dht11-digital-relative-humidity-temperature-sensor-module/",
+        "retrievedAt": "2026-10-20T15:40:42.910Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      },
+      {
+        "url": "https://robocraze.com/products/dht11-humidity-temperature-sensor-module",
+        "retrievedAt": "2026-10-20T15:41:07.765Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      },
+      {
+        "url": "https://robu.in/product/transparent-400-points-solderless-breadboard/",
+        "retrievedAt": "2026-10-20T15:41:33.348Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      },
+      {
+        "url": "https://robocraze.com/products/half-breadboard",
+        "retrievedAt": "2026-10-20T15:41:59.081Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      },
+      {
+        "url": "https://robu.in/shipping-policy/",
+        "retrievedAt": "2026-10-20T15:42:29.091Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      },
+      {
+        "url": "https://robocraze.com/pages/shipping-policy",
+        "retrievedAt": "2026-10-20T15:42:29.121Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      }
+    ]
+  }
+}

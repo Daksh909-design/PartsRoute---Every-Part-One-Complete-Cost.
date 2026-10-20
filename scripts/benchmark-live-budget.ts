@@ -94,4 +94,73 @@ await writeFile(
   JSON.stringify(report, null, 2),
 );
 console.log(JSON.stringify(report, null, 2));
+// Optional diagnostics keep following the SAME job after the strict deadline.
+// Later output never changes the failed seven-second verdict or starts a retry.
+if (process.argv.includes("--follow") && quoteId) {
+  const followDeadline = performance.now() + 240000;
+  async function followRequest(path: string) {
+    const response = await fetch(origin + path, {
+      signal: AbortSignal.timeout(6000),
+      headers: { Authorization: `Bearer ${process.env.APP_ACCESS_TOKEN}` },
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
+    return body;
+  }
+  try {
+    let job = await followRequest(`/api/quotes/${quoteId}`);
+    while (
+      ["queued", "processing"].includes(job.status) &&
+      performance.now() < followDeadline
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      job = await followRequest(`/api/quotes/${quoteId}`);
+    }
+    const evidence = await followRequest(`/api/quotes/${quoteId}/evidence`);
+    const followUp = {
+      status: job.status,
+      observedAfterMs: Math.round(performance.now() - start),
+      serverDurationMs: Date.parse(job.updated_at) - Date.parse(job.created_at),
+      refresh: job.input.refresh,
+      offers: job.result?.offers.length ?? 0,
+      coverage: job.result?.coverage ?? null,
+      verifiedPlan: Boolean(job.result?.recommendedId),
+      errors: job.result?.errors ?? job.errors,
+      providerResponses: evidence.usage.map((u: Record<string, any>) => ({
+        provider: u.provider,
+        model: u.model,
+        requestId: u.request_id,
+        recordedAt: u.created_at,
+        state: u.details?.state ?? null,
+        latencyMs: u.details?.latencyMs ?? null,
+        inputTokens: u.input_tokens,
+        outputTokens: u.output_tokens,
+      })),
+      fetchObservations: evidence.observations
+        .filter((o: Record<string, any>) => o.method === "tinyfish-fetch")
+        .map((o: Record<string, any>) => ({
+          url: o.source_url,
+          retrievedAt: o.retrieved_at,
+          requestId: o.original?.request_id ?? null,
+          results: o.original?.results?.length ?? 0,
+          errors: o.original?.errors?.length ?? 0,
+        })),
+    };
+    const fullReport = { ...report, followUp };
+    await writeFile(
+      "artifacts/live-seven-second-budget.json",
+      JSON.stringify(fullReport, null, 2),
+    );
+    console.log(JSON.stringify({ followUp }, null, 2));
+  } catch (error) {
+    console.log(
+      JSON.stringify({
+        followUpError:
+          error instanceof Error
+            ? error.message
+            : "Could not inspect saved work",
+      }),
+    );
+  }
+}
 if (!passed) process.exitCode = 1;
