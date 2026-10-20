@@ -1,0 +1,14 @@
+{
+  "label": "SYNTHETIC TEST DATA. These are invented arithmetic examples, not retailer observations or purchase quotes.",
+  "observedAt": "2026-01-01T00:00:00.000Z",
+  "offers": [
+    {"id":"robu:hcsr04","partId":"hcsr04","retailer":"robu","sku":"TEST-R-HC","pricePaise":6500},
+    {"id":"robu:dht11","partId":"dht11","retailer":"robu","sku":"TEST-R-DHT","pricePaise":7500},
+    {"id":"robu:breadboard400","partId":"breadboard400","retailer":"robu","sku":"TEST-R-BB","pricePaise":3500},
+    {"id":"robocraze:hcsr04","partId":"hcsr04","retailer":"robocraze","sku":"TEST-C-HC","pricePaise":7500},
+    {"id":"robocraze:dht11","partId":"dht11","retailer":"robocraze","sku":"TEST-C-DHT","pricePaise":6000},
+    {"id":"robocraze:breadboard400","partId":"breadboard400","retailer":"robocraze","sku":"TEST-C-BB","pricePaise":4500}
+  ],
+  "shippingPaise": {"robu":8000,"robocraze":4000},
+  "manuallyCalculatedSample": {"allRobuPaise":32000,"allRobocrazePaise":29500,"cheapestItemSplitPaise":34500,"bestPaise":29500}
+}

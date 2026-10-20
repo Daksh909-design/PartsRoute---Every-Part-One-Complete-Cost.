@@ -1,0 +1,22 @@
+[
+  {
+    "File": "catalogue-fetch.json",
+    "Hash": "DE6ED56244B786FC6B744E88C48943CE4FD9F4D71913791CFCE0B7241934AFD3"
+  },
+  {
+    "File": "initial-fetch.json",
+    "Hash": "B9A02EDC3367A0AE448352D94DAF6169A3937A1668631022A64A39E7C1DD5456"
+  },
+  {
+    "File": "normalized-feasibility.json",
+    "Hash": "C4E2165D82E9B5B3C2D17A587BBA10246CEA8788F33C125FE8A4F87698A8E83E"
+  },
+  {
+    "File": "retry-and-fallback-fetch.json",
+    "Hash": "846DF38C0F658D28FB7E612B298A638EC2107DC8454E441026F59AA7D14DB677"
+  },
+  {
+    "File": "robocraze-agent.json",
+    "Hash": "DCBCEA764A4CF9CF8787C328188DE451A424A5F835E5CC94B3585B4D00601B50"
+  }
+]

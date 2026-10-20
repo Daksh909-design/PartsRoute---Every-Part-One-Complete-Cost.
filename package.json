@@ -1,0 +1,45 @@
+{
+  "name": "partsroute",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build --webpack",
+    "start": "next start",
+    "worker": "tsx --env-file-if-exists=.env.local src/worker.ts",
+    "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "validate:live": "tsx --env-file-if-exists=.env.local scripts/validate-live.ts",
+    "recover:run": "tsx --env-file-if-exists=.env.local scripts/recover-run.ts",
+    "test:http": "tsx scripts/smoke-http.ts",
+    "format": "prettier --write src scripts tests *.json *.ts *.mjs *.yaml .github/workflows/*.yml"
+  },
+  "dependencies": {
+    "next": "16.4.2",
+    "openai": "7.39.0",
+    "pg": "8.23.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.6.5",
+    "@types/pg": "8.23.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "postcss": "8.5.31",
+    "prettier": "3.9.10",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.0.5"
+  }
+}

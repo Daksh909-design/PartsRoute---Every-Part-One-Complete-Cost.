@@ -1,0 +1,44 @@
+{
+  "runId": "7a650199-7a13-41ad-b789-ac9119dd3d92",
+  "observedAt": "2026-10-20T05:52:52.892Z",
+  "status": "completed",
+  "result": {
+    "sku": "TIFSS0171",
+    "price": "Rs 75/-",
+    "stock": "1989 left in stock",
+    "pin_count": "4 (VCC, GND, Trigger, Echo)",
+    "5v_voltage": "5V DC (stated)",
+    "source_urls": [
+      "https://robocraze.com/products/hc-sr-04-ultrasonic-sensor",
+      "https://robocraze.com/cart"
+    ],
+    "product_name": "HC-SR04 Ultrasonic Distance Sensor Module",
+    "tax_inclusion": "Incl. GST (No Hidden Charges)",
+    "shipping_total": "null - not displayed on product page pincode check",
+    "units_per_pack": "1",
+    "shipping_charge": "null - not displayed on product page pincode check",
+    "cart_composition": "2 x HC-SR04 Ultrasonic Distance Sensor Module",
+    "verbatim_evidence": {
+      "sku": "SKU: TIFSS0171",
+      "price": "Price ₹75.00 / Rs 75/-",
+      "stock": "Please hurry! Only 1989 left in stock",
+      "voltage": "Operating Voltage: 5V DC / +5V DC",
+      "tax_note": "Incl. GST (No Hidden Charges)",
+      "pin_count": "The HC-SR04 ultrasonic sensor has two main pins, Trigger and Echo. It also has VCC and GND pins. The four pins are: Trigger Pin, Echo Pin, VCC, GND",
+      "cart_total": "Total amount is ₹150/-",
+      "cart_subtotal": "Subtotal: ₹150/- (for 2 items)",
+      "serviceability": "✓ Delivery Available | Bengaluru | Estimated delivery by Saturday, 24 October",
+      "units_per_pack": "1 x HC-SR04 Ultrasonic Distance Sensor Module"
+    },
+    "cart_item_subtotal": "Rs 150/-",
+    "serviceability_result": "Delivery Available - Bengaluru - Estimated delivery by Saturday, 24 October",
+    "serviceability_pincode": "560001",
+    "shipping_verification_status": "shipping unverified - pincode-only shipping estimator on product page confirms delivery availability and estimated date (Saturday, 24 October) but does not display a shipping charge amount. The cart page also lacks a pincode input field for a detailed shipping estimate requiring full address. No shipping cost can be derived from dispatch estimates alone."
+  },
+  "error": null,
+  "step": "Return all gathered findings for HC-SR04 product",
+  "stepCount": 24,
+  "duration": 173,
+  "runUrl": "https://agent.tinyfish.ai/runs/7a650199-7a13-41ad-b789-ac9119dd3d92",
+  "upsell_enabled": true
+}

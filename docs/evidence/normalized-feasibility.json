@@ -1,0 +1,81 @@
+{
+  "checkedAt": "2026-10-20T05:56:05.394Z",
+  "collection": "TinyFish connector live calls with ttl=0; not the application's direct-key HTTP path",
+  "milestone": {
+    "twoRetailerFetch": "partial",
+    "shippingPolicies": "partial",
+    "originalsSaved": true,
+    "sourceExcerptReview": true,
+    "humanVerification": false,
+    "completeLandedBasket": false
+  },
+  "observations": [
+    {
+      "retailer": "robu",
+      "url": "https://robu.in/product/dht11-digital-relative-humidity-temperature-sensor-module/",
+      "sku": "28586",
+      "pricePaise": 5900,
+      "taxStatus": "included",
+      "stock": "in_stock",
+      "unitsPerPack": 1,
+      "model": "DHT11",
+      "form": "breakout module",
+      "shippingPaise": null,
+      "notes": "Source text inspected by coding agent; pin count not stated reliably."
+    },
+    {
+      "retailer": "robocraze",
+      "url": "https://robocraze.com/products/hc-sr-04-ultrasonic-sensor",
+      "sku": "TIFSS0171",
+      "pricePaise": 7500,
+      "taxStatus": "included",
+      "stock": "in_stock",
+      "availablePacks": 1989,
+      "unitsPerPack": 1,
+      "model": "HC-SR04",
+      "pins": 4,
+      "voltage": "5 V",
+      "shippingPaise": null,
+      "agentRunId": "7a650199-7a13-41ad-b789-ac9119dd3d92"
+    },
+    {
+      "retailer": "robocraze",
+      "url": "https://robocraze.com/products/dht11-temperature-and-humidity-sensor-module",
+      "sku": "TIFSS0178",
+      "pricePaise": 6500,
+      "taxStatus": "included",
+      "stock": "in_stock",
+      "availablePacks": 54,
+      "pins": 4,
+      "notes": "Four-pin sensor description conflicts with sample requirement for a breakout module; exclude rather than silently substitute."
+    },
+    {
+      "retailer": "robocraze",
+      "url": "https://robocraze.com/products/half-breadboard",
+      "sku": "TIFEC0055",
+      "pricePaise": 3900,
+      "taxStatus": "included",
+      "stock": "in_stock",
+      "availablePacks": 9681,
+      "tiePoints": 400
+    },
+    {
+      "retailer": "robu",
+      "url": "https://robu.in/product/transparent-400-points-solderless-breadboard/",
+      "sku": "618305",
+      "pricePaise": 10500,
+      "taxStatus": "included",
+      "stock": "out_of_stock",
+      "tiePoints": 400,
+      "notes": "Excluded."
+    }
+  ],
+  "limitations": [
+    "Robu HC-SR04 first fetch returned bot_blocked; one deliberate retry returned navigation-only text, not a usable offer.",
+    "Robu shipping policy fetched only navigation and a placeholder.",
+    "Robocraze Agent verified two HC-SR04 packs to pincode 560001: item subtotal 15000 paise, serviceable true, shipping unknown, landed total unknown.",
+    "Evelta fallback policy and humidity category fetched; exact overlapping catalogue not established. Evelta is not enabled as an application retailer.",
+    "No OPENAI_API_KEY/TINYFISH_API_KEY/DATABASE_URL in process environment. No direct API or live AI extraction check executed.",
+    "No human manual verification has been performed; reviewer checklist remains required."
+  ]
+}
