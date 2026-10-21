@@ -2,6 +2,8 @@
 
 The existing Next.js server, Node worker and PostgreSQL database can be reached through a Cloudflare Quick Tunnel. This is a live server connection, separate from the synthetic calculator and cached comparisons.
 
+Verified on **21 October 2026**: [current temporary backend](https://economy-ant-enhance-cycles.trycloudflare.com/api/health). Pages release `8a2f416e78e7e6fd6db75a0c442675ca4d5719db` is configured for this origin. This replaces the stopped previous tunnel; the lifetime limitations below still apply.
+
 **This is a temporary preview, not permanent hosting.** The team computer, database, web server, worker and tunnel process must all remain running and online. Stopping the tunnel invalidates its hostname. A new tunnel normally gets a different hostname and requires rebuilding Pages with the new public backend origin. No Render account, billing setup or paid hosting was created.
 
 The Pages interface displays a temporary-server notice when configured with a trycloudflare.com backend. Provider keys remain server-side. All live API routes still require the team token, and the backend permits the exact Pages origin through CORS. The database stays bound to loopback; its port is not exposed through this HTTP tunnel.
