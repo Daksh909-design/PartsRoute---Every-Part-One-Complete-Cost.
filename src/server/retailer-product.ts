@@ -63,6 +63,7 @@ export function retailerProduct(
     ? Number(/(\d+)\s*[x×]/i.exec(packageLine)![1])
     : null;
   const tax = /Incl\. GST(?: \(No Hidden Charges\))?/.exec(header);
+  const wholePoints = /\|\s*Number of Points\s*\|\s*(\d+)\s*\|/i.exec(main);
   const support: ProductExtraction["support"] = [
     { field: "title", excerpt: title },
     { field: "model", excerpt: title },
@@ -80,7 +81,9 @@ export function retailerProduct(
     title,
     model,
     sku: skuMatch?.[1] ?? null,
-    specs: [],
+    specs: wholePoints
+      ? [{ key: "tie_points", value: wholePoints[1], excerpt: wholePoints[0] }]
+      : [],
     unitsPerPack: units,
     minPacks: null,
     multiplePacks: null,

@@ -99,6 +99,29 @@ it("refuses ambiguous displayed prices and unfamiliar templates", () => {
     retailerProduct(page.replace("HC-SR04", "HC-SR05"), "robocraze"),
   ).toBeNull();
 });
+it("distinguishes total breadboard connection points from the terminal-strip count", () => {
+  const text =
+    page.replaceAll(
+      "HC-SR04 Ultrasonic Sensor",
+      "400 Tie Points Solderless Breadboard",
+    ) +
+    "\n| Number of Points | 400 |\n| Tie Point | 300 |\n| Power Lanes | 100 Points |";
+  const parsed = retailerProduct(text, "robocraze")!;
+  parsed.specs.push({
+    key: "tie_points",
+    value: "300",
+    excerpt: "Tie Point | 300 |",
+  });
+  const offer = groundedOffer(
+    parsed,
+    text,
+    evidence,
+    "robocraze",
+    "part",
+    "offer",
+  );
+  expect(offer.specs).toEqual([{ key: "tie_points", value: "400" }]);
+});
 it("retains explicit out-of-stock status and never assumes one unit per pack", () => {
   const source =
     "# DHT11 Sensor Module\nSKU: 123\n₹ 59.00 (Incl. GST)\nAvailability: Out of Stock\nDidn’t find what you are looking for?\nIn Stock\n₹ 1.00 (Incl. GST)";

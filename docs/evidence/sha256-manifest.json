@@ -90,5 +90,17 @@
   {
     "File": "compact-enrichment-experiment-2026-10-20.json",
     "Hash": "8BB29CB38DC556488750E6746A3C178A5D8C2C8A0C50BC3D4FCF89DB75D4EB01"
+  },
+  {
+    "File": "narrow-extraction-thirty-second-2026-10-20.json",
+    "Hash": "A27ACEA2092E877BF9ACDAB70A3F94AF3DAC39175AABFD5042A9103558B1B7E4"
+  },
+  {
+    "File": "budgeted-collection-thirty-second-2026-10-20.json",
+    "Hash": "FE3106C8635C3A6FBFF4D060D12B055BB29725BFD76E4EE4556CF5788130890E"
+  },
+  {
+    "File": "public-budgeted-collection-2026-10-21.json",
+    "Hash": "F87CDF576FAF3CD5C10CB65042F0B2954D3D33B84455E1BD006F5E366D83C0C4"
   }
 ]

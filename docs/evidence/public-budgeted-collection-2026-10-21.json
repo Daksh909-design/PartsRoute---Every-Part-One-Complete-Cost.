@@ -1,0 +1,123 @@
+{
+  "checkedAt": "2026-10-21T03:10:08.990Z",
+  "requirement": "New live collection AND complete verified purchasing plan within 30000 ms",
+  "budgetMs": 30000,
+  "submission": "public HTTP quote endpoint",
+  "quoteId": "ace63e9d-f91f-4c0b-8b64-94041da9f19c",
+  "statusAtDeadline": "partial",
+  "elapsedMs": 26646.66,
+  "completeVerifiedPlan": false,
+  "collectionFinished": true,
+  "collectionWithinBudget": true,
+  "passed": false,
+  "reason": "No complete verified purchasing plan was returned within 30000 ms.",
+  "savedJobContinues": false,
+  "followUp": {
+    "status": "partial",
+    "observedAfterMs": 27028,
+    "serverDurationMs": 26258,
+    "refresh": true,
+    "offers": 2,
+    "coverage": {
+      "covered": 0,
+      "requested": 3
+    },
+    "verifiedPlan": false,
+    "errors": [
+      "Robu: HC-SR04 ultrasonic sensor could not be retrieved (bot_blocked).",
+      "Robocraze: DHT11 temperature sensor module unavailable. The operation was aborted due to timeout",
+      "Robocraze: 400-point solderless breadboard unavailable. The operation was aborted due to timeout",
+      "Robocraze: shipping policy unavailable. The operation was aborted due to timeout",
+      "Robocraze: HC-SR04 ultrasonic sensor unavailable. The operation was aborted due to timeout",
+      "Robu: DHT11 temperature sensor module AI details unverified; published listing facts retained. This check did not finish in the collection window. Saved facts are retained; unfinished details remain unverified."
+    ],
+    "providerResponses": [
+      {
+        "provider": "tinyfish-fetch",
+        "model": "fetch",
+        "requestId": "058608f8-9ce9-48be-aa48-732c87eaf35f",
+        "recordedAt": "2026-10-21T03:10:06.476Z",
+        "state": "responded",
+        "operation": null,
+        "latencyMs": 23682,
+        "inputTokens": null,
+        "outputTokens": null
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-21T03:10:08.222Z",
+        "state": "responded",
+        "operation": "product_details",
+        "latencyMs": 1649,
+        "inputTokens": 1336,
+        "outputTokens": 133
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-21T03:10:08.642Z",
+        "state": "responded",
+        "operation": "shipping_policy",
+        "latencyMs": 2077,
+        "inputTokens": 1516,
+        "outputTokens": 130
+      },
+      {
+        "provider": "tinyfish-fetch",
+        "model": "fetch",
+        "requestId": null,
+        "recordedAt": "2026-10-21T03:10:08.785Z",
+        "state": "failed",
+        "operation": null,
+        "latencyMs": 25966,
+        "inputTokens": null,
+        "outputTokens": null
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-21T03:10:08.786Z",
+        "state": "budget_exhausted",
+        "operation": null,
+        "latencyMs": null,
+        "inputTokens": null,
+        "outputTokens": null
+      }
+    ],
+    "fetchObservations": [
+      {
+        "url": "https://robu.in/product/hc-sr04-ultrasonic-range-finder/",
+        "retrievedAt": "2026-10-21T03:10:06.488Z",
+        "requestId": "058608f8-9ce9-48be-aa48-732c87eaf35f",
+        "results": 3,
+        "errors": 1
+      },
+      {
+        "url": "https://robu.in/product/dht11-digital-relative-humidity-temperature-sensor-module/",
+        "retrievedAt": "2026-10-21T03:10:06.522Z",
+        "requestId": "058608f8-9ce9-48be-aa48-732c87eaf35f",
+        "results": 3,
+        "errors": 1
+      },
+      {
+        "url": "https://robu.in/product/transparent-400-points-solderless-breadboard/",
+        "retrievedAt": "2026-10-21T03:10:06.529Z",
+        "requestId": "058608f8-9ce9-48be-aa48-732c87eaf35f",
+        "results": 3,
+        "errors": 1
+      },
+      {
+        "url": "https://robu.in/shipping-and-refund-policy/",
+        "retrievedAt": "2026-10-21T03:10:06.537Z",
+        "requestId": "058608f8-9ce9-48be-aa48-732c87eaf35f",
+        "results": 3,
+        "errors": 1
+      }
+    ]
+  },
+  "origin": "https://economy-ant-enhance-cycles.trycloudflare.com"
+}

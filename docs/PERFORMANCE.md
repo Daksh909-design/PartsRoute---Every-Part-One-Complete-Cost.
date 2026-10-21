@@ -1,4 +1,6 @@
-# Response time and the seven-second requirement
+# Response time and live verification
+
+**Current target: thirty seconds.** The latest bounded-window operator test returned fresh partial results over public HTTP in 26.46 seconds. It did not return a verified delivered plan; the strict test still failed. The previous public run without the shared window took 54 seconds. See [current implementation and measurements](COLLECTOR-UPDATE.md). The seven- and ten-second measurements below are historical. The interface's old ten-second deadline warning has been removed as requested; timers and unknown costs remain visible.
 
 PartsRoute separates two operations:
 

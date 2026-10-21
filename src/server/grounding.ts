@@ -74,6 +74,14 @@ export function groundedOffer(
   const specs = ex.specs.filter(
     (s) =>
       containsExcerpt(text, s.excerpt) &&
+      // Some breadboards list 300 terminal tie points and 100 power points
+      // separately. When an explicit whole-board count exists, a lone "Tie
+      // Point" component row cannot establish the requested total count.
+      !(
+        s.key === "tie_points" &&
+        /\|\s*Number of Points\s*\|\s*\d+\s*\|/i.test(text) &&
+        /^\s*\|?\s*Tie Points?\s*[:|=]\s*\d+\s*\|?\s*$/i.test(s.excerpt)
+      ) &&
       (s.key !== "pins" ||
         (/^\d+$/.test(s.value) &&
           new RegExp(

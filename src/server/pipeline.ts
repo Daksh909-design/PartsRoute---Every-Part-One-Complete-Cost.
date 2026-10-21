@@ -34,6 +34,7 @@ import { cachedAI } from "./extraction-cache";
 import { observationTtl } from "./snapshot";
 import { NORMALIZATION_VERSION } from "../domain/normalization";
 import { retailerProduct } from "./retailer-product";
+import { CollectionDeadline, collectionWindowMs } from "./deadline";
 import {
   checkedOrders,
   verificationCandidates,
@@ -125,6 +126,7 @@ async function verify(
   tiny: TinyFishClient,
   deadline: number,
 ): Promise<{ shipping: ShippingObservation | null; orders: CheckedOrder[] }> {
+  if (Date.now() >= deadline) throw new CollectionDeadline();
   const key = `basket:${createHash("sha256").update(basket.key).digest("hex")}`;
   const existingObservation = await observation(jobId, key);
   if (
@@ -244,9 +246,13 @@ async function verify(
 export async function processQuote(
   jobId: string,
   rawInput: unknown,
-  tiny = new TinyFishClient(),
+  tiny?: TinyFishClient,
   suppliedAI?: AIProvider,
 ): Promise<QuoteResult> {
+  // Leave response/persistence headroom around the thirty-second UI target.
+  // Expiry yields a truthful partial result, never a verified substitute.
+  const deadline = Date.now() + collectionWindowMs();
+  const collector = tiny ?? new TinyFishClient(undefined, undefined, deadline);
   const input = QuoteInput.parse(rawInput),
     offers: Offer[] = [],
     rules: ShippingRule[] = [],
@@ -255,7 +261,7 @@ export async function processQuote(
   const ai =
     suppliedAI ??
     cachedAI(
-      createAIProvider((u) => usage(jobId, u)),
+      createAIProvider((u) => usage(jobId, u), deadline),
       input.refresh,
     );
   let accessFailure: ProviderAccessError | null = null;
@@ -280,7 +286,11 @@ export async function processQuote(
           const started = performance.now();
           let original: FetchResponse;
           try {
-            original = await tiny.fetchPages(urls, retailer, input.refresh);
+            original = await collector.fetchPages(
+              urls,
+              retailer,
+              input.refresh,
+            );
           } catch (error) {
             await usage(jobId, {
               provider: "tinyfish-fetch",
@@ -346,7 +356,7 @@ export async function processQuote(
                 retailer,
                 entry.urls[retailer],
                 input.refresh,
-                tiny,
+                collector,
                 fetchBatch,
               );
               if (
@@ -462,7 +472,7 @@ export async function processQuote(
             retailer,
             retailers[retailer].policyUrl,
             input.refresh,
-            tiny,
+            collector,
             fetchBatch,
           );
           if (
@@ -520,7 +530,7 @@ export async function processQuote(
     Math.max(1, Number(process.env.MAX_BROWSER_CHECKS) || 3),
   );
   let checks = 0;
-  const verificationDeadline = Date.now() + 45000;
+  const verificationDeadline = Math.min(deadline, Date.now() + 45000);
   verification: for (const plan of shortlist) {
     for (const basket of plan.baskets) {
       if (seen.has(basket.key) || checks >= limit) continue;
@@ -541,7 +551,7 @@ export async function processQuote(
           jobId,
           basket,
           input.pincode,
-          tiny,
+          collector,
           verificationDeadline,
         );
         if (inspected.shipping) shipping.push(inspected.shipping);

@@ -1,0 +1,131 @@
+{
+  "checkedAt": "2026-10-20T17:11:05.389Z",
+  "requirement": "New live collection AND complete verified purchasing plan within 30000 ms",
+  "budgetMs": 30000,
+  "quoteId": "f3bd83a7-46ec-4bde-8f19-8ab4c1da98cd",
+  "statusAtDeadline": "processing",
+  "elapsedMs": 30018.62,
+  "completeVerifiedPlan": false,
+  "collectionFinished": false,
+  "collectionWithinBudget": false,
+  "passed": false,
+  "reason": "No complete verified purchasing plan was returned within 30000 ms.",
+  "savedJobContinues": true,
+  "followUp": {
+    "source": "Direct database inspection after the public follow-up GET timed out; no additional provider calls",
+    "checkedAt": "2026-10-20T17:15:37.867Z",
+    "status": "partial",
+    "serverDurationMs": 54000,
+    "offers": 5,
+    "coverage": {
+      "covered": 0,
+      "requested": 3
+    },
+    "verifiedPlan": false,
+    "errors": [
+      "Robu: DHT11 temperature sensor module returned incomplete page content.",
+      "Robu: 400-point solderless breadboard AI details unverified; published listing facts retained. Product extraction timed out or could not reach Google. Collected pages remain saved; try refreshing later."
+    ],
+    "usage": [
+      {
+        "provider": "tinyfish-fetch",
+        "model": "fetch",
+        "request_id": null,
+        "input_tokens": null,
+        "output_tokens": null,
+        "created_at": "2026-10-20T17:10:40.438Z",
+        "state": "responded",
+        "operation": null,
+        "latency_ms": "4203"
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "request_id": null,
+        "input_tokens": 3974,
+        "output_tokens": 229,
+        "created_at": "2026-10-20T17:10:52.169Z",
+        "state": "responded",
+        "operation": "shipping_policy",
+        "latency_ms": "11697"
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "request_id": null,
+        "input_tokens": 2847,
+        "output_tokens": 136,
+        "created_at": "2026-10-20T17:10:52.735Z",
+        "state": "responded",
+        "operation": "product_details",
+        "latency_ms": "12252"
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "request_id": null,
+        "input_tokens": 3330,
+        "output_tokens": 132,
+        "created_at": "2026-10-20T17:10:53.724Z",
+        "state": "responded",
+        "operation": "product_details",
+        "latency_ms": "13237"
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "request_id": null,
+        "input_tokens": 2046,
+        "output_tokens": 131,
+        "created_at": "2026-10-20T17:10:57.440Z",
+        "state": "responded",
+        "operation": "product_details",
+        "latency_ms": "16954"
+      },
+      {
+        "provider": "tinyfish-fetch",
+        "model": "fetch",
+        "request_id": null,
+        "input_tokens": null,
+        "output_tokens": null,
+        "created_at": "2026-10-20T17:10:59.283Z",
+        "state": "responded",
+        "operation": null,
+        "latency_ms": "23070"
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "request_id": null,
+        "input_tokens": 1516,
+        "output_tokens": 131,
+        "created_at": "2026-10-20T17:11:10.979Z",
+        "state": "responded",
+        "operation": "shipping_policy",
+        "latency_ms": "11521"
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "request_id": null,
+        "input_tokens": 2526,
+        "output_tokens": 130,
+        "created_at": "2026-10-20T17:11:20.175Z",
+        "state": "responded",
+        "operation": "product_details",
+        "latency_ms": "20712"
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "request_id": null,
+        "input_tokens": null,
+        "output_tokens": null,
+        "created_at": "2026-10-20T17:11:29.476Z",
+        "state": "unavailable",
+        "operation": null,
+        "latency_ms": null
+      }
+    ]
+  }
+}

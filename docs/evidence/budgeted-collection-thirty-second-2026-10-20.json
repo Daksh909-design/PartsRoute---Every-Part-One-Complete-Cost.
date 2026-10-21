@@ -1,0 +1,225 @@
+{
+  "checkedAt": "2026-10-20T17:17:17.017Z",
+  "requirement": "New live collection AND complete verified purchasing plan within 30000 ms",
+  "budgetMs": 30000,
+  "submission": "local operator queue; public HTTP result polling",
+  "quoteId": "50503f1d-c73c-45cc-8acb-1950cbc99128",
+  "statusAtDeadline": "partial",
+  "elapsedMs": 26460.41,
+  "completeVerifiedPlan": false,
+  "collectionFinished": true,
+  "collectionWithinBudget": true,
+  "passed": false,
+  "reason": "No complete verified purchasing plan was returned within 30000 ms.",
+  "savedJobContinues": false,
+  "followUp": {
+    "status": "partial",
+    "observedAfterMs": 27528,
+    "serverDurationMs": 26224,
+    "refresh": true,
+    "offers": 5,
+    "coverage": {
+      "covered": 0,
+      "requested": 3
+    },
+    "verifiedPlan": false,
+    "errors": [
+      "Robu: 400-point solderless breadboard could not be retrieved (bot_blocked).",
+      "Robu: shipping policy unavailable. This check did not finish in the collection window. Saved facts are retained; unfinished details remain unverified.",
+      "Robu: DHT11 temperature sensor module AI details unverified; published listing facts retained. This check did not finish in the collection window. Saved facts are retained; unfinished details remain unverified.",
+      "Robu: HC-SR04 ultrasonic sensor AI details unverified; published listing facts retained. This check did not finish in the collection window. Saved facts are retained; unfinished details remain unverified."
+    ],
+    "providerResponses": [
+      {
+        "provider": "tinyfish-fetch",
+        "model": "fetch",
+        "requestId": null,
+        "recordedAt": "2026-10-20T17:16:56.797Z",
+        "state": "responded",
+        "operation": null,
+        "latencyMs": 5987,
+        "inputTokens": null,
+        "outputTokens": null
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T17:16:59.168Z",
+        "state": "unavailable",
+        "operation": null,
+        "latencyMs": null,
+        "inputTokens": null,
+        "outputTokens": null
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T17:17:00.113Z",
+        "state": "unavailable",
+        "operation": null,
+        "latencyMs": null,
+        "inputTokens": null,
+        "outputTokens": null
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T17:17:02.834Z",
+        "state": "unavailable",
+        "operation": null,
+        "latencyMs": null,
+        "inputTokens": null,
+        "outputTokens": null
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T17:17:08.127Z",
+        "state": "responded",
+        "operation": "product_details",
+        "latencyMs": 11286,
+        "inputTokens": 2847,
+        "outputTokens": 136
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T17:17:08.522Z",
+        "state": "responded",
+        "operation": "product_details",
+        "latencyMs": 11678,
+        "inputTokens": 3330,
+        "outputTokens": 128
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T17:17:12.044Z",
+        "state": "responded",
+        "operation": "shipping_policy",
+        "latencyMs": 15212,
+        "inputTokens": 3974,
+        "outputTokens": 269
+      },
+      {
+        "provider": "tinyfish-fetch",
+        "model": "fetch",
+        "requestId": "d82942e9-8091-4c77-851c-5d72c6f01dd0",
+        "recordedAt": "2026-10-20T17:17:12.912Z",
+        "state": "responded",
+        "operation": null,
+        "latencyMs": 22126,
+        "inputTokens": null,
+        "outputTokens": null
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T17:17:16.784Z",
+        "state": "budget_exhausted",
+        "operation": null,
+        "latencyMs": null,
+        "inputTokens": null,
+        "outputTokens": null
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T17:17:16.113Z",
+        "state": "responded",
+        "operation": "product_details",
+        "latencyMs": 19270,
+        "inputTokens": 2046,
+        "outputTokens": 131
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T17:17:16.783Z",
+        "state": "budget_exhausted",
+        "operation": null,
+        "latencyMs": null,
+        "inputTokens": null,
+        "outputTokens": null
+      },
+      {
+        "provider": "gemini",
+        "model": "gemini-3.5-flash-lite",
+        "requestId": null,
+        "recordedAt": "2026-10-20T17:17:16.783Z",
+        "state": "budget_exhausted",
+        "operation": null,
+        "latencyMs": null,
+        "inputTokens": null,
+        "outputTokens": null
+      }
+    ],
+    "fetchObservations": [
+      {
+        "url": "https://robocraze.com/products/hc-sr-04-ultrasonic-sensor",
+        "retrievedAt": "2026-10-20T17:16:56.806Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      },
+      {
+        "url": "https://robocraze.com/products/dht11-humidity-temperature-sensor-module",
+        "retrievedAt": "2026-10-20T17:16:56.806Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      },
+      {
+        "url": "https://robocraze.com/products/half-breadboard",
+        "retrievedAt": "2026-10-20T17:16:56.806Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      },
+      {
+        "url": "https://robocraze.com/pages/shipping-policy",
+        "retrievedAt": "2026-10-20T17:16:56.807Z",
+        "requestId": null,
+        "results": 4,
+        "errors": 0
+      },
+      {
+        "url": "https://robu.in/product/hc-sr04-ultrasonic-range-finder/",
+        "retrievedAt": "2026-10-20T17:17:12.916Z",
+        "requestId": "d82942e9-8091-4c77-851c-5d72c6f01dd0",
+        "results": 3,
+        "errors": 1
+      },
+      {
+        "url": "https://robu.in/product/transparent-400-points-solderless-breadboard/",
+        "retrievedAt": "2026-10-20T17:17:12.952Z",
+        "requestId": "d82942e9-8091-4c77-851c-5d72c6f01dd0",
+        "results": 3,
+        "errors": 1
+      },
+      {
+        "url": "https://robu.in/shipping-and-refund-policy/",
+        "retrievedAt": "2026-10-20T17:17:12.958Z",
+        "requestId": "d82942e9-8091-4c77-851c-5d72c6f01dd0",
+        "results": 3,
+        "errors": 1
+      },
+      {
+        "url": "https://robu.in/product/dht11-digital-relative-humidity-temperature-sensor-module/",
+        "retrievedAt": "2026-10-20T17:17:13.052Z",
+        "requestId": "d82942e9-8091-4c77-851c-5d72c6f01dd0",
+        "results": 3,
+        "errors": 1
+      }
+    ]
+  }
+}

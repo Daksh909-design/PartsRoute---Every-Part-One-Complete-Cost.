@@ -2,6 +2,7 @@ import { z } from "zod";
 import { EVIDENCE_INSTRUCTIONS, StructuredAIProvider, type Usage } from "./ai";
 import { ProviderAccessError, providerFingerprint } from "./provider-error";
 import { TaskPool } from "./concurrency";
+import { CollectionDeadline, requestSignal } from "./deadline";
 
 const Interaction = z.object({
   id: z.string().optional(),
@@ -43,6 +44,7 @@ export class GeminiProvider extends StructuredAIProvider {
     private recordUsage: (usage: Usage) => Promise<void>,
     private apiKey = process.env.GEMINI_API_KEY,
     private transport: typeof fetch = fetch,
+    private deadline = Infinity,
   ) {
     super();
     if (!apiKey)
@@ -78,7 +80,8 @@ export class GeminiProvider extends StructuredAIProvider {
             {
               method: "POST",
               redirect: "error",
-              signal: AbortSignal.timeout(
+              signal: requestSignal(
+                this.deadline,
                 Math.min(
                   30000,
                   Math.max(
@@ -108,11 +111,21 @@ export class GeminiProvider extends StructuredAIProvider {
               }),
             },
           );
-        } catch {
-          this.serviceFailure = new Error(
-            "Product extraction timed out or could not reach Google. Collected pages remain saved; try refreshing later.",
+        } catch (error) {
+          // Expired queued work never started a provider request. An in-flight
+          // abort has unknown remote usage and is recorded separately.
+          if (error instanceof CollectionDeadline) throw error;
+          const expired = Date.now() >= this.deadline;
+          this.serviceFailure = expired
+            ? new CollectionDeadline()
+            : new Error(
+                "Product extraction timed out or could not reach Google. Collected pages remain saved; try refreshing later.",
+              );
+          await this.recordFailure(
+            0,
+            this.serviceFailure.message,
+            expired ? "budget_exhausted" : undefined,
           );
-          await this.recordFailure(0, this.serviceFailure.message);
           throw this.serviceFailure;
         }
         if ([502, 503, 504].includes(response.status) && attempt === 0) {
@@ -202,7 +215,11 @@ export class GeminiProvider extends StructuredAIProvider {
       return schema.parse(JSON.parse(text));
     });
   }
-  private async recordFailure(httpStatus: number, detail: string) {
+  private async recordFailure(
+    httpStatus: number,
+    detail: string,
+    state?: string,
+  ) {
     const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
     await this.recordUsage({
       provider: "gemini",
@@ -211,11 +228,13 @@ export class GeminiProvider extends StructuredAIProvider {
       inputTokens: null,
       outputTokens: null,
       raw: {
-        state: [400, 401, 403, 404].includes(httpStatus)
-          ? "blocked"
-          : httpStatus === 429
-            ? "quota"
-            : "unavailable",
+        state:
+          state ??
+          ([400, 401, 403, 404].includes(httpStatus)
+            ? "blocked"
+            : httpStatus === 429
+              ? "quota"
+              : "unavailable"),
         httpStatus,
         detail,
         fingerprint: providerFingerprint("gemini", model, this.apiKey!),

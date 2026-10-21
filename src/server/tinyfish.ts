@@ -3,6 +3,7 @@ import { safeRetailerUrl } from "./urls";
 import type { Basket, Retailer } from "../domain/schema";
 import { retailers } from "../domain/catalogue";
 import { ProviderAccessError, RunRejectedError } from "./provider-error";
+import { requestSignal } from "./deadline";
 
 const FetchResult = z
   .object({
@@ -34,6 +35,7 @@ export class TinyFishClient {
   constructor(
     private apiKey = process.env.TINYFISH_API_KEY,
     private transport: typeof fetch = fetch,
+    private deadline = Infinity,
   ) {}
   private async request(
     url: string,
@@ -52,7 +54,7 @@ export class TinyFishClient {
             "Content-Type": "application/json",
           },
           body: body ? JSON.stringify(body) : undefined,
-          signal: AbortSignal.timeout(timeoutMs),
+          signal: requestSignal(this.deadline, timeoutMs),
           redirect: "error",
         });
         if (!response.ok) {
@@ -105,7 +107,10 @@ export class TinyFishClient {
           links: false,
           page_metadata: true,
           ttl: refresh ? 0 : 900,
-          per_url_timeout_ms: 30000,
+          per_url_timeout_ms: Math.max(
+            1,
+            Math.min(30000, Math.floor(this.deadline - Date.now() - 1000)),
+          ),
         },
         false,
         65000,

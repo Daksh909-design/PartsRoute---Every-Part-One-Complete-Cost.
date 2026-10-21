@@ -16,8 +16,9 @@ export function aiConfig() {
 }
 export function createAIProvider(
   record: (usage: Usage) => Promise<void>,
+  deadline = Infinity,
 ): AIProvider {
   return aiConfig().provider === "gemini"
-    ? new GeminiProvider(record)
-    : new OpenAIProvider(record);
+    ? new GeminiProvider(record, undefined, undefined, deadline)
+    : new OpenAIProvider(record, undefined, deadline);
 }

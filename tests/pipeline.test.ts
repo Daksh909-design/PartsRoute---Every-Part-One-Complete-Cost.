@@ -80,7 +80,7 @@ vi.mock("../src/server/db", () => ({
     for (const row of state.observations.values())
       if (row.id === id) {
         row.normalized = value;
-        row.normalization_version = "grounding-v5";
+        row.normalization_version = "grounding-v6";
       }
   }),
 }));

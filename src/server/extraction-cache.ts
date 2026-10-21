@@ -17,7 +17,7 @@ export function extractionKey(
 ) {
   // Bump this version when the prompt, schema or grounding contract changes.
   return createHash("sha256")
-    .update(JSON.stringify(["extraction-v4", provider, model, kind, args]))
+    .update(JSON.stringify(["extraction-v5", provider, model, kind, args]))
     .digest("hex");
 }
 export function cachedAI(ai: AIProvider, refresh = false): AIProvider {

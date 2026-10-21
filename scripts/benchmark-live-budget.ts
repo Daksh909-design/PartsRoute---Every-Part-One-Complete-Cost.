@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { sampleParts } from "../src/domain/catalogue";
 const origin = process.env.SMOKE_ORIGIN || "http://localhost:3000";
+const localSubmit = process.argv.includes("--local-submit");
 if (!process.env.APP_ACCESS_TOKEN)
   throw new Error("Configure the private team access token.");
 const start = performance.now();
@@ -33,16 +34,32 @@ async function request(path: string, init: RequestInit = {}) {
   return result;
 }
 try {
-  const created = await request("/api/quotes", {
-    method: "POST",
-    headers: { "Idempotency-Key": randomUUID() },
-    body: JSON.stringify({
-      parts: sampleParts,
-      pincode: "560001",
-      mode: "live",
-      refresh: true,
-    }),
-  });
+  const input = {
+    parts: sampleParts,
+    pincode: "560001",
+    mode: "live" as const,
+    refresh: true,
+  };
+  let created;
+  if (localSubmit) {
+    // Explicit operator validation requires private database credentials. Like
+    // validate:live, it has its own bounded actor quota; public limits stay intact.
+    // The normal worker still claims the job and public HTTP serves results.
+    const { enqueue, db } = await import("../src/server/db");
+    try {
+      created = {
+        id: await enqueue(input, randomUUID(), "live-validation-cli"),
+        status: "queued",
+      };
+    } finally {
+      await db().end();
+    }
+  } else
+    created = await request("/api/quotes", {
+      method: "POST",
+      headers: { "Idempotency-Key": randomUUID() },
+      body: JSON.stringify(input),
+    });
   quoteId = created.id;
   if (!quoteId || created.status === "cached")
     throw new Error("The fresh test did not create a live collection job.");
@@ -85,6 +102,9 @@ const report = {
   checkedAt: new Date().toISOString(),
   requirement: `New live collection AND complete verified purchasing plan within ${budgetMs} ms`,
   budgetMs,
+  submission: localSubmit
+    ? "local operator queue; public HTTP result polling"
+    : "public HTTP quote endpoint",
   quoteId,
   statusAtDeadline: state,
   elapsedMs,
