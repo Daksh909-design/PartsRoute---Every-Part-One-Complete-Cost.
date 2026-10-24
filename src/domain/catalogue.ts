@@ -1,4 +1,4 @@
-import type { PartRequest, Retailer } from "./schema";
+import type { PartRequest, Retailer, ProductSource } from "./schema";
 export const retailers: Record<
   Retailer,
   { name: string; domain: string; policyUrl: string; cartUrl: string }
@@ -52,6 +52,19 @@ export const catalogue = [
     },
   },
 ] as const;
+export function partSources(part: PartRequest): ProductSource[] {
+  if (part.sources?.length) return part.sources;
+  const sample = catalogue.find((entry) => entry.id === part.catalogueId);
+  return sample
+    ? Object.entries(sample.urls).map(([retailer, url]) => ({
+        retailer: retailer as Retailer,
+        url,
+      }))
+    : [];
+}
+export function sourceFor(part: PartRequest, retailer: Retailer) {
+  return partSources(part).find((source) => source.retailer === retailer);
+}
 export const sampleParts: PartRequest[] = catalogue.map((p, i) => ({
   id: p.id,
   catalogueId: p.id,

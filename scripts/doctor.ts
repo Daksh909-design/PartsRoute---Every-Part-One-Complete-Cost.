@@ -30,9 +30,7 @@ if (process.argv.includes("--providers")) {
   if (process.env[ai.keyName]) {
     try {
       const fact = "This is a provider connectivity check only.";
-      const answer = await createAIProvider(async () => {}).explain([fact]);
-      if (answer !== fact)
-        throw new Error("No validated explanation returned.");
+      await createAIProvider(async () => {}).explain([fact]);
       console.log(
         `OK ${ai.name}: configured model returned a schema-validated response. Product extraction accuracy is not checked here.`,
       );

@@ -194,6 +194,7 @@ export class OpenAIProvider extends StructuredAIProvider {
     private recordUsage: (usage: Usage) => Promise<void>,
     apiKey = process.env.OPENAI_API_KEY,
     private deadline = Infinity,
+    private signal?: AbortSignal,
   ) {
     super();
     if (!apiKey)
@@ -220,7 +221,7 @@ export class OpenAIProvider extends StructuredAIProvider {
         ],
         text: { format: zodTextFormat(schema, name) },
       },
-      { signal: requestSignal(this.deadline, 60000) },
+      { signal: requestSignal(this.deadline, 60000, this.signal) },
     );
     await this.recordUsage({
       provider: "openai",

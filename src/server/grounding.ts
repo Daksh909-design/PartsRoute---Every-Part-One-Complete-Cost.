@@ -1,14 +1,43 @@
 import type { ProductExtraction, PolicyExtraction } from "./ai";
 import { paise } from "../domain/optimizer";
 import type { Evidence, Offer, Retailer, ShippingRule } from "../domain/schema";
-import { canonical } from "../domain/matching";
 
 const whitespace = (s: string) =>
   s.normalize("NFKC").replace(/\s+/g, " ").trim();
 export const containsExcerpt = (text: string, excerpt: string) =>
   excerpt.trim().length >= 2 && whitespace(text).includes(whitespace(excerpt));
+
+// Match complete values while allowing published spacing and model punctuation.
+// Numeric boundaries prevent 5 V matching 12.5 V; suffixes remain significant.
+export function quotedValue(excerpt: string, value: string): boolean {
+  const normalise = (s: string) =>
+    whitespace(s)
+      .toLowerCase()
+      .replace(/volts?\b/g, "v")
+      .replace(/millimet(?:er|re)s?\b/g, "mm");
+  const tokens = normalise(value).match(/[a-z]+|\d+(?:\.\d+)?/g);
+  if (!tokens?.length) return false;
+  const pattern = tokens
+    .map((token) => token.replaceAll(".", "\\."))
+    .join("[\\s_-]*");
+  return new RegExp(`(?<![a-z\\d.])${pattern}(?![a-z\\d]|\\.\\d)`, "i").test(
+    normalise(excerpt),
+  );
+}
+
+function supportsSpec(key: string, value: string, excerpt: string): boolean {
+  if (key === "voltage") {
+    if (
+      /\d\s*(?:-|–|—|to|~)\s*\d/i.test(excerpt) &&
+      !/\d\s*(?:-|–|—|to|~)\s*\d/i.test(value)
+    )
+      return false;
+    if (/\bAC\b/i.test(excerpt) !== /\bAC\b/i.test(value)) return false;
+  }
+  return quotedValue(excerpt, value);
+}
 export function quotedMoney(excerpt: string, amount: number): boolean {
-  const matches = excerpt.match(/\d[\d,]*(?:\.\d{1,2})?/g) ?? [];
+  const matches = excerpt.match(/-?\d[\d,]*(?:\.\d+)?/g) ?? [];
   return matches.some((m) => {
     try {
       return paise(m.replaceAll(",", "")) === amount;
@@ -35,10 +64,24 @@ export function groundedOffer(
       const value = ex[s.field],
         q = s.excerpt.toLowerCase();
       if (value === null) return false;
+      if (s.field === "title") return containsExcerpt(s.excerpt, ex.title);
       if (
         typeof value === "number" &&
         (s.field === "minPacks" || s.field === "multiplePacks")
       ) {
+        // HTML steps start at min, whereas the calculator uses absolute
+        // multiples. Keep unsupported offset sequences unverified.
+        if (s.field === "multiplePacks") {
+          const htmlMinimum = /\bmin=["'](\d+)["']/i.exec(q);
+          const htmlStep = /\bstep=["'](\d+)["']/i.exec(q);
+          if (
+            htmlMinimum &&
+            htmlStep &&
+            (Number(htmlStep[1]) <= 0 ||
+              Number(htmlMinimum[1]) % Number(htmlStep[1]) !== 0)
+          )
+            return false;
+        }
         const label =
           s.field === "minPacks"
             ? "(?:min(?:imum)?(?:\\s+(?:order|packs|quantity))?|MOQ)"
@@ -50,6 +93,16 @@ export function groundedOffer(
           ).test(q) && numberIn(q, value)
         );
       }
+      if (s.field === "unitsPerPack" && typeof value === "number")
+        return new RegExp(
+          `(?:\\b${value}\\s*[x×]\\s+|\\b(?:units? per pack|pack (?:of|size))\\s*[:=]?\\s*${value}(?!\\d|\\.\\d))`,
+          "i",
+        ).test(q);
+      if (s.field === "availablePacks" && typeof value === "number")
+        return new RegExp(
+          `\\b${value}\\s+(?:left in stock|packs? (?:available|in stock))\\b`,
+          "i",
+        ).test(q.replaceAll(",", ""));
       if (typeof value === "number")
         return s.field === "taxRateBps"
           ? new RegExp(`${value / 100}\\s*%`).test(q)
@@ -62,14 +115,16 @@ export function groundedOffer(
             ? /out of stock|sold out|only 0 left/i.test(q)
             : false;
       if (s.field === "taxStatus")
-        return value === "included"
-          ? /incl(?:uded|usive)?\.?\s*(?:of\s*)?(?:gst|tax)/i.test(q)
-          : value === "excluded"
-            ? /ex(?:cl(?:uded|usive)?)?\.?\s*(?:of\s*)?(?:gst|tax)/i.test(q)
-            : false;
+        return /\b(?:not|excluding)\s+incl/i.test(q)
+          ? false
+          : value === "included"
+            ? /incl(?:uded|usive)?\.?\s*(?:of\s*)?(?:gst|tax)/i.test(q)
+            : value === "excluded"
+              ? /ex(?:cl(?:uded|usive)?)?\.?\s*(?:of\s*)?(?:gst|tax)/i.test(q)
+              : false;
       if (s.field === "model" && value === "breadboard400")
-        return /400/.test(q) && /breadboard/.test(q);
-      return canonical(q).includes(canonical(String(value)));
+        return quotedValue(q, "400") && /\bbreadboard\b/.test(q);
+      return quotedValue(q, String(value));
     });
   const specs = ex.specs.filter(
     (s) =>
@@ -88,7 +143,7 @@ export function groundedOffer(
             `(?:\\b${s.value}\\s*[- ]?pins?\\b|\\bpins?\\s*[:|=]\\s*${s.value}\\b)`,
             "i",
           ).test(s.excerpt))) &&
-      (canonical(s.excerpt).includes(canonical(s.value)) ||
+      (supportsSpec(s.key, s.value, s.excerpt) ||
         (s.key === "form" &&
           s.value === "breakout module" &&
           (/break[- ]?out\s+(?:board|module)/i.test(s.excerpt) ||
@@ -100,12 +155,19 @@ export function groundedOffer(
           /4[- ]pin package/i.test(s.excerpt))),
   );
   const prices = ex.priceBreaks
-    .filter(
-      (p) =>
-        containsExcerpt(text, p.excerpt) &&
-        quotedMoney(p.excerpt, paise(p.packPriceInr)) &&
-        (p.minPacks === 1 || numberIn(p.excerpt, p.minPacks)),
-    )
+    .filter((p) => {
+      try {
+        return (
+          containsExcerpt(text, p.excerpt) &&
+          !/(~~|<del\b|<s\b|\b(?:save|savings|MRP|was)\b)/i.test(p.excerpt) &&
+          /₹|\b(?:INR|Rs\.?|price)\b/i.test(p.excerpt) &&
+          quotedMoney(p.excerpt, paise(p.packPriceInr)) &&
+          (p.minPacks === 1 || numberIn(p.excerpt, p.minPacks))
+        );
+      } catch {
+        return false;
+      }
+    })
     .map((p) => ({
       minPacks: p.minPacks,
       packPricePaise: paise(p.packPriceInr),

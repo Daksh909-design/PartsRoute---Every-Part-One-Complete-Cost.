@@ -51,7 +51,10 @@ export async function POST(request: Request) {
     if (error instanceof RequestLimit)
       return Response.json(
         { error: error.message },
-        { status: 429, headers: { "Retry-After": "300" } },
+        {
+          status: 429,
+          headers: { "Retry-After": String(error.retryAfterSeconds) },
+        },
       );
     return apiError(error);
   }

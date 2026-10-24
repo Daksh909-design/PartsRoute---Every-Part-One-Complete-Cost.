@@ -48,7 +48,7 @@ describe("live API access boundary", () => {
       requestJson(
         new Request("http://localhost/api/demo", {
           method: "POST",
-          body: "a".repeat(16385),
+          body: "a".repeat(131073),
         }),
       ),
     ).rejects.toThrow("too large");

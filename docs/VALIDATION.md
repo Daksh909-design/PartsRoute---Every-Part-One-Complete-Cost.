@@ -1,51 +1,43 @@
-# Validation
+# Validation — local revision, 22 October 2026
 
-Application checks and external integration qualification are reported separately. Original responses remain in [evidence](evidence/README.md). Earlier development notes are available in Git history.
+## Checks exercised
 
-## Render service checks — 24 October 2026
+| Check                                  | Result                            | What it establishes                                                                                                                             |
+| -------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit/contract regressions              | 135 tests across 19 files passed  | Arithmetic, grounding, matching, deadlines, mocked provider contracts, API validation and pipeline scheduling                                   |
+| TypeScript                             | Passed                            | Static types for the application and scripts                                                                                                    |
+| Real PostgreSQL                        | 16 checks passed                  | Migrations, idempotency, configurable quota, concurrent claiming, lease takeover, stale-write fencing, persisted evidence and heartbeat queries |
+| Production Next.js build               | Passed                            | Server and frontend production compilation                                                                                                      |
+| Production HTTP smoke                  | 9 checks passed                   | Homepage, health, synthetic arithmetic, input validation, authentication, origins and readiness restrictions                                    |
+| Browser checks                         | Passed locally                    | Current UI observations are recorded below                                                                                                      |
+| Static Pages build                     | Passed                            | Separate static frontend packaging                                                                                                              |
+| Strict new live quote under 10 seconds | **Failed; optimization deferred** | The whole verified delivered quote was not available in this window; the user removed timing as a release blocker                               |
 
-- Main site https://partsroute.onrender.com/ and `/api/health` returned HTTP 200.
-- Authenticated `/api/integration/status` returned HTTP 200 and `ready: true`: provider keys configured, database connected/migrated, recent worker heartbeat.
-- The same readiness endpoint without authentication returned HTTP 401.
-- GitHub Pages-origin preflight returned HTTP 403; Pages links to the hosted app instead of calling it cross-origin.
-- No new quote or provider call was made in these checks. The provider accounts, complete basket flow and database/worker hosting locations were not independently verified.
+Mocked providers do not establish live correctness. SQL stubs do not establish PostgreSQL behavior. Readiness does not establish provider access. No CI run on GitHub or hosted deployment is claimed for these local changes.
 
-## Local checks — 24 October 2026
+## Meaningful regressions added
 
-- 112 unit/fixture tests in 17 files passed, including timeout/network-error and repository-link regressions.
-- Standalone TypeScript check, production Next.js build and the separate Pages build passed.
-- Local documentation links passed in all 10 Markdown files after consolidating setup and deployment notes.
-- All 26 original evidence hashes matched. Tracked files and the generated public entry files contained none of the configured private provider keys or team token.
-- These checks did not call providers or rerun PostgreSQL integration checks. Those results are listed separately below.
+- Shipping keys change with price, tax, URL, pack size and composition.
+- Voltage 5 V cannot inherit 12.5 V, an AC supply, or one endpoint of a published range; model suffixes remain significant.
+- Stock counts do not establish package contents. Missing order rules remain unknown; offset HTML steps cannot be represented as absolute pack multiples.
+- Published cheaper quantity tiers are considered while respecting actual stock.
+- A stale worker cannot save result, normalized evidence, observations or completion after its lease changes owner.
+- Provider waits and in-flight work respect deadline/cancellation signals.
+- Complete source facts bypass the model. A complete retailer basket starts checking while the other retailer's fetch is still blocked.
+- Merchant API SKU and price must agree with the listing. A nonempty isolated guest cart is left unchanged, and changed cart composition/price prevents a shipping estimate.
+- Shipping estimates remain tax-unknown. Exact matching verified shipping takes precedence over an earlier estimate.
+- Displaying the combined item/shipping estimate preserves unknown tax and verification status; absent costs or unavailable delivery do not produce a total.
+- Real PostgreSQL checks confirm the hourly limit supplies a retry delay and `LIVE_QUOTES_PER_HOUR=0` permits local testing.
+- Datasheet extraction uses explicit physical-header descriptions, rejects model suffix mismatches and ignores signal-only pin counts.
 
-The public sample has no configured backend origin and shows live setup instructions.
+## Browser observations
 
-## Earlier recorded checks — 21 October 2026
+The production UI calculated INR 370 after raising the first sample quantity to three, and INR 325 after removing the breadboard. Adding/restoring a component works, duplicate selections remain disabled, and invalid pincodes receive native form validation. Reset restores INR 295. An invalid team token produced an authorization error; the configured token showed database and worker readiness.
 
-| Check                                          | Recorded result                                     |
-| ---------------------------------------------- | --------------------------------------------------- |
-| Unit/fixture tests                             | 108 passed in 16 files                              |
-| Dedicated PostgreSQL integration checks        | 13 passed                                           |
-| Production Next.js build, including TypeScript | Passed                                              |
-| Separate Pages build                           | Passed                                              |
-| Public HTTP smoke checks                       | 9 passed through the then-running temporary preview |
-| Stored response integrity                      | 26 evidence hashes matched                          |
+A desktop viewport at 1280 pixels had matching client/scroll widths with no horizontal overflow. The 390-pixel mobile breakpoint had matching client/scroll widths and no page overflow. Saved-quote restoration and retry were verified through the UI; its completed browser result was reused. The evidence view displayed API originals, datasheet records, the completed run ID and usage. Delivery includes current desktop, mobile and evidence captures.
 
-These are dated results, not a claim that today's public backend is running.
+## Real provider measurement
 
-## Live APIs
+Quote `56233eb4-3367-4dfb-b9c9-50308307cb8c` used the unchanged three-line BOM with refresh enabled through the protected HTTP endpoint and normal worker. All three lines became eligible by 5.313 seconds; the INR 49 shipping estimate appeared by 7.464 seconds. Shipping tax remained unknown. The strict ten-second verdict failed; the server ended partial at 26.320 seconds. Original sources, parsed datasheet text, sanitized API data and the pending Agent run were retained.
 
-TinyFish Fetch, TinyFish Agent and Gemini structured extraction were exercised with real credentials. The latest fresh quote used public HTTP and returned **partial** after **26.647 seconds**: two offers, no complete verified plan, and no delivered total. The strict complete-result benchmark failed. [Original report](evidence/public-budgeted-collection-2026-10-21.json).
-
-The main frontend now runs on Render; Pages remains a static sample. The earlier development tunnel is no longer used.
-
-## Still unverified
-
-- A complete live basket with exact pincode shipping and manual arithmetic review.
-- Fully qualified retailer/product coverage and a labelled extraction evaluation.
-- Full cloud deployment configuration, Docker execution and real process-kill recovery beyond SQL lease tests.
-- A successful fresh verified quote within the requested latency target.
-
-## Reproduce
-
-Run `pnpm test`, `pnpm typecheck`, `pnpm build` and `pnpm build:pages`. PostgreSQL checks require a dedicated disposable `TEST_DATABASE_URL`; provider checks are opt-in and consume quota. See the README and deployment guide before running them.
+See [performance](PERFORMANCE.md) for exact scope and reproduction. API keys, team tokens, database passwords and guest-cart cookies are excluded from public evidence and source packages.

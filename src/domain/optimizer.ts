@@ -22,24 +22,43 @@ export function tax(amount: number, bps: number): number {
   return Number((BigInt(amount) * BigInt(bps) + 5000n) / 10000n);
 }
 export function priceLine(part: PartRequest, offer: Offer): LineCost | null {
+  const unitsPerPack = part.quantityUnit === "packs" ? 1 : offer.unitsPerPack;
   if (
     !eligible(part, offer) ||
     offer.stock !== "in_stock" ||
-    !offer.unitsPerPack ||
+    !unitsPerPack ||
     !offer.minPacks ||
     !offer.multiplePacks
   )
     return null;
-  const packs =
+  const minimum =
     Math.ceil(
-      Math.max(Math.ceil(part.quantity / offer.unitsPerPack), offer.minPacks) /
+      Math.max(Math.ceil(part.quantity / unitsPerPack), offer.minPacks) /
         offer.multiplePacks,
     ) * offer.multiplePacks;
-  if (offer.availablePacks !== null && packs > offer.availablePacks)
+  if (offer.availablePacks !== null && minimum > offer.availablePacks)
     return null;
-  const tier = [...offer.priceBreaks]
-    .sort((a, b) => b.minPacks - a.minPacks)
-    .find((p) => packs >= p.minPacks);
+  // A higher published tier may cost less in total, even with surplus units.
+  // Between tier boundaries the total only increases, so no unit-by-unit search is needed.
+  const multiple = offer.multiplePacks;
+  const tiers = [...offer.priceBreaks].sort((a, b) => b.minPacks - a.minPacks);
+  const candidates = [
+    ...new Set([
+      minimum,
+      ...offer.priceBreaks.map(
+        (tier) =>
+          Math.ceil(Math.max(minimum, tier.minPacks) / multiple) * multiple,
+      ),
+    ]),
+  ].filter(
+    (packs) => offer.availablePacks === null || packs <= offer.availablePacks,
+  );
+  const totalAt = (packs: number) => {
+    const price = tiers.find((tier) => packs >= tier.minPacks);
+    return price ? packs * price.packPricePaise : Infinity;
+  };
+  const packs = candidates.sort((a, b) => totalAt(a) - totalAt(b) || a - b)[0];
+  const tier = tiers.find((p) => packs >= p.minPacks);
   if (!tier) return null;
   const itemsPaise = packs * tier.packPricePaise;
   const addedTaxPaise =
@@ -64,7 +83,8 @@ export function priceLine(part: PartRequest, offer: Offer): LineCost | null {
     offer,
     requiredUnits: part.quantity,
     packs,
-    purchasedUnits: packs * offer.unitsPerPack,
+    purchasedUnits: packs * unitsPerPack,
+    quantityUnit: part.quantityUnit,
     itemsPaise,
     addedTaxPaise,
     beforeTaxPaise,
@@ -76,13 +96,24 @@ export function basketKey(
   pincode: string,
   lines: LineCost[],
 ): string {
-  return (
-    `${retailer}:${pincode}:` +
-    lines
-      .map((l) => `${l.offer.id}=${l.packs}`)
-      .sort()
-      .join("|")
-  );
+  return JSON.stringify([
+    "basket-v3",
+    retailer,
+    pincode,
+    [...lines]
+      .sort((a, b) => a.offer.id.localeCompare(b.offer.id))
+      .map((line) => ({
+        id: line.offer.id,
+        sku: line.offer.sku,
+        variantId: line.offer.variantId ?? null,
+        url: line.offer.url,
+        packs: line.packs,
+        unitsPerPack: line.offer.unitsPerPack,
+        itemsPaise: line.itemsPaise,
+        addedTaxPaise: line.addedTaxPaise,
+        payablePaise: line.payablePaise,
+      })),
+  ]);
 }
 function sumKnown(values: (number | null)[]): number | null {
   return values.some((v) => v === null)
@@ -148,12 +179,46 @@ export function buildPlans(
   );
   if (choices.some((c) => !c.length)) return [];
   let combinations: LineCost[][] = [[]];
-  for (const alternatives of choices)
+  for (const alternatives of choices) {
     combinations = combinations.flatMap((combo) =>
       alternatives.map((line) => [...combo, line]),
     );
-  if (combinations.length > 1024)
-    throw new Error("Too many candidate combinations");
+    if (combinations.length > 1024) {
+      // Keep the two complete-store paths as well as a bounded item-cost
+      // shortlist. Large comparisons explicitly disclose this search bound.
+      const itemCost = (lines: LineCost[]) =>
+        lines.reduce(
+          (sum, line) => sum + (line.payablePaise ?? line.itemsPaise),
+          0,
+        );
+      const completeStore = (["robu", "robocraze"] as const).flatMap(
+        (retailer) =>
+          combinations
+            .filter((lines) =>
+              lines.every((line) => line.offer.retailer === retailer),
+            )
+            .sort((a, b) => itemCost(a) - itemCost(b))
+            .slice(0, 1),
+      );
+      combinations.sort(
+        (a, b) =>
+          a.reduce(
+            (sum, line) => sum + (line.payablePaise ?? line.itemsPaise),
+            0,
+          ) -
+          b.reduce(
+            (sum, line) => sum + (line.payablePaise ?? line.itemsPaise),
+            0,
+          ),
+      );
+      combinations = [
+        ...new Set([
+          ...completeStore,
+          ...combinations.slice(0, 1024 - completeStore.length),
+        ]),
+      ];
+    }
+  }
   const plans = combinations.map((lines, index): Plan => {
     const unresolved: string[] = [];
     const baskets = [...new Set(lines.map((l) => l.offer.retailer))].map(
@@ -168,24 +233,32 @@ export function buildPlans(
           addedTaxPaise: sumKnown(subset.map((l) => l.addedTaxPaise)),
           payableItemsPaise: sumKnown(subset.map((l) => l.payablePaise)),
         };
-        const observed = shipping.find(
-          (s) =>
-            s.basketKey === key &&
-            s.pincode === pincode &&
-            s.retailer === retailer &&
-            JSON.stringify(
-              [...s.items].sort((a, b) => a.offerId.localeCompare(b.offerId)),
-            ) ===
+        const observed = [...shipping]
+          .sort(
+            (a, b) =>
+              Number(b.status !== "unknown" || b.serviceable === false) -
+                Number(a.status !== "unknown" || a.serviceable === false) ||
+              Date.parse(b.observedAt) - Date.parse(a.observedAt) ||
+              Number(b.status === "verified") - Number(a.status === "verified"),
+          )
+          .find(
+            (s) =>
+              s.basketKey === key &&
+              s.pincode === pincode &&
+              s.retailer === retailer &&
               JSON.stringify(
-                subset
-                  .map((l) => ({
-                    offerId: l.offer.id,
-                    sku: l.offer.sku,
-                    packs: l.packs,
-                  }))
-                  .sort((a, b) => a.offerId.localeCompare(b.offerId)),
-              ),
-        );
+                [...s.items].sort((a, b) => a.offerId.localeCompare(b.offerId)),
+              ) ===
+                JSON.stringify(
+                  subset
+                    .map((l) => ({
+                      offerId: l.offer.id,
+                      sku: l.offer.sku,
+                      packs: l.packs,
+                    }))
+                    .sort((a, b) => a.offerId.localeCompare(b.offerId)),
+                ),
+          );
         const ship =
           observed ??
           ruleShipping(

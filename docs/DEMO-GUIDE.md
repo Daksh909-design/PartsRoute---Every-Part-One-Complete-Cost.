@@ -1,33 +1,12 @@
 # Demo walkthrough
 
-## Sample calculation
+Open [PartsRoute](https://partsroute.onrender.com). Have your team token ready for Live quote. If the free host is asleep, allow about a minute for startup.
 
-Open the public sample. It starts with two HC-SR04 sensors, one DHT11 module and one breadboard, delivered to pincode 560001.
+1. Start with **Sample calculation**. The default basket costs INR 295 through one retailer, compared with INR 345 when buying each item at its lowest item price.
+2. Change a quantity and recalculate. Show how shipping affects the best basket.
+3. Switch to **Live quote**, enter the team token and check the connection.
+4. Search a component, choose its variant and add it. Add more parts, adjust quantities and enter a pincode.
+5. Compare live prices. Show the item, tax and shipping breakdown. Pending delivery checks remain labelled in the result.
+6. Open **Evidence** to show the retailer sources. Reload the quote to demonstrate saved results.
 
-The synthetic example shows why item prices alone are misleading:
-
-| Plan                                            | Items | Shipping | Total |
-| ----------------------------------------------- | ----: | -------: | ----: |
-| Lowest item prices, split between two retailers |  ₹225 |     ₹120 |  ₹345 |
-| Best complete sample basket                     |  ₹255 |      ₹40 |  ₹295 |
-
-Change the HC-SR04 quantity from two to three and calculate again. The best sample total becomes ₹370. Reset restores the original basket. Expand the other combinations to inspect their costs and the matching details to see the required specifications.
-
-These numbers come from synthetic fixtures. They are not current retailer prices.
-
-## Live collection
-
-On the [hosted app](https://partsroute.onrender.com/), choose **Live quote**, enter the team token and check the connection. Select **Collect & compare fresh offers** to start new TinyFish and model requests.
-
-The result shows priced-line coverage, product differences and missing costs. **Evidence** contains source URLs, retrieval times, original observations, provider request IDs and saved Agent runs. **View saved observations** is a separate read-only option and does not make new provider calls.
-
-A complete live demonstration needs matching products, published order constraints and verified shipping for the exact basket and pincode. If a fact is missing, the result remains partial. The latest recorded live run has no complete verified total; see [validation](VALIDATION.md).
-
-## Links
-
-- [Sample calculator](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./)
-- [Source code](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost./)
-- [Local setup](LIVE-SETUP.md)
-- [Recorded collection timings](PERFORMANCE.md)
-
-A demo recording and presentation link have not been added.
+For local recording, follow [LOCAL-DEMO.md](LOCAL-DEMO.md).

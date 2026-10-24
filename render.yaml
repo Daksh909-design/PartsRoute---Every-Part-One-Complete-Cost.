@@ -1,19 +1,26 @@
-# Review hosting charges in Render before creating these always-on services.
+# Default card-free setup. Paid separate services require render.paid.yaml.
+# DATABASE_URL must use an external persistent Postgres database, such as the
+# Supabase session pooler. Render's own free database expires after 30 days.
 services:
   - type: web
-    name: partsroute-web
+    name: partsroute
     runtime: node
-    plan: 0.5c-512mb
+    plan: free
     region: singapore
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
-    preDeployCommand: pnpm db:migrate
-    startCommand: pnpm start --hostname 0.0.0.0 --port $PORT
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm build
+    startCommand: node scripts/start-hosted.mjs
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: 24.19.0
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: NODE_EXTRA_CA_CERTS
+        value: certs/supabase-prod-ca-2021.crt
       - key: DATABASE_URL
-        fromDatabase: { name: partsroute-db, property: connectionString }
+        sync: false
       - key: TINYFISH_API_KEY
         sync: false
       - key: AI_PROVIDER
@@ -23,37 +30,6 @@ services:
       - key: GEMINI_MODEL
         value: gemini-3.5-flash-lite
       - key: APP_ACCESS_TOKEN
-        generateValue: true
-      - key: APP_ALLOWED_ORIGINS
-        value: https://daksh909-design.github.io
-  - type: worker
-    name: partsroute-worker
-    runtime: node
-    plan: 0.5c-512mb
-    region: singapore
-    buildCommand: corepack enable && pnpm install --frozen-lockfile
-    startCommand: pnpm db:migrate && pnpm worker
-    envVars:
-      - key: NODE_VERSION
-        value: 24.19.0
-      - key: DATABASE_URL
-        fromDatabase: { name: partsroute-db, property: connectionString }
-      - key: TINYFISH_API_KEY
-        fromService:
-          { type: web, name: partsroute-web, envVarKey: TINYFISH_API_KEY }
-      - key: AI_PROVIDER
-        value: gemini
-      - key: GEMINI_API_KEY
-        fromService:
-          { type: web, name: partsroute-web, envVarKey: GEMINI_API_KEY }
-      - key: GEMINI_MODEL
-        value: gemini-3.5-flash-lite
-databases:
-  - name: partsroute-db
-    plan: 0.1c-256mb
-    region: singapore
-    postgresMajorVersion: "17"
-    databaseName: partsroute
-    user: partsroute
-    diskSizeGB: 1
-    ipAllowList: []
+        sync: false
+      - key: LIVE_QUOTES_PER_HOUR
+        value: "0"

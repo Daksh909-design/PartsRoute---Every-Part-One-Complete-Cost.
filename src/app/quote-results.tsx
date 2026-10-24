@@ -1,7 +1,10 @@
 import type { Plan, QuoteResult } from "../domain/schema";
 import { retailers } from "../domain/catalogue";
 import { money, when } from "./api-client";
-import { itemFirstComparison } from "../domain/comparison";
+import {
+  itemFirstComparison,
+  itemsAndShippingEstimate,
+} from "../domain/comparison";
 import { collectionIssues } from "../domain/issues";
 import { listedEstimate } from "../domain/listed-estimate";
 
@@ -28,8 +31,7 @@ export function BasketPlan({ plan, demo }: { plan: Plan; demo: boolean }) {
       </dl>
       {!plan.verified && (
         <p className="notice warning">
-          Known item subtotal: {money(plan.knownSubtotalPaise)}. A complete
-          landed cost is not verified.
+          Items: {money(plan.knownSubtotalPaise)} · Delivered total pending
         </p>
       )}
       {plan.baskets.map((basket) => (
@@ -47,8 +49,17 @@ export function BasketPlan({ plan, demo }: { plan: Plan; demo: boolean }) {
                   {line.offer.title.replace(/^\[Synthetic\]\s*/, "")} ↗
                 </a>
                 <small>
-                  {line.packs} × {line.offer.unitsPerPack}-unit pack · need{" "}
-                  {line.requiredUnits}, receive {line.purchasedUnits}
+                  {line.quantityUnit === "packs" ? (
+                    <>
+                      {line.packs} retailer packs · requested{" "}
+                      {line.requiredUnits} packs
+                    </>
+                  ) : (
+                    <>
+                      {line.packs} × {line.offer.unitsPerPack}-unit pack · need{" "}
+                      {line.requiredUnits}, receive {line.purchasedUnits}
+                    </>
+                  )}
                 </small>
               </div>
               <strong>{money(line.payablePaise)}</strong>
@@ -56,6 +67,13 @@ export function BasketPlan({ plan, demo }: { plan: Plan; demo: boolean }) {
           ))}
           {!demo && (
             <p className="source-note">
+              {basket.shipping.status === "estimated" &&
+                basket.shipping.chargePaise !== null && (
+                  <>
+                    Estimated shipping, before tax:{" "}
+                    {money(basket.shipping.chargePaise)}.{" "}
+                  </>
+                )}
               {basket.shipping.conditions} · {when(basket.shipping.observedAt)}
             </p>
           )}
@@ -99,17 +117,16 @@ export default function QuoteResults({
       ? next.totalPaise! - recommendation.totalPaise
       : 0;
   const comparison = itemFirstComparison(result.plans, result.recommendedId);
+  const deliveredEstimate =
+    !demo && best && !best.verified ? itemsAndShippingEstimate(best) : null;
   const estimate =
     !demo && !best ? listedEstimate(result.input.parts, result.offers) : null;
   return (
     <div className="quote-results">
       {result.dataStatus && (
         <div className="observation-age">
-          <strong>Previously collected retailer data</strong>
-          <span>
-            Oldest product check: {when(result.dataStatus.oldestObservedAt)}. No
-            new API call was made for this comparison.
-          </span>
+          <strong>Saved prices</strong>
+          <span>Last checked {when(result.dataStatus.oldestObservedAt)}</span>
           {result.dataStatus.missingUrls > 0 && (
             <span>
               {result.dataStatus.missingUrls} product page
@@ -133,8 +150,8 @@ export default function QuoteResults({
             {demo
               ? "Order comparison"
               : recommendation
-                ? "Best verified plan among checked options"
-                : "Products found; complete cost pending"}
+                ? "Best checked plan"
+                : "Your comparison"}
           </h2>
         </div>
       </div>
@@ -145,6 +162,11 @@ export default function QuoteResults({
         {result.plans.filter((plan) => plan.verified).length}{" "}
         {demo ? "complete sample plans" : "verified plans"}
       </p>
+      {result.comparisonLimited && (
+        <p className="notice warning">
+          Large basket: comparing shortlisted combinations.
+        </p>
+      )}
 
       {estimate && (
         <article className="recommendation" style={{ padding: "1.5rem" }}>
@@ -182,13 +204,9 @@ export default function QuoteResults({
             </div>
           </dl>
           <p className="notice warning">
-            This is an item-price estimate, not a verified purchase
-            recommendation. Shipping is excluded
-            {!estimate.complete &&
-              "; missing component lines are also excluded"}
-            .{" "}
-            {estimate.conditional &&
-              "Unpublished minimums and incomplete product specifications may change it."}
+            Excludes shipping
+            {!estimate.complete && " and unpriced components"}.{" "}
+            {estimate.conditional && "Some order details are pending."}
           </p>
           {estimate.lines.map((line) => (
             <div className="purchase-line" key={line.partId}>
@@ -215,8 +233,7 @@ export default function QuoteResults({
         <section className="listed-offers" aria-label="Observed product prices">
           <h3>Listed prices</h3>
           <p className="source-note">
-            Per pack, before any additional tax or shipping. A listing is
-            eligible only after all required details match.
+            Per pack · Excludes additional tax and shipping
           </p>
           {result.offers.map((offer) => (
             <div className="offer-row" key={offer.id}>
@@ -229,8 +246,6 @@ export default function QuoteResults({
                   {offer.unitsPerPack ?? "Unknown"} unit
                   {offer.unitsPerPack === 1 ? "" : "s"} / pack ·{" "}
                   {offer.stock.replaceAll("_", " ")}
-                  {offer.extractionMethod === "retailer-parser" &&
-                    " · Direct listing read; AI details unverified"}
                 </small>
               </div>
               <strong>
@@ -250,14 +265,25 @@ export default function QuoteResults({
                 {demo
                   ? "LOWEST COMPLETE SAMPLE"
                   : best.verified
-                    ? "VERIFIED LANDED COST"
-                    : "KNOWN ITEM SUBTOTAL"}
+                    ? "DELIVERED TOTAL"
+                    : deliveredEstimate
+                      ? "ITEMS + SHIPPING ESTIMATE"
+                      : "KNOWN ITEM SUBTOTAL"}
               </span>
               <p className="quote-total">
                 {best.verified
                   ? money(best.totalPaise)
-                  : money(best.knownSubtotalPaise)}
+                  : money(
+                      deliveredEstimate?.amountPaise ?? best.knownSubtotalPaise,
+                    )}
               </p>
+              {deliveredEstimate && (
+                <p className="muted">
+                  {deliveredEstimate.shippingTaxUnknown
+                    ? "Shipping tax pending"
+                    : "Estimated shipping"}
+                </p>
+              )}
             </div>
             <span className="retailer-count">
               {best.baskets.length} retailer
@@ -275,10 +301,7 @@ export default function QuoteResults({
       ) : (
         <div className="empty-panel">
           <h3>Some parts have no eligible offer.</h3>
-          <p>
-            Review the product matches below. A price alone is not enough when
-            specifications, stock or pack details are missing.
-          </p>
+          <p>Check product details below.</p>
         </div>
       )}
       {comparison && (
@@ -354,12 +377,6 @@ export default function QuoteResults({
             ? "Sample matches & source fields"
             : "Product matches & sources"}
         </h3>
-        {demo && (
-          <p className="source-note">
-            These matches describe synthetic fixture records, not verified
-            retailer products.
-          </p>
-        )}
         {result.offers.length === 0 && (
           <p className="muted">No usable product observation was returned.</p>
         )}
@@ -406,7 +423,7 @@ export default function QuoteResults({
                 <div className="source" key={source.id}>
                   <p>
                     {source.method === "synthetic-fixture"
-                      ? "Synthetic fixture"
+                      ? "Sample data"
                       : source.method}{" "}
                     · {when(source.retrievedAt)}
                   </p>
@@ -441,17 +458,10 @@ export default function QuoteResults({
           View collection evidence ↗
         </button>
         <span className="muted">
-          {demo
-            ? "Synthetic fixture · 1 Jan 2026"
-            : `Assembled ${when(result.generatedAt)}`}
+          {demo ? "Sample data" : `Assembled ${when(result.generatedAt)}`}
         </span>
       </div>
-      {!demo && (
-        <p className="source-note">
-          {result.explanation} Prices can change. Open the retailer pages to
-          review before buying.
-        </p>
-      )}
+      {!demo && <p className="source-note">{result.explanation}</p>}
     </div>
   );
 }

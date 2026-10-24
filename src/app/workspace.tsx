@@ -12,15 +12,15 @@ import {
   liveAvailable,
   repository,
   requestApi,
-  staticSite,
   temporaryBackend,
 } from "./api-client";
 import QuoteResults from "./quote-results";
-import LiveConnection, { type IntegrationStatus } from "./live-connection";
 import EvidenceView, { type EvidenceData } from "./evidence-view";
 import { Icon } from "./ui-icons";
 import { demoQuote } from "../domain/demo";
 import { liveRequest, type CollectionClock } from "../domain/live-request";
+import ComponentSearch from "./component-search";
+import type { SearchProduct } from "../domain/search";
 
 type Job = {
   id: string;
@@ -31,6 +31,11 @@ type Job = {
   phase: string;
   result: QuoteResult | null;
   errors: string[];
+  attempts?: number;
+};
+type Status = {
+  ready: boolean;
+  checks: { name: string; ok: boolean; detail: string }[];
 };
 const savedKey = `partsroute-job:${apiBase || "same-origin"}`;
 const storage = {
@@ -58,7 +63,7 @@ export default function Workspace() {
   const [mode, setMode] = useState<"demo" | "live">("demo");
   const [view, setView] = useState<"compare" | "evidence">("compare");
   const [token, setToken] = useState("");
-  const [status, setStatus] = useState<IntegrationStatus | null>(null);
+  const [status, setStatus] = useState<Status | null>(null);
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<QuoteResult | null>(() =>
     demoQuote({
@@ -82,6 +87,9 @@ export default function Workspace() {
   const generation = useRef(0);
   const pollingStarted = useRef(0);
   const requestId = useRef<string | null>(null);
+  const liveDraft = useRef<{ parts: PartRequest[]; pincode: string } | null>(
+    null,
+  );
   useEffect(() => {
     if (liveAvailable) {
       const reference =
@@ -132,18 +140,91 @@ export default function Workspace() {
     );
     requestId.current = null;
   }
+  function addPart() {
+    const entry = catalogue.find(
+      (item) => !parts.some((part) => part.catalogueId === item.id),
+    );
+    if (!entry) return;
+    setParts((current) => [
+      ...current,
+      {
+        id: crypto.randomUUID(),
+        catalogueId: entry.id,
+        name: entry.name,
+        model: entry.model,
+        quantity: 1,
+        requiredSpecs: entry.specs.map((spec) => ({ ...spec })),
+        equivalentAcceptable: false,
+        confirmedOfferIds: [],
+      },
+    ]);
+    requestId.current = null;
+  }
+  function addSearchProduct(product: SearchProduct, variantId?: number) {
+    const variant = product.variants.find((item) => item.id === variantId);
+    setParts((current) => {
+      const existing = current.find((part) =>
+        part.sources?.some(
+          (source) =>
+            source.retailer === product.retailer &&
+            source.url === product.url &&
+            source.variantId === variantId,
+        ),
+      );
+      if (existing)
+        return current.map((part) =>
+          part.id === existing.id
+            ? { ...part, quantity: Math.min(100, part.quantity + 1) }
+            : part,
+        );
+      return [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          catalogueId: `search:${product.id}:${variantId ?? "product"}`,
+          name: `${product.title}${variant && variant.title !== "Default Title" ? ` — ${variant.title}` : ""}`.slice(
+            0,
+            240,
+          ),
+          model: "",
+          quantity: 1,
+          quantityUnit: "packs",
+          sources: [
+            {
+              retailer: product.retailer,
+              url: product.url,
+              ...(variantId ? { variantId } : {}),
+            },
+          ],
+          requiredSpecs: [],
+          equivalentAcceptable: false,
+          confirmedOfferIds: [],
+        },
+      ];
+    });
+    requestId.current = null;
+  }
   function switchMode(next: "demo" | "live") {
+    if (next === mode) return;
     cancelPolling();
     setMode(next);
-    const sample = QuoteInput.safeParse({
-      parts,
-      pincode,
-      mode: "demo",
-      refresh: false,
-    });
-    setResult(
-      next === "demo" && sample.success ? demoQuote(sample.data) : null,
-    );
+    if (next === "demo") {
+      liveDraft.current = { parts: structuredClone(parts), pincode };
+      setParts(structuredClone(sampleParts));
+      setPincode("560001");
+      setResult(
+        demoQuote({
+          parts: structuredClone(sampleParts),
+          pincode: "560001",
+          mode: "demo",
+          refresh: false,
+        }),
+      );
+    } else {
+      setParts(liveDraft.current?.parts ?? []);
+      setPincode(liveDraft.current?.pincode ?? pincode);
+      setResult(null);
+    }
     setJob(null);
     setEvidence(null);
     setError("");
@@ -184,7 +265,7 @@ export default function Workspace() {
       const current = (await requestApi(
         "/api/integration/status",
         token,
-      )) as IntegrationStatus;
+      )) as Status;
       setStatus(current);
       return current.ready;
     } catch (caught) {
@@ -302,12 +383,7 @@ export default function Workspace() {
     );
     try {
       if (mode === "demo") {
-        const sample = staticSite
-          ? (await import("../domain/demo")).demoQuote(parsed.data)
-          : ((await requestApi("/api/demo", "", {
-              method: "POST",
-              body: JSON.stringify(parsed.data),
-            })) as QuoteResult);
+        const sample = demoQuote(parsed.data);
         if (version !== generation.current) return;
         setResult(sample);
         setJob(null);
@@ -355,13 +431,17 @@ export default function Workspace() {
   }
   async function retry() {
     if (!job) return;
+    cancelPolling();
+    const version = generation.current;
+    setBusy(true);
     setError("");
     try {
       await requestApi(`/api/quotes/${job.id}`, token, { method: "POST" });
-      cancelPolling();
-      setBusy(true);
-      await poll(job.id, generation.current);
+      if (version !== generation.current) return;
+      await poll(job.id, version);
     } catch (caught) {
+      if (version !== generation.current) return;
+      setBusy(false);
       setError(caught instanceof Error ? caught.message : "Retry failed.");
     }
   }
@@ -369,30 +449,31 @@ export default function Workspace() {
     setView("evidence");
     if (!job && !result?.dataStatus) return;
     setEvidenceBusy(true);
+    const version = generation.current;
     try {
-      setEvidence(
-        job
-          ? await requestApi(`/api/quotes/${job.id}/evidence`, token)
-          : await requestApi("/api/observations", token, {
-              method: "POST",
-              body: JSON.stringify(
-                [
-                  ...new Set(
-                    [
-                      ...result!.offers.flatMap((o) => o.evidence),
-                      ...result!.shipping.flatMap((s) => s.evidence),
-                    ].map((e) => e.observationId),
-                  ),
-                ].slice(0, 20),
-              ),
-            }),
-      );
+      const loaded = job
+        ? await requestApi(`/api/quotes/${job.id}/evidence`, token)
+        : await requestApi("/api/observations", token, {
+            method: "POST",
+            body: JSON.stringify(
+              [
+                ...new Set(
+                  [
+                    ...result!.offers.flatMap((o) => o.evidence),
+                    ...result!.shipping.flatMap((s) => s.evidence),
+                  ].map((e) => e.observationId),
+                ),
+              ].slice(0, 20),
+            ),
+          });
+      if (version === generation.current) setEvidence(loaded);
     } catch (caught) {
+      if (version !== generation.current) return;
       setError(
         caught instanceof Error ? caught.message : "Cannot load evidence.",
       );
     } finally {
-      setEvidenceBusy(false);
+      if (version === generation.current) setEvidenceBusy(false);
     }
   }
   const stale = Boolean(
@@ -433,7 +514,7 @@ export default function Workspace() {
         <div className="page-heading">
           <div>
             <span className="eyebrow">PARTS WORKBENCH</span>
-            <h1>Compare the full cost of your parts list.</h1>
+            <h1>Plan your next build.</h1>
             <p>
               Compare component orders from Robu and Robocraze, including pack
               sizes, tax and delivery to your pincode.
@@ -460,19 +541,17 @@ export default function Workspace() {
               onClick={() => switchMode("live")}
             >
               Live quote{" "}
-              {!liveAvailable && <span className="small-tag">Hosted</span>}
+              {!liveAvailable && <span className="small-tag">Setup</span>}
             </button>
           </div>
-          <span className="toolbar-note">
-            INR · India · No purchases or payments
-          </span>
+          <span className="toolbar-note">INR · India</span>
         </div>
         {mode === "demo" && (
           <div className="demo-banner">
             <Icon name="info" />
             <span>
-              <strong>Calculator example.</strong> Edit the quantities to see
-              how shipping changes the best basket. Prices here are synthetic.
+              <strong>Sample data.</strong> Change quantities to compare
+              baskets.
             </span>
           </div>
         )}
@@ -485,8 +564,7 @@ export default function Workspace() {
           <div className="demo-banner" role="status">
             <Icon name="info" />
             <span>
-              <strong>Temporary live server.</strong> The team computer must
-              stay online. Collection time depends on retailer availability.
+              <strong>Temporary server.</strong> Keep the host computer online.
             </span>
           </div>
         )}
@@ -500,19 +578,111 @@ export default function Workspace() {
         ) : (
           <>
             {mode === "live" && (
-              <LiveConnection
-                token={token}
-                status={status}
-                checking={checking}
-                busy={busy}
-                savedId={savedId}
-                onTokenChange={(value) => {
-                  setToken(value);
-                  setStatus(null);
-                }}
-                onCheck={() => void checkConnection()}
-                onResume={() => void resume()}
-              />
+              <section className="panel connection-panel">
+                <div className="section-heading">
+                  <div>
+                    <span className="eyebrow">LIVE CONNECTION</span>
+                    <h2>
+                      {!liveAvailable
+                        ? "Connect a server to collect live offers"
+                        : "Team access"}
+                    </h2>
+                  </div>
+                  <span
+                    className={`connection-state ${status?.ready ? "ready" : ""}`}
+                  >
+                    {status?.ready
+                      ? "Connected"
+                      : !liveAvailable
+                        ? "Server not connected"
+                        : status
+                          ? "Needs attention"
+                          : "Not checked"}
+                  </span>
+                </div>
+                {!liveAvailable ? (
+                  <>
+                    <p>Connect a backend to enable live quotes.</p>
+                    <a
+                      className="setup-link"
+                      href={`${repository}/blob/main/docs/LIVE-SETUP.md`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open live deployment guide ↗
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    {apiBase && (
+                      <p className="source-note">
+                        Connected server:{" "}
+                        <a
+                          href={`${apiBase}/api/health`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {new URL(apiBase).hostname} ↗
+                        </a>
+                      </p>
+                    )}
+                    <div className="connection-controls">
+                      <label htmlFor="team-token">
+                        Team access token
+                        <input
+                          id="team-token"
+                          type="password"
+                          autoComplete="off"
+                          value={token}
+                          onChange={(event) => {
+                            setToken(event.target.value);
+                            setStatus(null);
+                          }}
+                          placeholder="Team token"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={checking || busy || !token}
+                        onClick={() => void checkConnection()}
+                      >
+                        {checking ? "Checking…" : "Check connection"}
+                      </button>
+                    </div>
+                    <details className="token-help">
+                      <summary>Where do I find the team token?</summary>
+                      <p>Ask your team for the access token.</p>
+                    </details>
+                    {status && (
+                      <ul className="status-checks">
+                        {status.checks.map((check) => (
+                          <li key={check.name}>
+                            <span
+                              className={check.ok ? "check-ok" : "check-fail"}
+                            >
+                              {check.ok ? "✓" : "!"}
+                            </span>
+                            <div>
+                              <strong>{check.name}</strong>
+                              {!check.ok && <span>{check.detail}</span>}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {savedId && !busy && (
+                      <button
+                        className="text-button"
+                        type="button"
+                        onClick={() => void resume()}
+                      >
+                        Resume the last live quote ↗
+                      </button>
+                    )}
+                  </>
+                )}
+              </section>
             )}
             <div className="workspace-grid">
               <section className="panel parts-panel">
@@ -527,7 +697,7 @@ export default function Workspace() {
                     onClick={reset}
                     disabled={busy}
                   >
-                    Reset sample
+                    {mode === "demo" ? "Reset sample" : "Load sample parts"}
                   </button>
                 </div>
                 <div className="bom-summary" aria-label="Parts list summary">
@@ -538,12 +708,30 @@ export default function Workspace() {
                     <strong>
                       {parts.reduce((sum, part) => sum + part.quantity, 0)}
                     </strong>{" "}
-                    units needed
+                    total requested
                   </span>
                   <span>
                     Deliver to <strong>{pincode || "—"}</strong>
                   </span>
                 </div>
+                {mode === "live" && liveAvailable && (
+                  <ComponentSearch
+                    token={token}
+                    disabled={busy || checking}
+                    add={addSearchProduct}
+                  />
+                )}
+                {mode === "demo" && (
+                  <p className="source-note">
+                    <button
+                      className="text-button"
+                      type="button"
+                      onClick={() => switchMode("live")}
+                    >
+                      Search components in Live quote ↗
+                    </button>
+                  </p>
+                )}
                 <form
                   onSubmit={(event) => {
                     event.preventDefault();
@@ -567,29 +755,53 @@ export default function Workspace() {
                           >
                             Component {index + 1}
                           </label>
-                          <select
-                            id={`component-${part.id}`}
-                            value={part.catalogueId}
-                            onChange={(event) => {
-                              const entry = catalogue.find(
-                                (item) => item.id === event.target.value,
-                              )!;
-                              patch(part.id, {
-                                catalogueId: entry.id,
-                                name: entry.name,
-                                model: entry.model,
-                                requiredSpecs: entry.specs.map((spec) => ({
-                                  ...spec,
-                                })),
-                              });
-                            }}
-                          >
-                            {catalogue.map((entry) => (
-                              <option key={entry.id} value={entry.id}>
-                                {entry.name}
-                              </option>
-                            ))}
-                          </select>
+                          {part.sources?.length ? (
+                            <div>
+                              <h3>{part.name}</h3>
+                              {part.sources.map((source) => (
+                                <a
+                                  key={source.url}
+                                  href={source.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  Selected retailer product ↗
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <select
+                              id={`component-${part.id}`}
+                              value={part.catalogueId}
+                              onChange={(event) => {
+                                const entry = catalogue.find(
+                                  (item) => item.id === event.target.value,
+                                )!;
+                                patch(part.id, {
+                                  catalogueId: entry.id,
+                                  name: entry.name,
+                                  model: entry.model,
+                                  requiredSpecs: entry.specs.map((spec) => ({
+                                    ...spec,
+                                  })),
+                                });
+                              }}
+                            >
+                              {catalogue.map((entry) => (
+                                <option
+                                  key={entry.id}
+                                  value={entry.id}
+                                  disabled={parts.some(
+                                    (other) =>
+                                      other.id !== part.id &&
+                                      other.catalogueId === entry.id,
+                                  )}
+                                >
+                                  {entry.name}
+                                </option>
+                              ))}
+                            </select>
+                          )}
                           <div className="attribute-summary">
                             {part.requiredSpecs.map((spec, key) => (
                               <span key={key}>
@@ -597,11 +809,28 @@ export default function Workspace() {
                               </span>
                             ))}
                           </div>
+                          {(mode === "live" || parts.length > 1) && (
+                            <button
+                              className="text-button"
+                              type="button"
+                              onClick={() => {
+                                setParts((current) =>
+                                  current.filter((item) => item.id !== part.id),
+                                );
+                                requestId.current = null;
+                              }}
+                            >
+                              Remove component
+                            </button>
+                          )}
                           <details className="attributes-editor">
                             <summary>Edit matching requirements</summary>
                             <div className="attribute-fields">
                               <label htmlFor={`model-${part.id}`}>
-                                Exact model
+                                Exact model{" "}
+                                {part.sources?.length
+                                  ? "(optional; leave blank to use selected listing)"
+                                  : ""}
                                 <input
                                   id={`model-${part.id}`}
                                   value={part.model}
@@ -612,6 +841,27 @@ export default function Workspace() {
                                   }
                                 />
                               </label>
+                              {part.sources?.length ? (
+                                <label>
+                                  Quantity means
+                                  <select
+                                    value={part.quantityUnit ?? "units"}
+                                    onChange={(event) =>
+                                      patch(part.id, {
+                                        quantityUnit: event.target.value as
+                                          "units" | "packs",
+                                      })
+                                    }
+                                  >
+                                    <option value="packs">
+                                      Retailer packs, as listed
+                                    </option>
+                                    <option value="units">
+                                      Individual units
+                                    </option>
+                                  </select>
+                                </label>
+                              ) : null}
                               {part.requiredSpecs.map((spec, specIndex) => (
                                 <div className="attribute-pair" key={specIndex}>
                                   <label>
@@ -706,14 +956,17 @@ export default function Workspace() {
                                 />
                                 Allow a different model after I confirm it
                               </label>
-                              <p className="source-note">
-                                Required specifications must still match. A
-                                confidence score cannot override a conflict.
-                              </p>
                             </div>
                           </details>
                         </div>
                         <label className="quantity">
+                          {part.sources?.length ? (
+                            <small>
+                              {part.quantityUnit === "packs"
+                                ? "Packs"
+                                : "Units"}
+                            </small>
+                          ) : null}
                           <span className="sr-only">
                             Quantity for component {index + 1}
                           </span>
@@ -734,6 +987,19 @@ export default function Workspace() {
                         </label>
                       </article>
                     ))}
+                    {mode === "demo" &&
+                      catalogue.some(
+                        (entry) =>
+                          !parts.some((part) => part.catalogueId === entry.id),
+                      ) && (
+                        <button
+                          className="secondary"
+                          type="button"
+                          onClick={addPart}
+                        >
+                          Add component
+                        </button>
+                      )}
                     <div className="delivery-row">
                       <label htmlFor="pincode">
                         Delivery pincode
@@ -750,19 +1016,22 @@ export default function Workspace() {
                           }}
                         />
                       </label>
-                      <p>One destination for every retailer basket.</p>
+                      <p>{mode === "demo" ? "Sample delivery rates" : ""}</p>
                     </div>
                     <button
                       className="primary"
                       type="submit"
-                      disabled={mode === "live" && (!liveAvailable || !token)}
+                      disabled={
+                        mode === "live" &&
+                        (!liveAvailable || !token || !parts.length)
+                      }
                     >
                       {busy
                         ? "Checking options…"
                         : mode === "demo"
                           ? "Calculate sample baskets"
                           : token
-                            ? "Collect & compare fresh offers"
+                            ? "Compare live prices"
                             : "Enter team token to compare"}
                       <Icon name="arrow" />
                     </button>
@@ -776,9 +1045,6 @@ export default function Workspace() {
                         >
                           View saved observations ↗
                         </button>
-                        <span>
-                          Previously collected data; no new retailer checks.
-                        </span>
                       </div>
                     )}
                     {mode === "live" && !token && (
@@ -796,25 +1062,6 @@ export default function Workspace() {
                     )}
                   </fieldset>
                 </form>
-                <details className="coverage">
-                  <summary>Supported retailers</summary>
-                  <p>
-                    <strong>Robu · Robocraze.</strong> Collection is limited to
-                    the curated products in this list. Missing specifications
-                    and shipping charges are marked as unknown.
-                  </p>
-                  <p>
-                    A complete live purchase recommendation still requires
-                    verified products and shipping for your pincode.
-                  </p>
-                  <a
-                    href={`${repository}blob/main/docs/FEASIBILITY.md`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Read retailer feasibility notes ↗
-                  </a>
-                </details>
               </section>
               <section
                 className="panel results-panel"
@@ -828,24 +1075,25 @@ export default function Workspace() {
                       <strong>{phase || "Checking the saved quote…"}</strong>
                       <p>
                         {mode === "live"
-                          ? "Fresh collection is running in the background. Saved results appear as they arrive. Resume retrieves this same job."
-                          : "Calculating complete assignments from the synthetic fixture."}
+                          ? "Results appear as they arrive."
+                          : "Comparing baskets…"}
                       </p>
                     </div>
                   </div>
                 )}
                 {mode === "live" && responseMs !== null && (
                   <p className="response-note" role="status">
-                    Saved comparison · {(responseMs / 1000).toFixed(2)} s · No
-                    new API calls
+                    Saved comparison · {(responseMs / 1000).toFixed(2)} s
                   </p>
                 )}
                 {mode === "live" && collectionClock && (
                   <>
-                    <p className="response-note">
+                    <p className="response-note" aria-live="off">
                       {collectionClock.recovered
                         ? collectionClock.finished
-                          ? "Saved quote duration"
+                          ? (job?.attempts ?? 1) > 1
+                            ? "Total elapsed time"
+                            : "Saved quote duration"
                           : "Resumed collection"
                         : "Fresh collection"}{" "}
                       · {(collectionClock.elapsedMs / 1000).toFixed(1)} s
@@ -864,7 +1112,7 @@ export default function Workspace() {
                       {collectionClock.finished &&
                         (job?.status === "complete" && result?.recommendedId
                           ? " · Verified plan returned"
-                          : " · No complete verified plan returned")}
+                          : " · Partial result")}
                     </p>
                   </>
                 )}
@@ -896,9 +1144,9 @@ export default function Workspace() {
                       <p>
                         {mode === "live"
                           ? job?.status === "failed"
-                            ? "Review the error above. Any pages already collected remain saved with this quote; open Evidence to inspect them before retrying."
-                            : "The main button starts new TinyFish requests and new AI extraction. Saved observations are available through a separate link and are never counted as a fresh quote."
-                          : "Calculate this three-part prototype to compare complete baskets, including shipping once per retailer."}
+                            ? "Check the error above or retry this quote."
+                            : "Add components and compare prices for your pincode."
+                          : "Add components to compare basket costs."}
                       </p>
                       <div className="empty-breakdown">
                         <div>
@@ -914,11 +1162,6 @@ export default function Workspace() {
                           <span>One charge per retailer basket</span>
                         </div>
                       </div>
-                      <p className="source-note">
-                        {mode === "live"
-                          ? "A delivered total is recommended only after product requirements and exact-basket shipping have been checked."
-                          : "The sample is a worked arithmetic example. Live recommendations require source evidence and verified shipping."}
-                      </p>
                     </div>
                   )
                 )}
@@ -930,8 +1173,11 @@ export default function Workspace() {
                       <button
                         className="secondary"
                         onClick={() => void retry()}
+                        disabled={(job.attempts ?? 0) >= 3}
                       >
-                        Retry saved work
+                        {(job.attempts ?? 0) >= 3
+                          ? "Retry limit reached"
+                          : "Retry saved work"}
                       </button>
                       <button
                         className="text-button"

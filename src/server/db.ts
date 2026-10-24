@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { QuoteInput, QuoteResult } from "../domain/schema";
 import type { Usage } from "./ai";
 import { NORMALIZATION_VERSION } from "../domain/normalization";
+import { LeaseLost, type JobLease } from "./lease";
 
 let instance: Pool | undefined;
 export function db(): Pool {
@@ -26,7 +27,14 @@ export type Job = {
   created_at: string;
   updated_at: string;
 };
-export class RequestLimit extends Error {}
+export class RequestLimit extends Error {
+  constructor(
+    message: string,
+    public retryAfterSeconds = 300,
+  ) {
+    super(message);
+  }
+}
 export async function enqueue(
   input: QuoteInput,
   key: string,
@@ -61,15 +69,26 @@ export async function enqueue(
       return active.rows[0].id;
     }
     const recent = await client.query(
-      "SELECT count(*)::int AS n FROM rate_events WHERE actor=$1 AND created_at>now()-interval '1 hour'",
+      "SELECT count(*)::int AS n, COALESCE(CEIL(EXTRACT(EPOCH FROM (min(created_at)+interval '1 hour'-now()))),1)::int AS retry_after FROM rate_events WHERE actor=$1 AND created_at>now()-interval '1 hour'",
       [actor],
     );
     const queued = await client.query(
       "SELECT count(*)::int AS n FROM quotes WHERE status IN ('queued','processing')",
     );
-    if (recent.rows[0].n >= 6 || queued.rows[0].n >= 3)
+    const hourlyLimit = Number(process.env.LIVE_QUOTES_PER_HOUR ?? "6");
+    if (!Number.isSafeInteger(hourlyLimit) || hourlyLimit < 0)
+      throw new Error("LIVE_QUOTES_PER_HOUR must be a nonnegative integer.");
+    if (hourlyLimit > 0 && recent.rows[0].n >= hourlyLimit) {
+      const waitSeconds = Math.max(1, recent.rows[0].retry_after);
       throw new RequestLimit(
-        "Live quote limit reached. Please wait before trying again.",
+        `Live quote limit reached: ${hourlyLimit} new quotes per team per rolling hour. Try again in about ${Math.ceil(waitSeconds / 60)} minute(s). Sample calculations and saved observations are still available.`,
+        waitSeconds,
+      );
+    }
+    if (queued.rows[0].n >= 3)
+      throw new RequestLimit(
+        "Three live quotes are already queued or running. Wait for one to finish, or resume your existing quote.",
+        30,
       );
     const id = randomUUID();
     await client.query(
@@ -99,14 +118,20 @@ export async function getJob(id: string): Promise<Job | null> {
     ).rows[0] ?? null
   );
 }
-export async function phase(id: string, message: string) {
-  await db().query("UPDATE quotes SET phase=$2,updated_at=now() WHERE id=$1", [
-    id,
-    message,
-  ]);
+export async function phase(id: string, message: string, lease?: JobLease) {
+  await writeForLease(
+    lease,
+    "UPDATE quotes SET phase=$2,updated_at=now() WHERE id=$1",
+    [id, message],
+  );
 }
-export async function saveResult(id: string, result: QuoteResult) {
-  await db().query(
+export async function saveResult(
+  id: string,
+  result: QuoteResult,
+  lease?: JobLease,
+) {
+  await writeForLease(
+    lease,
     "UPDATE quotes SET result=$2,errors=$3,updated_at=now() WHERE id=$1",
     [id, JSON.stringify(result), JSON.stringify(result.errors)],
   );
@@ -157,17 +182,24 @@ export async function saveObservation(
   method: string,
   original: unknown,
   runId: string | null = null,
+  lease?: JobLease,
 ): Promise<Observation> {
   const id = randomUUID();
   return (
-    await db().query(
+    await writeForLease(
+      lease,
       "INSERT INTO observations(id,quote_id,operation_key,retailer,source_url,method,run_id,original) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(quote_id,operation_key) DO UPDATE SET original=observations.original RETURNING *",
       [id, jobId, key, retailer, url, method, runId, JSON.stringify(original)],
     )
   ).rows[0];
 }
-export async function normalizeObservation(id: string, normalized: unknown) {
-  await db().query(
+export async function normalizeObservation(
+  id: string,
+  normalized: unknown,
+  lease?: JobLease,
+) {
+  await writeForLease(
+    lease,
     "UPDATE observations SET normalized=$2,normalization_version=$3,normalized_at=now() WHERE id=$1",
     [id, JSON.stringify(normalized), NORMALIZATION_VERSION],
   );
@@ -175,11 +207,42 @@ export async function normalizeObservation(id: string, normalized: unknown) {
 export async function preserveObservationTime(
   copyId: string,
   sourceId: string,
+  lease?: JobLease,
 ) {
   // Preserve PostgreSQL's microseconds. Round-tripping through JS Date loses
   // precision and can make an old normalization appear newer than its copy.
-  await db().query(
+  await writeForLease(
+    lease,
     "UPDATE observations copy SET retrieved_at=source.retrieved_at FROM observations source WHERE copy.id=$1 AND source.id=$2",
     [copyId, sourceId],
   );
+}
+
+// Hold the quote row only for a short database mutation, never a provider call.
+// The lock makes the ownership check and write atomic with a replacement claim.
+export async function writeForLease(
+  lease: JobLease | undefined,
+  text: string,
+  values: unknown[],
+) {
+  if (!lease) return db().query(text, values); // Explicit operator scripts and fixtures.
+  lease.signal.throwIfAborted();
+  const client = await db().connect();
+  try {
+    await client.query("BEGIN");
+    const owned = await client.query(
+      "SELECT id FROM quotes WHERE id=$1 AND lease_owner=$2 AND attempts=$3 AND status='processing' AND lease_until>now() FOR UPDATE",
+      [lease.id, lease.owner, lease.attempt],
+    );
+    if (!owned.rowCount) throw new LeaseLost();
+    lease.signal.throwIfAborted();
+    const result = await client.query(text, values);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
 }

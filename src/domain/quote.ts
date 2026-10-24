@@ -16,12 +16,22 @@ export function finish(
 ): QuoteResult {
   const plans = buildPlans(input.parts, offers, input.pincode, rules, shipping);
   const recommended = plans.find((p) => p.verified);
+  const comparisonLimited =
+    input.parts.reduce(
+      (count, part) =>
+        count *
+        offers.filter(
+          (offer) => offer.partId === part.id && priceLine(part, offer),
+        ).length,
+      1,
+    ) > 1024;
   return {
     mode: input.mode,
     input,
     offers,
     shipping,
     plans,
+    comparisonLimited,
     recommendedId: recommended?.id ?? null,
     coverage: {
       requested: input.parts.length,

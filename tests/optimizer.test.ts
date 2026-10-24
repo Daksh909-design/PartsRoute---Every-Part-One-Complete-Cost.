@@ -20,6 +20,53 @@ const part = (change: Partial<PartRequest> = {}): PartRequest => ({
   ...change,
 });
 describe("money, packs and price breaks", () => {
+  it("prefers a matching verified shipping observation over an earlier estimate", () => {
+    const verified = baseline.shipping[0];
+    const estimated = {
+      ...verified,
+      status: "estimated" as const,
+      taxStatus: "unknown" as const,
+      chargePaise: 9999,
+      observedAt: new Date(
+        Date.parse(verified.observedAt) - 1000,
+      ).toISOString(),
+    };
+    const plans = buildPlans(
+      input.parts,
+      baseline.offers,
+      input.pincode,
+      [],
+      [estimated, ...baseline.shipping],
+    );
+    const matching = plans
+      .flatMap((plan) => plan.baskets)
+      .find((basket) => basket.key === verified.basketKey)!;
+    expect(matching.shipping.status).toBe("verified");
+    expect(matching.shipping.chargePaise).toBe(verified.chargePaise);
+  });
+  it("invalidates older verified shipping when a newer exact-cart estimate changes the rate", () => {
+    const verified = baseline.shipping[0];
+    const changed = {
+      ...verified,
+      status: "estimated" as const,
+      taxStatus: "unknown" as const,
+      chargePaise: 9999,
+      observedAt: new Date(
+        Date.parse(verified.observedAt) + 1000,
+      ).toISOString(),
+    };
+    const matching = buildPlans(
+      input.parts,
+      baseline.offers,
+      input.pincode,
+      [],
+      [...baseline.shipping, changed],
+    )
+      .flatMap((plan) => plan.baskets)
+      .find((basket) => basket.key === verified.basketKey)!;
+    expect(matching.shipping.status).toBe("estimated");
+    expect(matching.totalPaise).toBeNull();
+  });
   it("rejects contradictory published specifications in either source order", () => {
     for (const pins of [
       ["4", "3"],

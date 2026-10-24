@@ -15,12 +15,13 @@ export async function completeJob(
   id: string,
   owner: string,
   status: "complete" | "partial",
+  attempt?: number,
 ): Promise<boolean> {
   return Boolean(
     (
       await db().query(
-        "UPDATE quotes SET status=$2,phase='Finished checking options',lease_until=NULL,lease_owner=NULL,updated_at=now() WHERE id=$1 AND lease_owner=$3",
-        [id, status, owner],
+        "UPDATE quotes SET status=$2,phase='Finished checking options',lease_until=NULL,lease_owner=NULL,updated_at=now() WHERE id=$1 AND lease_owner=$3 AND lease_until>now() AND ($4::integer IS NULL OR attempts=$4)",
+        [id, status, owner, attempt ?? null],
       )
     ).rowCount,
   );

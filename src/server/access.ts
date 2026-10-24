@@ -24,12 +24,12 @@ export function authorize(request: Request): string {
       "Enter your team access token to use live quotes.",
     );
   const origin = request.headers.get("origin");
-  if (!allowedOrigin(origin, request.url))
+  if (!allowedOrigin(origin, request.url, request.headers.get("host")))
     throw new AccessError(403, "Request origin not permitted.");
   return hash(expected).toString("hex");
 }
 export async function requestJson(request: Request): Promise<unknown> {
-  if (Number(request.headers.get("content-length")) > 16384)
+  if (Number(request.headers.get("content-length")) > 131072)
     throw new AccessError(413, "This parts list is too large.");
   const reader = request.body?.getReader();
   let length = 0;
@@ -39,7 +39,7 @@ export async function requestJson(request: Request): Promise<unknown> {
       const chunk = await reader.read();
       if (chunk.done) break;
       length += chunk.value.byteLength;
-      if (length > 16384) {
+      if (length > 131072) {
         await reader.cancel();
         throw new AccessError(413, "This parts list is too large.");
       }
@@ -60,7 +60,7 @@ export function apiError(error: unknown): Response {
     return Response.json(
       {
         error:
-          "Check the pincode, quantities and required attributes. Choose three different catalogue components.",
+          "Check the pincode, quantities and attributes. Add at least one component and select a supported retailer product for every line.",
       },
       { status: 400 },
     );

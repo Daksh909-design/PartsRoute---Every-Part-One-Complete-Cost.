@@ -72,6 +72,22 @@ describe("live service readiness", () => {
   });
 });
 describe("cross-origin Pages backend boundary", () => {
+  it("accepts the actual same-origin HTTP authority when Next uses an internal hostname", () => {
+    expect(
+      allowedOrigin(
+        "http://127.0.0.1:3000",
+        "http://localhost:3000/api/quotes",
+        "127.0.0.1:3000",
+      ),
+    ).toBe(true);
+    expect(
+      allowedOrigin(
+        "http://unrelated.invalid",
+        "http://localhost:3000/api/quotes",
+        "127.0.0.1:3000",
+      ),
+    ).toBe(false);
+  });
   it("accepts Render's declared public origin without trusting arbitrary forwarded headers", () => {
     vi.stubEnv(
       "RENDER_EXTERNAL_URL",

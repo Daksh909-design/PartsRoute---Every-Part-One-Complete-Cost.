@@ -17,8 +17,9 @@ export function aiConfig() {
 export function createAIProvider(
   record: (usage: Usage) => Promise<void>,
   deadline = Infinity,
+  signal?: AbortSignal,
 ): AIProvider {
   return aiConfig().provider === "gemini"
-    ? new GeminiProvider(record, undefined, undefined, deadline)
-    : new OpenAIProvider(record, undefined, deadline);
+    ? new GeminiProvider(record, undefined, undefined, deadline, signal)
+    : new OpenAIProvider(record, undefined, deadline, signal);
 }

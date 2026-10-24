@@ -1,4 +1,4 @@
-import { catalogue } from "../domain/catalogue";
+import { partSources, sourceFor } from "../domain/catalogue";
 import {
   Offer,
   ShippingObservation,
@@ -27,14 +27,14 @@ export function snapshotFromObservations(
   const offers: Offer[] = [];
   const times: number[] = [];
   for (const part of input.parts) {
-    const entry = catalogue.find((item) => item.id === part.catalogueId)!;
+    const entry = { id: part.catalogueId };
     for (const retailer of ["robu", "robocraze"] as const) {
       // The newest observation wins, including a newer failure or invalidation.
       // An older success must not conceal a newer price or stock change.
       const row = rows
         .filter(
           (r) =>
-            r.source_url === entry.urls[retailer] &&
+            r.source_url === sourceFor(part, retailer)?.url &&
             r.method === "tinyfish-fetch",
         )
         .sort(
@@ -47,6 +47,8 @@ export function snapshotFromObservations(
       if (
         !parsed.success ||
         parsed.data.retailer !== retailer ||
+        (sourceFor(part, retailer)?.variantId !== undefined &&
+          sourceFor(part, retailer)?.variantId !== parsed.data.variantId) ||
         parsed.data.evidence.some((e) => e.method === "synthetic-fixture")
       )
         continue;
@@ -82,7 +84,9 @@ export function snapshotFromObservations(
     kind: "cached",
     oldestObservedAt: new Date(Math.min(...times)).toISOString(),
     expiresAt: new Date(Math.min(...times) + ttl).toISOString(),
-    missingUrls: input.parts.length * 2 - offers.length,
+    missingUrls:
+      input.parts.reduce((sum, part) => sum + partSources(part).length, 0) -
+      offers.length,
   };
   return result;
 }
@@ -91,7 +95,7 @@ export async function cachedComparison(
 ): Promise<QuoteResult | null> {
   if (input.refresh || observationTtl() === 0) return null;
   const urls = input.parts.flatMap((part) =>
-    Object.values(catalogue.find((c) => c.id === part.catalogueId)!.urls),
+    partSources(part).map((source) => source.url),
   );
   const productQuery: BoundedQuery = {
     text: "SELECT DISTINCT ON (source_url) * FROM observations WHERE method='tinyfish-fetch' AND source_url=ANY($1::text[]) AND retrieved_at>now()-($2 * interval '1 second') ORDER BY source_url,retrieved_at DESC,(normalization_version=$3) DESC NULLS LAST,normalized_at DESC NULLS LAST",

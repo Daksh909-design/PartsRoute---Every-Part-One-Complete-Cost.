@@ -1,7 +1,41 @@
 import { z } from "zod";
+import { catalogue } from "./catalogue";
 
 export const Retailer = z.enum(["robu", "robocraze"]);
 export type Retailer = z.infer<typeof Retailer>;
+export const ProductSource = z
+  .object({
+    retailer: Retailer,
+    url: z.url().max(1000),
+    variantId: z.number().int().positive().optional(),
+  })
+  .superRefine((source, ctx) => {
+    let url: URL;
+    try {
+      url = new URL(source.url);
+    } catch {
+      ctx.addIssue({ code: "custom", message: "Invalid retailer product URL" });
+      return;
+    }
+    const domain = source.retailer === "robu" ? "robu.in" : "robocraze.com";
+    const path =
+      source.retailer === "robu"
+        ? /^\/product\/[^/]+\/?$/
+        : /^\/products\/[^/]+\/?$/;
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.port ||
+      ![domain, `www.${domain}`].includes(url.hostname) ||
+      !path.test(url.pathname)
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Choose a product URL from the supported retailer.",
+      });
+  });
+export type ProductSource = z.infer<typeof ProductSource>;
 export const Money = z.number().int().min(0).max(1_000_000_000);
 export const Spec = z.object({
   key: z.string().min(1).max(60),
@@ -9,10 +43,12 @@ export const Spec = z.object({
 });
 export const PartRequest = z.object({
   id: z.string().min(1).max(50),
-  catalogueId: z.enum(["hcsr04", "dht11", "breadboard400"]),
-  name: z.string().min(1).max(120),
-  model: z.string().min(1).max(80),
+  catalogueId: z.string().min(1).max(100),
+  name: z.string().min(1).max(240),
+  model: z.string().max(120),
+  sources: z.array(ProductSource).min(1).max(2).optional(),
   quantity: z.number().int().min(1).max(100),
+  quantityUnit: z.enum(["units", "packs"]).optional(),
   requiredSpecs: z.array(Spec).max(8),
   equivalentAcceptable: z.boolean(),
   confirmedOfferIds: z.array(z.string().max(160)).max(4),
@@ -20,7 +56,7 @@ export const PartRequest = z.object({
 export type PartRequest = z.infer<typeof PartRequest>;
 export const QuoteInput = z
   .object({
-    parts: z.array(PartRequest).min(3).max(5),
+    parts: z.array(PartRequest).min(1),
     pincode: z
       .string()
       .regex(/^[1-9][0-9]{5}$/, "Enter a six-digit Indian pincode"),
@@ -28,15 +64,21 @@ export const QuoteInput = z
     refresh: z.boolean().default(false),
   })
   .superRefine((input, ctx) => {
-    if (
-      new Set(input.parts.map((p) => p.id)).size !== input.parts.length ||
-      new Set(input.parts.map((p) => p.catalogueId)).size !== input.parts.length
-    )
+    if (new Set(input.parts.map((p) => p.id)).size !== input.parts.length)
       ctx.addIssue({
         code: "custom",
-        message:
-          "Use each catalogue component once; increase its quantity instead.",
+        message: "Every component line must have a unique identifier.",
       });
+    for (const part of input.parts)
+      if (
+        !part.sources?.length &&
+        !catalogue.some((entry) => entry.id === part.catalogueId)
+      )
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "Select a real retailer product before collecting a component.",
+        });
   });
 export type QuoteInput = z.infer<typeof QuoteInput>;
 export const Evidence = z.object({
@@ -44,7 +86,13 @@ export const Evidence = z.object({
   sourceUrl: z.url(),
   retrievedAt: z.iso.datetime(),
   excerpt: z.string(),
-  method: z.enum(["tinyfish-fetch", "tinyfish-agent", "synthetic-fixture"]),
+  method: z.enum([
+    "tinyfish-fetch",
+    "tinyfish-agent",
+    "storefront-api",
+    "retailer-datasheet",
+    "synthetic-fixture",
+  ]),
   runId: z.string().nullable(),
   observationId: z.string(),
 });
@@ -54,6 +102,7 @@ export const Offer = z.object({
   partId: z.string(),
   retailer: Retailer,
   sku: z.string().nullable(),
+  variantId: z.number().int().positive().optional(),
   title: z.string(),
   url: z.url(),
   model: z.string().nullable(),
@@ -121,6 +170,7 @@ export type LineCost = {
   requiredUnits: number;
   packs: number;
   purchasedUnits: number;
+  quantityUnit?: "units" | "packs";
   itemsPaise: number;
   addedTaxPaise: number | null;
   beforeTaxPaise: number | null;
@@ -159,6 +209,7 @@ export type QuoteResult = {
   explanation: string;
   explanationSource: "deterministic" | "openai-validated" | "gemini-validated";
   generatedAt: string;
+  comparisonLimited?: boolean;
   dataStatus?: {
     kind: "cached";
     oldestObservedAt: string;

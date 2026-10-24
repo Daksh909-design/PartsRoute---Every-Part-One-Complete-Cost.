@@ -17,3 +17,7 @@ FROM base AS worker
 ENV NODE_ENV=production
 USER node
 CMD ["pnpm", "worker"]
+
+# Generic container hosts build the last stage; default to the complete web app.
+# Compose can still select the dedicated web and worker targets above.
+FROM web AS app

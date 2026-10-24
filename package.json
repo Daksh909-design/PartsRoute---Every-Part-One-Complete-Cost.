@@ -16,7 +16,6 @@
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
     "test": "vitest run --configLoader native",
     "test:watch": "vitest --configLoader native",
-    "check:docs": "node scripts/check-docs.mjs",
     "typecheck": "tsc --noEmit",
     "validate:live": "tsx --env-file-if-exists=.env.local scripts/validate-live.ts",
     "validate:providers": "vitest run --configLoader native --config vitest.live.config.mjs",
@@ -24,6 +23,7 @@
     "doctor": "tsx --env-file-if-exists=.env.local scripts/doctor.ts",
     "test:postgres": "tsx --env-file-if-exists=.env.local scripts/test-postgres.ts",
     "local:db": "node scripts/local-db.mjs",
+    "local:setup": "node scripts/setup-local.mjs",
     "local:start": "node scripts/start-local.mjs",
     "preview:public": "node scripts/public-preview.mjs",
     "test:http": "tsx scripts/smoke-http.ts",
@@ -37,6 +37,7 @@
     "pg": "8.23.1",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "unpdf": "1.9.1",
     "zod": "4.6.7"
   },
   "devDependencies": {

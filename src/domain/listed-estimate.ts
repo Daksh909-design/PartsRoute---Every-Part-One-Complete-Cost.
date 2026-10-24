@@ -1,5 +1,5 @@
 import type { Offer, PartRequest } from "./schema";
-import { canonical } from "./matching";
+import { canonical, selectedIdentity } from "./matching";
 import { tax } from "./optimizer";
 
 // A clearly conditional price calculation, never a purchasing plan. Missing
@@ -7,21 +7,24 @@ import { tax } from "./optimizer";
 export function listedEstimate(parts: PartRequest[], offers: Offer[]) {
   const lines = parts.flatMap((part) => {
     const options = offers.flatMap((offer) => {
+      const unitsPerPack =
+        part.quantityUnit === "packs" ? 1 : offer.unitsPerPack;
       if (
         offer.partId !== part.id ||
         offer.stock !== "in_stock" ||
         offer.match === "rejected" ||
         offer.orderingConflict ||
-        !offer.unitsPerPack ||
-        !offer.model ||
-        canonical(offer.model) !== canonical(part.model)
+        !unitsPerPack ||
+        (part.model
+          ? !offer.model || canonical(offer.model) !== canonical(part.model)
+          : !selectedIdentity(part, offer))
       )
         return [];
       const multiple = offer.multiplePacks ?? 1;
       const packs =
         Math.ceil(
           Math.max(
-            Math.ceil(part.quantity / offer.unitsPerPack),
+            Math.ceil(part.quantity / unitsPerPack),
             offer.minPacks ?? 1,
           ) / multiple,
         ) * multiple;
@@ -52,6 +55,7 @@ export function listedEstimate(parts: PartRequest[], offers: Offer[]) {
           partId: part.id,
           name: part.name,
           quantity: part.quantity,
+          quantityUnit: part.quantityUnit,
           offer,
           packs,
           itemsPaise,

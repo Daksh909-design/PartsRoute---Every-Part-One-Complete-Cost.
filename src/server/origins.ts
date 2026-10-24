@@ -1,6 +1,7 @@
 export function allowedOrigin(
   origin: string | null,
   requestUrl: string,
+  host?: string | null,
 ): boolean {
   if (!origin) return true;
   const configured = [
@@ -10,5 +11,13 @@ export function allowedOrigin(
   ]
     .map((value) => value?.trim())
     .filter(Boolean);
-  return origin === new URL(requestUrl).origin || configured.includes(origin);
+  const url = new URL(requestUrl);
+  // Next may expose its internal hostname in request.url. Host is the actual
+  // HTTP authority; forwarded host headers do not grant cross-origin access.
+  const requestOrigin = host ? `${url.protocol}//${host}` : url.origin;
+  return (
+    origin === url.origin ||
+    origin === requestOrigin ||
+    configured.includes(origin)
+  );
 }

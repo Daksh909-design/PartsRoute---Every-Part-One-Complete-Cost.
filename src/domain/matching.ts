@@ -1,4 +1,22 @@
 import type { Offer, PartRequest } from "./schema";
+import { partSources } from "./catalogue";
+export function selectedIdentity(part: PartRequest, offer: Offer): boolean {
+  return Boolean(
+    part.sources?.length &&
+    partSources(part).some((source) => {
+      const selected = new URL(source.url),
+        observed = new URL(offer.url);
+      return (
+        source.retailer === offer.retailer &&
+        selected.hostname.replace(/^www\./, "") ===
+          observed.hostname.replace(/^www\./, "") &&
+        selected.pathname.replace(/\/$/, "") ===
+          observed.pathname.replace(/\/$/, "") &&
+        (source.variantId === undefined || source.variantId === offer.variantId)
+      );
+    }),
+  );
+}
 export function canonical(value: string): string {
   return value
     .toLowerCase()
@@ -33,16 +51,21 @@ export function matchOffer(part: PartRequest, offer: Offer): Offer {
       );
     }
   }
-  const modelSame =
-    offer.model !== null && canonical(offer.model) === canonical(part.model);
+  const modelSame = part.model
+    ? offer.model !== null && canonical(offer.model) === canonical(part.model)
+    : selectedIdentity(part, offer);
   let match: Offer["match"] = "exact";
-  if (offer.orderingConflict) {
+  if (part.sources?.length && !selectedIdentity(part, offer)) {
+    match = "rejected";
+    reasons.push("This is not the selected retailer product and variant.");
+  } else if (offer.orderingConflict) {
     match = "insufficient_information";
     reasons.push(
-      "Published and browser-observed ordering constraints conflict.",
+      "Published ordering or commercial details conflict across sources.",
     );
   } else if (conflict) match = "rejected";
-  else if (missing || offer.model === null) match = "insufficient_information";
+  else if (missing || (part.model ? offer.model === null : !modelSame))
+    match = "insufficient_information";
   else if (!modelSame) {
     match = part.equivalentAcceptable ? "needs_confirmation" : "rejected";
     reasons.push(`Model ${offer.model} differs from requested ${part.model}.`);

@@ -13,6 +13,31 @@ const evidence = {
 // Labelled synthetic excerpts representing observed templates, not live prices.
 const page =
   "# Buy HC-SR04 Ultrasonic Sensor\n\n: Rs 75/-\n: Rs 75/-\n: ~~Rs 125/-~~\nSave Rs 50/-\nIncl. GST (No Hidden Charges)\nOnly 3 left in stock\nBuy it with\nRelated sensor Price ₹5\nSKU: TST001\n## Package Includes:\n* 2 x HC-SR04 Ultrasonic Sensor\n";
+it("reads published specifications and quantity controls without guessing missing values", () => {
+  const source =
+    page +
+    '\nPins: 4\nVoltage: +5V DC\n<input name="quantity" min="1" step="1">';
+  const extracted = retailerProduct(source, "robocraze")!;
+  const offer = groundedOffer(
+    extracted,
+    source,
+    evidence,
+    "robocraze",
+    "part",
+    "offer",
+  );
+  expect(offer.specs).toEqual([
+    { key: "pins", value: "4" },
+    { key: "voltage", value: "+5V DC" },
+  ]);
+  expect(offer.minPacks).toBe(1);
+  expect(offer.multiplePacks).toBe(1);
+  const offset = retailerProduct(
+    source.replace('min="1" step="1"', 'min="3" step="2"'),
+    "robocraze",
+  )!;
+  expect(offset.multiplePacks).toBeNull();
+});
 it("requires ordering context rather than interpreting loyalty points or package counts as minimums", () => {
   const original = retailerProduct(page, "robocraze")!;
   for (const text of [
@@ -61,7 +86,7 @@ it("requires ordering context rather than interpreting loyalty points or package
     "offer",
   );
   expect(offer.minPacks).toBe(1);
-  expect(offer.multiplePacks).toBe(2);
+  expect(offer.multiplePacks).toBeNull();
 });
 it("reads current price and explicit pack contents while ignoring crossed-out, savings and related prices", () => {
   const parsed = retailerProduct(page, "robocraze")!;

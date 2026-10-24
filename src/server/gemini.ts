@@ -2,7 +2,11 @@ import { z } from "zod";
 import { EVIDENCE_INSTRUCTIONS, StructuredAIProvider, type Usage } from "./ai";
 import { ProviderAccessError, providerFingerprint } from "./provider-error";
 import { TaskPool } from "./concurrency";
-import { CollectionDeadline, requestSignal } from "./deadline";
+import {
+  CollectionDeadline,
+  requestSignal,
+  waitWithinDeadline,
+} from "./deadline";
 
 const Interaction = z.object({
   id: z.string().optional(),
@@ -45,6 +49,7 @@ export class GeminiProvider extends StructuredAIProvider {
     private apiKey = process.env.GEMINI_API_KEY,
     private transport: typeof fetch = fetch,
     private deadline = Infinity,
+    private signal?: AbortSignal,
   ) {
     super();
     if (!apiKey)
@@ -57,6 +62,7 @@ export class GeminiProvider extends StructuredAIProvider {
     data: unknown,
   ): Promise<z.infer<T>> {
     return this.queue.run(async () => {
+      this.signal?.throwIfAborted();
       if (this.accessFailure) throw this.accessFailure;
       if (this.serviceFailure) throw this.serviceFailure;
       const interval = Math.min(
@@ -66,7 +72,8 @@ export class GeminiProvider extends StructuredAIProvider {
       const scheduled = Math.max(Date.now(), this.nextRequest);
       this.nextRequest = scheduled + interval;
       const delay = scheduled - Date.now();
-      if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+      if (delay > 0)
+        await waitWithinDeadline(delay, this.deadline, this.signal);
       if (this.accessFailure) throw this.accessFailure;
       if (this.serviceFailure) throw this.serviceFailure;
       const { $schema: _dialect, ...shape } = z.toJSONSchema(schema);
@@ -89,6 +96,7 @@ export class GeminiProvider extends StructuredAIProvider {
                     Number(process.env.GEMINI_TIMEOUT_MS) || 30000,
                   ),
                 ),
+                this.signal,
               ),
               headers: {
                 "Content-Type": "application/json",
@@ -112,6 +120,7 @@ export class GeminiProvider extends StructuredAIProvider {
             },
           );
         } catch (error) {
+          this.signal?.throwIfAborted();
           // Expired queued work never started a provider request. An in-flight
           // abort has unknown remote usage and is recorded separately.
           if (error instanceof CollectionDeadline) throw error;
@@ -134,7 +143,7 @@ export class GeminiProvider extends StructuredAIProvider {
             "Google is temporarily unavailable; retrying once.",
           );
           await response.body?.cancel();
-          await new Promise((resolve) => setTimeout(resolve, 400));
+          await waitWithinDeadline(400, this.deadline, this.signal);
           continue;
         }
         break;

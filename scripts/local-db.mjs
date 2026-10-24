@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const executable = (name) =>
+  join(config.bin, process.platform === "win32" ? `${name}.exe` : name);
 const config = JSON.parse(
   await readFile(join(root, "artifacts", "local-db.json"), "utf8"),
 );
@@ -19,13 +21,13 @@ const command =
       : ["-D", config.data, "status"];
 const alreadyRunning =
   action === "start" &&
-  spawnSync(join(config.bin, "pg_ctl.exe"), ["-D", config.data, "status"], {
+  spawnSync(executable("pg_ctl"), ["-D", config.data, "status"], {
     stdio: "ignore",
     windowsHide: true,
   }).status === 0;
 const run = alreadyRunning
   ? { status: 0 }
-  : spawnSync(join(config.bin, "pg_ctl.exe"), command, {
+  : spawnSync(executable("pg_ctl"), command, {
       stdio: "inherit",
       windowsHide: true,
       timeout: 45000,

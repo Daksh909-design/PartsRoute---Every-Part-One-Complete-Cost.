@@ -9,13 +9,16 @@ if (!process.env.APP_ACCESS_TOKEN)
   throw new Error("Configure the private team access token.");
 const start = performance.now();
 const budgetMs = Math.min(
-  30000,
-  Math.max(1000, Number(process.env.LIVE_BUDGET_MS) || 30000),
+  10000,
+  Math.max(1000, Number(process.env.LIVE_BUDGET_MS) || 10000),
 );
 const deadline = start + budgetMs;
 let quoteId: string | null = null;
 let state = "not_submitted";
 let completeVerifiedPlan = false;
+let firstCompleteItemsMs: number | null = null;
+let firstShippingEstimateMs: number | null = null;
+let progressAtDeadline: unknown = null;
 let reason = `No complete verified purchasing plan was returned within ${budgetMs} ms.`;
 async function request(path: string, init: RequestInit = {}) {
   const remaining = Math.floor(deadline - performance.now());
@@ -67,6 +70,36 @@ try {
   while (performance.now() < deadline) {
     const job = await request(`/api/quotes/${quoteId}`);
     state = job.status;
+    if (job.result) {
+      const elapsed = Math.round(performance.now() - start);
+      if (
+        job.result.coverage.covered === job.result.coverage.requested &&
+        firstCompleteItemsMs === null
+      )
+        firstCompleteItemsMs = elapsed;
+      if (
+        job.result.shipping?.some(
+          (shipping: { status: string }) => shipping.status === "estimated",
+        ) &&
+        firstShippingEstimateMs === null
+      )
+        firstShippingEstimateMs = elapsed;
+      progressAtDeadline = {
+        coverage: job.result.coverage,
+        offers: job.result.offers.length,
+        shipping: job.result.shipping.map(
+          (shipping: {
+            status: string;
+            taxStatus: string;
+            chargePaise: number | null;
+          }) => ({
+            status: shipping.status,
+            taxStatus: shipping.taxStatus,
+            chargePaise: shipping.chargePaise,
+          }),
+        ),
+      };
+    }
     const plan = job.result?.plans?.find(
       (p: { id: string }) => p.id === job.result?.recommendedId,
     );
@@ -109,6 +142,9 @@ const report = {
   statusAtDeadline: state,
   elapsedMs,
   completeVerifiedPlan,
+  firstCompleteItemsMs,
+  firstShippingEstimateMs,
+  progressAtDeadline,
   collectionFinished,
   collectionWithinBudget: collectionFinished && elapsedMs <= budgetMs,
   passed,

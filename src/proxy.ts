@@ -3,7 +3,7 @@ import { allowedOrigin } from "./server/origins";
 
 export function proxy(request: NextRequest) {
   const origin = request.headers.get("origin");
-  if (!allowedOrigin(origin, request.url))
+  if (!allowedOrigin(origin, request.url, request.headers.get("host")))
     return NextResponse.json(
       { error: "Request origin not permitted." },
       { status: 403 },

@@ -1,0 +1,47 @@
+name: Validate
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: partsroute_test
+          POSTGRES_USER: partsroute
+          POSTGRES_PASSWORD: partsroute_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U partsroute -d partsroute_test"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://partsroute:partsroute_test@127.0.0.1:5432/partsroute_test
+      APP_ORIGIN: http://127.0.0.1:3000
+      SMOKE_ORIGIN: http://127.0.0.1:3000
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm typecheck
+      - run: pnpm test:postgres
+      - run: pnpm build
+      - run: pnpm build:pages
+      - name: Production HTTP checks
+        shell: bash
+        run: |
+          pnpm start --hostname 127.0.0.1 --port 3000 > /tmp/partsroute-web.log 2>&1 &
+          server=$!
+          trap 'kill "$server"' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent "$SMOKE_ORIGIN/api/health" > /dev/null; then break; fi
+            sleep 1
+          done
+          pnpm test:http

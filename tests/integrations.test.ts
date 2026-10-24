@@ -82,7 +82,13 @@ describe("TinyFish HTTP contract with labelled mocked responses", () => {
     );
     const body = JSON.parse(transport.mock.calls[0][1]!.body as string);
     expect(body.output_schema).toBeDefined();
-    expect(body.agent_config.max_steps).toBe(30);
+    expect(body.agent_config).toEqual({ max_duration_seconds: 180 });
+    expect(body.use_profile).toBe(false);
+    expect(body.use_vault).toBe(false);
+    expect(body.goal).toContain(
+      "Require an initially empty isolated guest cart",
+    );
+    expect(body.goal).toContain("Never clear or remove existing cart contents");
   });
   it("recovers an existing run with the documented status endpoint", async () => {
     const transport = vi.fn<typeof fetch>().mockResolvedValue(
@@ -227,7 +233,7 @@ describe("extraction grounding and input bounds", () => {
     expect(offer.specs).toEqual([{ key: "voltage", value: "5 V" }]);
     expect(offer.taxRateBps).toBeNull();
   });
-  it("requires three to five unique lines and valid pincode", () => {
+  it("accepts one to three unique catalogue lines and requires a valid pincode", () => {
     expect(
       QuoteInput.safeParse({
         parts: sampleParts,
@@ -241,7 +247,7 @@ describe("extraction grounding and input bounds", () => {
         pincode: "560001",
         mode: "live",
       }).success,
-    ).toBe(false);
+    ).toBe(true);
     expect(
       QuoteInput.safeParse({
         parts: [sampleParts[0], sampleParts[0], sampleParts[2]],

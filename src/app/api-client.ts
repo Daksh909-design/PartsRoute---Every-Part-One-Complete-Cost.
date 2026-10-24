@@ -6,15 +6,14 @@ export const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(
 export const liveAvailable = !staticSite || Boolean(apiBase);
 export const temporaryBackend =
   /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(apiBase);
-export const repository =
-  "https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost./";
+export const repository = "https://github.com/Omegaman-cell/PartsRoute";
 export const homePath = `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/`;
-export const hostedSite = "https://partsroute.onrender.com/";
 
 export async function requestApi(
   path: string,
   token: string,
   init: RequestInit = {},
+  timeoutMs = 6000,
 ) {
   if (staticSite && !apiBase)
     throw new Error(
@@ -24,7 +23,7 @@ export async function requestApi(
   try {
     response = await fetch(`${apiBase}${path}`, {
       ...init,
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(timeoutMs),
       credentials: "omit",
       headers: {
         "Content-Type": "application/json",
@@ -32,12 +31,9 @@ export async function requestApi(
         ...init.headers,
       },
     });
-  } catch (error) {
+  } catch {
     throw new Error(
-      error instanceof Error &&
-        ["TimeoutError", "AbortError"].includes(error.name)
-        ? "The server did not respond within six seconds. Use Resume to check an existing quote before starting another."
-        : "Cannot reach the live service. Check your connection or use the sample calculator. If you already started a quote, use Resume when the service returns.",
+      `The server did not respond within ${timeoutMs / 1000} seconds. Saved work is kept; use Resume before starting another collection.`,
     );
   }
   if (!response.headers.get("content-type")?.includes("application/json"))

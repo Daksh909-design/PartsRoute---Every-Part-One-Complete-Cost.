@@ -9,10 +9,12 @@ import {
   saveResult,
   getJob,
   preserveObservationTime,
+  RequestLimit,
 } from "../src/server/db";
 import { sampleParts } from "../src/domain/catalogue";
 import { demoQuote } from "../src/domain/demo";
 import { claimJob, completeJob } from "../src/server/queue";
+import { LeaseLost } from "../src/server/lease";
 
 const connection = process.env.TEST_DATABASE_URL;
 if (!connection || !new URL(connection).pathname.endsWith("_test"))
@@ -66,6 +68,31 @@ try {
     "a deliberate new request after completion creates fresh work",
   );
   await db().query("DELETE FROM quotes WHERE id=$1", [newId]);
+  const configuredHourlyLimit = process.env.LIVE_QUOTES_PER_HOUR;
+  try {
+    process.env.LIVE_QUOTES_PER_HOUR = "2";
+    let limited = false;
+    try {
+      await enqueue(input, randomUUID(), actor);
+    } catch (error) {
+      limited = error instanceof RequestLimit && error.retryAfterSeconds > 0;
+    }
+    check(
+      limited,
+      "the configured rolling-hour limit reports a positive retry delay",
+    );
+    process.env.LIVE_QUOTES_PER_HOUR = "0";
+    const unrestricted = await enqueue(input, randomUUID(), actor);
+    check(
+      Boolean(unrestricted),
+      "zero disables the hourly limit for local testing",
+    );
+    await db().query("DELETE FROM quotes WHERE id=$1", [unrestricted]);
+  } finally {
+    if (configuredHourlyLimit === undefined)
+      delete process.env.LIVE_QUOTES_PER_HOUR;
+    else process.env.LIVE_QUOTES_PER_HOUR = configuredHourlyLimit;
+  }
   await db().query("UPDATE quotes SET status='queued' WHERE id=$1", [ids[0]]);
   const first = await saveObservation(
     ids[0],
@@ -112,6 +139,52 @@ try {
   check(
     recovered?.id === ids[0] && recovered.attempts === 2,
     "expired PostgreSQL leases are recovered with an incremented attempt count",
+  );
+  const staleLease = {
+    id: ids[0],
+    owner: previousOwner,
+    attempt: 1,
+    signal: new AbortController().signal,
+  };
+  const replacementLease = {
+    id: ids[0],
+    owner: replacementOwner,
+    attempt: 2,
+    signal: new AbortController().signal,
+  };
+  await saveResult(ids[0], demoQuote(input), replacementLease);
+  let rejectedWrites = 0;
+  for (const write of [
+    () =>
+      saveResult(
+        ids[0],
+        { ...demoQuote(input), explanation: "stale overwrite" },
+        staleLease,
+      ),
+    () => normalizeObservation(first.id, { stale: true }, staleLease),
+    () =>
+      saveObservation(
+        ids[0],
+        "stale-write",
+        "robu",
+        first.source_url,
+        "synthetic-fixture",
+        {},
+        null,
+        staleLease,
+      ),
+  ]) {
+    try {
+      await write();
+    } catch (error) {
+      if (!(error instanceof LeaseLost)) throw error;
+      rejectedWrites++;
+    }
+  }
+  check(
+    rejectedWrites === 3 &&
+      (await getJob(ids[0]))?.result?.explanation !== "stale overwrite",
+    "stale workers cannot write results, normalized evidence or observations after takeover",
   );
   check(
     !(await completeJob(ids[0], previousOwner, "complete")) &&

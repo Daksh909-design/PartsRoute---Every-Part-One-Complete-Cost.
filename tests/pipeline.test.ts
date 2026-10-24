@@ -3,6 +3,7 @@ import { sampleParts, retailers, catalogue } from "../src/domain/catalogue";
 import type { AIProvider, ProductExtraction } from "../src/server/ai";
 import type { Basket } from "../src/domain/schema";
 import type { TinyFishClient } from "../src/server/tinyfish";
+import type { StorefrontClient } from "../src/server/storefront";
 
 // Labelled in-memory persistence test double. This does not validate PostgreSQL SQL.
 const state = vi.hoisted(() => ({
@@ -10,80 +11,83 @@ const state = vi.hoisted(() => ({
   operations: new Map<string, Record<string, unknown>>(),
   sequence: 0,
 }));
-vi.mock("../src/server/db", () => ({
-  db: () => ({
-    query: vi.fn(async (sql: string, args: unknown[]) => {
-      const key = `${args[0]}:${args[1]}`;
-      if (sql.includes("SELECT * FROM observations"))
-        return { rows: [], rowCount: 0 };
-      if (sql.includes("SELECT * FROM provider_operations"))
-        return {
-          rows: state.operations.has(key) ? [state.operations.get(key)] : [],
-        };
-      if (sql.includes("INSERT INTO provider_operations")) {
-        if (state.operations.has(key)) return { rows: [], rowCount: 0 };
-        const row = {
-          status: "initiating",
-          run_id: null,
-          payload: JSON.parse(String(args[2])),
-        };
-        state.operations.set(key, row);
-        return { rows: [row], rowCount: 1 };
-      }
-      if (sql.includes("UPDATE provider_operations")) {
-        const row = state.operations.get(key)!;
-        if (sql.includes("status='running'"))
-          Object.assign(row, { status: "running", run_id: args[2] });
-        else if (sql.includes("status='complete'"))
-          Object.assign(row, {
-            status: "complete",
-            result: JSON.parse(String(args[2])),
-          });
-        return { rows: [], rowCount: 1 };
-      }
-      throw new Error(`Unhandled persistence-test query: ${sql}`);
-    }),
-  }),
-  phase: vi.fn(async () => {}),
-  usage: vi.fn(async () => {}),
-  saveResult: vi.fn(async () => {}),
-  observation: vi.fn(
-    async (job: string, key: string) =>
-      state.observations.get(`${job}:${key}`) || null,
-  ),
-  saveObservation: vi.fn(
-    async (
-      job: string,
-      key: string,
-      retailer: string,
-      url: string,
-      method: string,
-      original: unknown,
-      runId: string | null = null,
-    ) => {
-      const existing = state.observations.get(`${job}:${key}`);
-      if (existing) return existing;
-      const row = {
-        id: `observation-${++state.sequence}`,
-        source_url: url,
-        method,
-        run_id: runId,
-        retrieved_at: new Date("2026-01-01T00:00:00Z"),
-        original,
-        normalized: null,
+vi.mock("../src/server/db", () => {
+  const query = vi.fn(async (sql: string, args: unknown[]) => {
+    const key = `${args[0]}:${args[1]}`;
+    if (sql.includes("SELECT * FROM observations"))
+      return { rows: [], rowCount: 0 };
+    if (sql.includes("SELECT * FROM provider_operations"))
+      return {
+        rows: state.operations.has(key) ? [state.operations.get(key)] : [],
       };
-      state.observations.set(`${job}:${key}`, row);
-      return row;
-    },
-  ),
-  normalizeObservation: vi.fn(async (id: string, value: unknown) => {
-    for (const row of state.observations.values())
-      if (row.id === id) {
-        row.normalized = value;
-        row.normalization_version = "grounding-v6";
-      }
-  }),
-}));
+    if (sql.includes("INSERT INTO provider_operations")) {
+      if (state.operations.has(key)) return { rows: [], rowCount: 0 };
+      const row = {
+        status: "initiating",
+        run_id: null,
+        payload: JSON.parse(String(args[2])),
+      };
+      state.operations.set(key, row);
+      return { rows: [row], rowCount: 1 };
+    }
+    if (sql.includes("UPDATE provider_operations")) {
+      const row = state.operations.get(key)!;
+      if (sql.includes("status='running'"))
+        Object.assign(row, { status: "running", run_id: args[2] });
+      else if (sql.includes("status='complete'"))
+        Object.assign(row, {
+          status: "complete",
+          result: JSON.parse(String(args[2])),
+        });
+      return { rows: [], rowCount: 1 };
+    }
+    throw new Error(`Unhandled persistence-test query: ${sql}`);
+  });
+  return {
+    db: () => ({ query }),
+    writeForLease: (_lease: unknown, sql: string, args: unknown[]) =>
+      query(sql, args),
+    phase: vi.fn(async () => {}),
+    usage: vi.fn(async () => {}),
+    saveResult: vi.fn(async () => {}),
+    observation: vi.fn(
+      async (job: string, key: string) =>
+        state.observations.get(`${job}:${key}`) || null,
+    ),
+    saveObservation: vi.fn(
+      async (
+        job: string,
+        key: string,
+        retailer: string,
+        url: string,
+        method: string,
+        original: unknown,
+        runId: string | null = null,
+      ) => {
+        const existing = state.observations.get(`${job}:${key}`);
+        if (existing) return existing;
+        const row = {
+          id: `observation-${++state.sequence}`,
+          source_url: url,
+          method,
+          run_id: runId,
+          retrieved_at: new Date("2026-01-01T00:00:00Z"),
+          original,
+          normalized: null,
+        };
+        state.observations.set(`${job}:${key}`, row);
+        return row;
+      },
+    ),
+    normalizeObservation: vi.fn(async (id: string, value: unknown) => {
+      for (const row of state.observations.values())
+        if (row.id === id) {
+          row.normalized = value;
+          row.normalization_version = "grounding-v9";
+        }
+    }),
+  };
+});
 import { processQuote } from "../src/server/pipeline";
 import { ProviderAccessError } from "../src/server/provider-error";
 import { listedEstimate } from "../src/domain/listed-estimate";
@@ -94,6 +98,147 @@ beforeEach(() => {
   state.sequence = 0;
 });
 describe("worker pipeline with explicitly mocked providers and persistence", () => {
+  it("preserves changed supplemental originals on recovery instead of attributing new order rules to old evidence", async () => {
+    let minimum = 1;
+    const part = sampleParts[2];
+    const tiny = {
+      fetchPages: vi.fn(async (urls: string[], retailer: string) =>
+        retailer === "robu"
+          ? {
+              results: [],
+              errors: urls.map((url) => ({
+                url,
+                error: "Synthetic unavailable retailer",
+              })),
+            }
+          : {
+              results: urls.map((url) => ({
+                url,
+                final_url: url,
+                text: url.includes("/products/")
+                  ? `# 400 Tie Points Solderless Breadboard\nSKU: TEST-B\n: Rs 81/-\nIncl. GST\nOnly 8 left in stock\n## Package Includes:\n1 x 400-point solderless breadboard\n| Number of Points | 400 |\n${"Synthetic source. ".repeat(40)}`
+                  : "Shipping Policy Page Content",
+              })),
+              errors: [],
+            },
+      ),
+      startBasket: vi.fn(async () => {
+        throw new Error("Synthetic unavailable browser");
+      }),
+    };
+    const storefront = {
+      product: vi.fn(async () => ({
+        title: "400 Tie Points Solderless Breadboard",
+        handle: "half-breadboard",
+        variants: [
+          {
+            id: 1,
+            sku: "TEST-B",
+            price: 8100,
+            available: true,
+            quantity_rule: { min: minimum, max: null, increment: 1 },
+          },
+        ],
+      })),
+      shipping: vi.fn(async () => {
+        throw new Error("Synthetic estimator unavailable");
+      }),
+    };
+    const ai = { product: vi.fn(), policy: vi.fn(), explain: vi.fn() };
+    const input = {
+      parts: [part],
+      pincode: "560001",
+      mode: "live",
+      refresh: true,
+    };
+    await processQuote(
+      "source-recovery",
+      input,
+      tiny as unknown as TinyFishClient,
+      ai,
+      undefined,
+      storefront as unknown as StorefrontClient,
+    );
+    minimum = 2;
+    const resumed = await processQuote(
+      "source-recovery",
+      input,
+      tiny as unknown as TinyFishClient,
+      ai,
+      undefined,
+      storefront as unknown as StorefrontClient,
+    );
+    const offer = resumed.offers[0];
+    expect(offer.minPacks).toBe(2);
+    const rows = [...state.observations.values()].filter(
+      (row) => row.method === "storefront-api",
+    );
+    expect(rows).toHaveLength(2);
+    const source = offer.evidence.find(
+      (evidence) => evidence.method === "storefront-api",
+    )!;
+    const original = rows.find((row) => row.id === source.observationId)!
+      .original as { variants: { quantity_rule: { min: number } }[] };
+    expect(original.variants[0].quantity_rule.min).toBe(2);
+  });
+  it("checks a complete retailer basket while the other retailer is still fetching, without model calls for complete source facts", async () => {
+    let release!: () => void;
+    const waiting = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const part = sampleParts[2];
+    const tiny = {
+      fetchPages: vi.fn(async (urls: string[], retailer: string) => {
+        if (retailer === "robu") {
+          await waiting;
+          return {
+            results: [],
+            errors: urls.map((url) => ({
+              url,
+              error: "Synthetic unavailable retailer",
+            })),
+          };
+        }
+        return {
+          results: urls.map((url) => ({
+            url,
+            final_url: url,
+            text: url.includes("/products/")
+              ? `# 400 Tie Points Solderless Breadboard\n: Rs 81/-\nIncl. GST\nOnly 8 left in stock\n## Package Includes:\n1 x 400-point solderless breadboard\n| Number of Points | 400 |\n<input name="quantity" min="1" step="1">\nFor Best Price Contact on WhatsApp for bulk discounts!\n${"Synthetic fixture. ".repeat(40)}`
+              : "Shipping Policy Page Content",
+          })),
+          errors: [],
+        };
+      }),
+      startBasket: vi.fn(async () => {
+        throw new Error("Synthetic browser unavailable");
+      }),
+    };
+    const ai = {
+      product: vi.fn(),
+      productDetails: vi.fn(),
+      policy: vi.fn(),
+      explain: vi.fn(),
+    };
+    const work = processQuote(
+      "early-basket-fixture",
+      { parts: [part], pincode: "560001", mode: "live", refresh: true },
+      tiny as unknown as TinyFishClient,
+      ai,
+    );
+    try {
+      await vi.waitFor(() => expect(tiny.startBasket).toHaveBeenCalledTimes(1));
+      expect(ai.product).not.toHaveBeenCalled();
+      expect(ai.productDetails).not.toHaveBeenCalled();
+      expect(ai.policy).not.toHaveBeenCalled();
+    } finally {
+      release();
+    }
+    const result = await work;
+    expect(result.coverage.covered).toBe(1);
+    expect(result.recommendedId).toBeNull();
+    expect(tiny.startBasket).toHaveBeenCalledTimes(1);
+  });
   it("uses narrow detail extraction for recognised templates and preserves source prices", async () => {
     const tiny = {
       fetchPages: vi.fn(
@@ -213,8 +358,8 @@ describe("worker pipeline with explicitly mocked providers and persistence", () 
     );
     try {
       await vi.waitFor(() => expect(ai.product).toHaveBeenCalledTimes(6));
-      // Both policy calls must begin while all product calls remain blocked.
-      expect(ai.policy).toHaveBeenCalledTimes(2);
+      // Policy capture does not spend model calls while product work is blocked.
+      expect(ai.policy).not.toHaveBeenCalled();
     } finally {
       release.splice(0).forEach((done) => done());
     }

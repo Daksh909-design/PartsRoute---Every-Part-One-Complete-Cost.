@@ -15,10 +15,33 @@ export function collectionWindowMs() {
 export function requestSignal(
   deadline: number,
   timeoutMs: number,
+  signal?: AbortSignal,
 ): AbortSignal {
+  signal?.throwIfAborted();
   const remaining = deadline - Date.now();
   if (remaining <= 0) throw new CollectionDeadline();
-  return AbortSignal.timeout(
+  const timeout = AbortSignal.timeout(
     Math.max(1, Math.ceil(Math.min(timeoutMs, remaining))),
   );
+  return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
+
+export async function waitWithinDeadline(
+  ms: number,
+  deadline: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  signal?.throwIfAborted();
+  if (Date.now() + ms >= deadline) throw new CollectionDeadline();
+  await new Promise<void>((resolve, reject) => {
+    const aborted = () => {
+      clearTimeout(timer);
+      reject(signal!.reason);
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", aborted);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", aborted, { once: true });
+  });
 }

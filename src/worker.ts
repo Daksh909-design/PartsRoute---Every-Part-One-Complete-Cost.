@@ -3,6 +3,7 @@ import { db, saveResult } from "./server/db";
 import { claimJob, completeJob } from "./server/queue";
 import { processQuote } from "./server/pipeline";
 import { aiConfig } from "./server/ai-provider";
+import { LeaseLost, type JobLease } from "./server/lease";
 const owner = randomUUID();
 let stopping = false;
 process.on("SIGINT", () => {
@@ -37,34 +38,55 @@ while (!stopping) {
     await new Promise((r) => setTimeout(r, 250));
     continue;
   }
+  const controller = new AbortController();
+  const lease: JobLease = {
+    id: job.id,
+    owner,
+    attempt: job.attempts,
+    signal: controller.signal,
+  };
   const heartbeat = setInterval(() => {
     void db()
       .query(
-        "UPDATE quotes SET lease_until=now()+interval '60 seconds' WHERE id=$1 AND lease_owner=$2",
-        [job.id, owner],
+        "UPDATE quotes SET lease_until=now()+interval '60 seconds' WHERE id=$1 AND lease_owner=$2 AND attempts=$3 AND status='processing' AND lease_until>now()",
+        [job.id, owner, job.attempts],
       )
+      .then((result) => {
+        if (!result.rowCount) controller.abort(new LeaseLost());
+      })
       .catch(() => {
+        controller.abort(new LeaseLost());
         stopping = true;
       });
   }, 10000);
   try {
-    const result = await processQuote(job.id, job.input);
-    await saveResult(job.id, result);
+    const result = await processQuote(
+      job.id,
+      job.input,
+      undefined,
+      undefined,
+      lease,
+    );
+    await saveResult(job.id, result, lease);
     await completeJob(
       job.id,
       owner,
       result.recommendedId ? "complete" : "partial",
+      job.attempts,
     );
   } catch (error) {
+    controller.abort(error);
+    if (error instanceof LeaseLost) continue;
     console.error(`Quote ${job.id} failed; inspect protected evidence.`);
     await db().query(
-      "UPDATE quotes SET status='failed',phase='Could not complete this quote. Retry the saved job.',errors=$2,lease_until=NULL,lease_owner=NULL,updated_at=now() WHERE id=$1 AND lease_owner=$3",
+      "UPDATE quotes SET status='failed',phase='Could not complete this quote. Retry the saved job.',errors=$2,lease_until=NULL,lease_owner=NULL,updated_at=now() WHERE id=$1 AND lease_owner=$3 AND attempts=$4 AND lease_until>now()",
       [
         job.id,
         JSON.stringify([
           error instanceof Error ? error.message : "Processing failed",
         ]),
         owner,
+        job.attempts,
       ],
     );
   } finally {
