@@ -2,6 +2,14 @@
 
 Application checks and external integration qualification are reported separately. Original responses remain in [evidence](evidence/README.md). Earlier development notes are available in Git history.
 
+## Render service checks — 24 October 2026
+
+- Main site https://partsroute.onrender.com/ and `/api/health` returned HTTP 200.
+- Authenticated `/api/integration/status` returned HTTP 200 and `ready: true`: provider keys configured, database connected/migrated, recent worker heartbeat.
+- The same readiness endpoint without authentication returned HTTP 401.
+- GitHub Pages-origin preflight returned HTTP 403; Pages links to the hosted app instead of calling it cross-origin.
+- No new quote or provider call was made in these checks. The provider accounts, complete basket flow and database/worker hosting locations were not independently verified.
+
 ## Local checks — 24 October 2026
 
 - 112 unit/fixture tests in 17 files passed, including timeout/network-error and repository-link regressions.
@@ -29,13 +37,13 @@ These are dated results, not a claim that today's public backend is running.
 
 TinyFish Fetch, TinyFish Agent and Gemini structured extraction were exercised with real credentials. The latest fresh quote used public HTTP and returned **partial** after **26.647 seconds**: two offers, no complete verified plan, and no delivered total. The strict complete-result benchmark failed. [Original report](evidence/public-budgeted-collection-2026-10-21.json).
 
-The public frontend is a static sample. The earlier tunnel depended on the local computer and is no longer a deployment guarantee. No permanent backend has been provisioned.
+The main frontend now runs on Render; Pages remains a static sample. The earlier development tunnel is no longer used.
 
 ## Still unverified
 
 - A complete live basket with exact pincode shipping and manual arithmetic review.
 - Fully qualified retailer/product coverage and a labelled extraction evaluation.
-- Independent cloud deployment, Docker execution and real process-kill recovery beyond SQL lease tests.
+- Full cloud deployment configuration, Docker execution and real process-kill recovery beyond SQL lease tests.
 - A successful fresh verified quote within the requested latency target.
 
 ## Reproduce

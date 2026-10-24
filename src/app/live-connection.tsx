@@ -1,4 +1,4 @@
-import { apiBase, liveAvailable, repository } from "./api-client";
+import { apiBase, hostedSite, liveAvailable, repository } from "./api-client";
 
 export type IntegrationStatus = {
   ready: boolean;
@@ -33,7 +33,7 @@ export default function LiveConnection({
           <span className="eyebrow">LIVE CONNECTION</span>
           <h2>
             {!liveAvailable
-              ? "Connect a server to collect live offers"
+              ? "Collect live offers on the hosted app"
               : "Check the live service"}
           </h2>
         </div>
@@ -41,7 +41,7 @@ export default function LiveConnection({
           {status?.ready
             ? "Service ready"
             : !liveAvailable
-              ? "Server not connected"
+              ? "Hosted separately"
               : status
                 ? "Needs attention"
                 : "Not checked"}
@@ -50,17 +50,24 @@ export default function LiveConnection({
       {!liveAvailable ? (
         <>
           <p>
-            This GitHub Pages site hosts the sample calculator. Live quotes need
-            the server application, a database and a worker. TinyFish and AI
-            provider keys belong on that server.
+            This page is the sample calculator. Open the hosted PartsRoute app
+            for live collection and enter your team access token there.
           </p>
+          <a
+            className="setup-link"
+            href={hostedSite}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open live PartsRoute ↗
+          </a>
           <a
             className="setup-link"
             href={`${repository}blob/main/docs/LIVE-SETUP.md`}
             target="_blank"
             rel="noreferrer"
           >
-            Open live deployment guide ↗
+            Deployment instructions ↗
           </a>
         </>
       ) : (

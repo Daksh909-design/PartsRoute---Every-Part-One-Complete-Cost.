@@ -6,7 +6,7 @@ PartsRoute compares the complete cost of an electronics parts list across Indian
 
 Built by **Team REsynced** for the AI/ML track at **Kritical Hacks**, for student teams, makers and electronics builders.
 
-[Try the sample calculator](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./) · [Source](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost./)
+[Open PartsRoute](https://partsroute.onrender.com/) · [Sample calculator](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./) · [Source](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost./)
 
 ![Sample calculator with synthetic prices](docs/images/sample-calculator.png)
 
@@ -18,7 +18,9 @@ Built by **Team REsynced** for the AI/ML track at **Kritical Hacks**, for studen
 - TinyFish Fetch collection and an Agent integration for supported basket interactions, with saved responses and run IDs.
 - Background quote jobs, partial results, resumption and a separate evidence view.
 
-**Current limits:** the public site is a synthetic sample calculator. The live application needs a separately running web server, worker and PostgreSQL database. No independent backend has been deployed. Live API checks have returned partial data, but no complete live basket with verified shipping has passed validation. There is no successful end-to-end latency guarantee. See [validation](docs/VALIDATION.md).
+**Deployment:** the main application is hosted on Render. On 24 October 2026 its authenticated readiness check confirmed database access, applied migrations and a recent worker heartbeat. GitHub Pages remains a separate synthetic sample and links to the hosted app for live collection.
+
+**Current limits:** previous live API checks returned partial data; no complete live basket with verified shipping has passed validation. Provider account access is checked during collection, and there is no successful end-to-end latency guarantee. See [validation](docs/VALIDATION.md).
 
 The sample calculates ₹255 in items plus ₹40 shipping = **₹295**, using fictional prices. It demonstrates the calculator, not current retailer pricing or a live API call.
 
@@ -130,7 +132,7 @@ A presentation link and demo video have not been added.
 
 ## Roadmap
 
-- **MVP completion:** manually verify extraction, qualify both retailers, obtain one complete live shipping result and deploy the independent backend.
+- **MVP completion:** manually verify extraction, qualify both retailers, obtain one complete live shipping result and validate the hosted deployment through that workflow.
 - **Version 1:** labelled extraction evaluation, broader curated catalogue, stronger account controls and operational monitoring.
 - **Version 2:** TinyFish Search discovery and additional retailers after variant, seller and shipping qualification.
 

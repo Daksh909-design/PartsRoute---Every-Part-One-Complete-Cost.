@@ -8,6 +8,6 @@ The browser asks for `APP_ACCESS_TOKEN`, the separate PartsRoute team token. It 
 
 Check the account's billing tier, available model, quotas and spending controls in the provider dashboard before running live checks. A successful request does not establish that usage is free. Request spacing and application rate limits are not account spending caps. The application does not automatically switch to a paid provider after a failure.
 
-Sample mode needs no keys. The provider validation scripts and live quotes consume real API quota. The prepared Render deployment uses paid resources and has not been provisioned.
+Sample mode needs no keys. The provider validation scripts and live quotes consume real API quota. The Render blueprint specifies paid resources; check the provider's estimate before using it to create additional services. The existing hosted app's billing plan has not been inspected.
 
 [Google billing](https://ai.google.dev/gemini-api/docs/billing) · [Google pricing](https://ai.google.dev/gemini-api/docs/pricing) · [TinyFish](https://docs.tinyfish.ai/) · [OpenAI pricing](https://developers.openai.com/api/docs/pricing)

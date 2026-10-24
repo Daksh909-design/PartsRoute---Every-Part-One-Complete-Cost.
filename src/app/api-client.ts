@@ -9,6 +9,7 @@ export const temporaryBackend =
 export const repository =
   "https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost./";
 export const homePath = `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/`;
+export const hostedSite = "https://partsroute.onrender.com/";
 
 export async function requestApi(
   path: string,

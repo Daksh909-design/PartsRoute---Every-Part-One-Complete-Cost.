@@ -17,7 +17,7 @@ These numbers come from synthetic fixtures. They are not current retailer prices
 
 ## Live collection
 
-On a configured server, choose **Live quote**, enter the team token and check the connection. Select **Collect & compare fresh offers** to start new TinyFish and model requests.
+On the [hosted app](https://partsroute.onrender.com/), choose **Live quote**, enter the team token and check the connection. Select **Collect & compare fresh offers** to start new TinyFish and model requests.
 
 The result shows priced-line coverage, product differences and missing costs. **Evidence** contains source URLs, retrieval times, original observations, provider request IDs and saved Agent runs. **View saved observations** is a separate read-only option and does not make new provider calls.
 

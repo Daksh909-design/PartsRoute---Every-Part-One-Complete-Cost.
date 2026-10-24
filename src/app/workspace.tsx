@@ -460,7 +460,7 @@ export default function Workspace() {
               onClick={() => switchMode("live")}
             >
               Live quote{" "}
-              {!liveAvailable && <span className="small-tag">Setup</span>}
+              {!liveAvailable && <span className="small-tag">Hosted</span>}
             </button>
           </div>
           <span className="toolbar-note">

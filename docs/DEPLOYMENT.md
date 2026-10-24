@@ -1,6 +1,8 @@
 # Deployment
 
-Live PartsRoute requires three services: a Next.js web server, a Node worker and persistent PostgreSQL. Deploy web and worker from the same commit. No independent backend is currently deployed.
+The main application is at [partsroute.onrender.com](https://partsroute.onrender.com/). On 24 October 2026 the web health check passed, and authenticated readiness reported a migrated database and recent worker heartbeat. The hosting configuration and location of the database/worker were not inspected; these checks do not establish provider access or a complete verified basket.
+
+Live PartsRoute requires three services: a Next.js web server, a Node worker and persistent PostgreSQL. Deploy web and worker from the same commit.
 
 ## Web and worker
 
@@ -16,7 +18,7 @@ Start the web service with `pnpm start --hostname 0.0.0.0 --port $PORT` and a se
 
 Required settings are listed in [.env.example](../.env.example). Set `APP_ORIGIN` to the web origin. If using Pages as the frontend, add `https://daksh909-design.github.io` to `APP_ALLOWED_ORIGINS`. These are exact origins, without repository paths or wildcards. Keep keys and the team token in the hosting provider's secret settings.
 
-The prepared [Render blueprint](../render.yaml) defines these services, PostgreSQL and migration commands. It uses paid resources and has not been provisioned or tested on Render. Review the provider's estimate before deploying it.
+The prepared [Render blueprint](../render.yaml) defines these services, PostgreSQL and migration commands. It uses paid resources. The existing deployment's plan and configuration have not been checked against this blueprint; review the provider's estimate before using it for another deployment.
 
 ## Containers
 
@@ -31,7 +33,7 @@ Run migrations with the worker image before starting web and worker. Use injecte
 
 ## GitHub Pages
 
-Pages hosts the sample calculator. It cannot run quote APIs, the worker or PostgreSQL.
+Pages hosts the sample calculator and links to the hosted application for live quotes. It cannot run quote APIs, the worker or PostgreSQL. The current Render configuration rejects API preflights from the Pages origin, so the two frontends remain separate.
 
 ```sh
 pnpm build:pages
