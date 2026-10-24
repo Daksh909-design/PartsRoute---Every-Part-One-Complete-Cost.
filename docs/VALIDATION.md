@@ -2,7 +2,6 @@
 
 This file separates application tests from external integration qualification. Historical execution logs are retained in [the archive](archive/VALIDATION-2026-10-21.md); original responses remain in [evidence](evidence/README.md).
 
-## Latest recorded checks — 21 October 2026
 ## Repository cleanup checks — 24 October 2026
 
 - 112 unit/fixture tests in 17 files passed, including timeout/network-error and repository-link regressions.
