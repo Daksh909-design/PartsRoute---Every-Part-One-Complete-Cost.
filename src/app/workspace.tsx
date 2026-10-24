@@ -16,6 +16,7 @@ import {
   temporaryBackend,
 } from "./api-client";
 import QuoteResults from "./quote-results";
+import LiveConnection, { type IntegrationStatus } from "./live-connection";
 import EvidenceView, { type EvidenceData } from "./evidence-view";
 import { Icon } from "./ui-icons";
 import { demoQuote } from "../domain/demo";
@@ -30,10 +31,6 @@ type Job = {
   phase: string;
   result: QuoteResult | null;
   errors: string[];
-};
-type Status = {
-  ready: boolean;
-  checks: { name: string; ok: boolean; detail: string }[];
 };
 const savedKey = `partsroute-job:${apiBase || "same-origin"}`;
 const storage = {
@@ -61,7 +58,7 @@ export default function Workspace() {
   const [mode, setMode] = useState<"demo" | "live">("demo");
   const [view, setView] = useState<"compare" | "evidence">("compare");
   const [token, setToken] = useState("");
-  const [status, setStatus] = useState<Status | null>(null);
+  const [status, setStatus] = useState<IntegrationStatus | null>(null);
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<QuoteResult | null>(() =>
     demoQuote({
@@ -187,7 +184,7 @@ export default function Workspace() {
       const current = (await requestApi(
         "/api/integration/status",
         token,
-      )) as Status;
+      )) as IntegrationStatus;
       setStatus(current);
       return current.ready;
     } catch (caught) {
@@ -503,130 +500,19 @@ export default function Workspace() {
         ) : (
           <>
             {mode === "live" && (
-              <section className="panel connection-panel">
-                <div className="section-heading">
-                  <div>
-                    <span className="eyebrow">LIVE CONNECTION</span>
-                    <h2>
-                      {!liveAvailable
-                        ? "Connect a server to collect live offers"
-                        : "Check the live service"}
-                    </h2>
-                  </div>
-                  <span
-                    className={`connection-state ${status?.ready ? "ready" : ""}`}
-                  >
-                    {status?.ready
-                      ? "Service ready"
-                      : !liveAvailable
-                        ? "Server not connected"
-                        : status
-                          ? "Needs attention"
-                          : "Not checked"}
-                  </span>
-                </div>
-                {!liveAvailable ? (
-                  <>
-                    <p>
-                      This GitHub Pages site hosts the sample calculator. Live
-                      quotes need the server application, a database and a
-                      worker. TinyFish and AI provider keys belong on that
-                      server.
-                    </p>
-                    <a
-                      className="setup-link"
-                      href={`${repository}blob/main/docs/LIVE-SETUP.md`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Open live deployment guide ↗
-                    </a>
-                  </>
-                ) : (
-                  <>
-                    <p>
-                      Collect new product pages and request new AI extraction.
-                      The timer measures the full quote, including verification.
-                    </p>
-                    {apiBase && (
-                      <p className="source-note">
-                        Connected server:{" "}
-                        <a
-                          href={`${apiBase}/api/health`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {new URL(apiBase).hostname} ↗
-                        </a>
-                      </p>
-                    )}
-                    <div className="connection-controls">
-                      <label htmlFor="team-token">
-                        Team access token
-                        <input
-                          id="team-token"
-                          type="password"
-                          autoComplete="off"
-                          value={token}
-                          onChange={(event) => {
-                            setToken(event.target.value);
-                            setStatus(null);
-                          }}
-                          placeholder="Enter the server’s team token"
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        className="secondary"
-                        disabled={checking || busy || !token}
-                        onClick={() => void checkConnection()}
-                      >
-                        {checking ? "Checking…" : "Check connection"}
-                      </button>
-                    </div>
-                    <p className="source-note">
-                      The token stays in this tab. API keys are never entered
-                      here.
-                    </p>
-                    <details className="token-help">
-                      <summary>Where do I find the team token?</summary>
-                      <p>
-                        Local server: copy the value of APP_ACCESS_TOKEN from
-                        your private .env.local file. Hosted server: find
-                        APP_ACCESS_TOKEN in the web service’s Environment
-                        settings. This is your PartsRoute access password,
-                        separate from the AI provider and TinyFish keys.
-                      </p>
-                    </details>
-                    {status && (
-                      <ul className="status-checks">
-                        {status.checks.map((check) => (
-                          <li key={check.name}>
-                            <span
-                              className={check.ok ? "check-ok" : "check-fail"}
-                            >
-                              {check.ok ? "✓" : "!"}
-                            </span>
-                            <div>
-                              <strong>{check.name}</strong>
-                              <span>{check.detail}</span>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {savedId && !busy && (
-                      <button
-                        className="text-button"
-                        type="button"
-                        onClick={() => void resume()}
-                      >
-                        Resume the last live quote ↗
-                      </button>
-                    )}
-                  </>
-                )}
-              </section>
+              <LiveConnection
+                token={token}
+                status={status}
+                checking={checking}
+                busy={busy}
+                savedId={savedId}
+                onTokenChange={(value) => {
+                  setToken(value);
+                  setStatus(null);
+                }}
+                onCheck={() => void checkConnection()}
+                onResume={() => void resume()}
+              />
             )}
             <div className="workspace-grid">
               <section className="panel parts-panel">

@@ -19,7 +19,6 @@ async function markdownFiles(directory) {
 }
 const files = [
   join(root, "README.md"),
-  join(root, "START-HERE.md"),
   ...(await markdownFiles(join(root, "docs"))),
 ];
 const failures = [];

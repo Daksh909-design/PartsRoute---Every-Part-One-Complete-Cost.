@@ -1,21 +1,33 @@
-# A credible PartsRoute demonstration
+# Demo walkthrough
 
-Lead with the purchasing decision, then show the evidence supporting it. The sample demonstrates the arithmetic; it must not be presented as current retailer pricing or proof of live collection.
+## Sample calculation
 
-1. Open the sample. Explain the three requirements and exact attributes. Show the computed ₹225 item-first basket becoming ₹345 after two shipping charges, while one retailer's ₹255 basket totals ₹295.
-2. Change a quantity. Point out the stale-result notice and recalculate; all totals come from the same pack/tax/shipping calculator.
-3. Open a product's matching details. Explain how a bare DHT11 sensor differs from an external sensor module, why a wrong connector would be rejected and why confirmation cannot override contradictions.
-4. Choose Live quote and check the connection. Use Collect & compare fresh offers to run one quote. Inspect source URLs, new retrieval times, original Fetch responses, provider request IDs, model usage and Agent run IDs in Evidence. The main action bypasses both page and model caches. Do not substitute saved observations or the Pages sample for this step.
-5. Show one complete, independently calculated live landed total **only after** extraction, quantity constraints and exact-basket shipping actually pass. If they do not, state the blocker and demonstrate the honest partial/failure state.
+Open the public sample. It starts with two HC-SR04 sensors, one DHT11 module and one breadboard, delivered to pincode 560001.
 
-## Current evidence and gaps
+The synthetic example shows why item prices alone are misleading:
 
-Direct-key Fetch works and originals are saved for Robu and Robocraze. A direct Agent research run reported a three-line ₹248 cart but no usable shipping/serviceability. A replacement Google key restored generation. Real Flash-Lite extraction recovered published Robu/Robocraze prices, but some extractions timed out and required fields remain unknown. Therefore the required complete live recommendation has not passed, and should not be claimed during judging.
+| Plan                                            | Items | Shipping | Total |
+| ----------------------------------------------- | ----: | -------: | ----: |
+| Lowest item prices, split between two retailers |  ₹225 |     ₹120 |  ₹345 |
+| Best complete sample basket                     |  ₹255 |      ₹40 |  ₹295 |
 
-The strongest differentiator is an auditable complete basket calculation that rejects misleading product matches. More retailer logos, unsupported delivery promises or decorative AI badges do not strengthen that evidence.
+Change the HC-SR04 quantity from two to three and calculate again. The best sample total becomes ₹370. Reset restores the original basket. Expand the other combinations to inspect their costs and the matching details to see the required specifications.
 
-Before submission, gather one short user example from a team buying parts, verify the real basket manually, and record the successful live workflow. No user interviews, human verification, presentation or demo video are claimed in this repository.
+These numbers come from synthetic fixtures. They are not current retailer prices.
 
-## Seven-second presentation constraint
+## Live collection
 
-Earlier seven- and ten-second targets failed; the later thirty-second complete-result target has not passed either. The fresh action shows elapsed time and verification status without a missed-deadline banner. A cached comparison, queue acknowledgement or partial price list cannot qualify as a complete fresh result. See [current measurements](PERFORMANCE.md).
+On a configured server, choose **Live quote**, enter the team token and check the connection. Select **Collect & compare fresh offers** to start new TinyFish and model requests.
+
+The result shows priced-line coverage, product differences and missing costs. **Evidence** contains source URLs, retrieval times, original observations, provider request IDs and saved Agent runs. **View saved observations** is a separate read-only option and does not make new provider calls.
+
+A complete live demonstration needs matching products, published order constraints and verified shipping for the exact basket and pincode. If a fact is missing, the result remains partial. The latest recorded live run has no complete verified total; see [validation](VALIDATION.md).
+
+## Links
+
+- [Sample calculator](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./)
+- [Source code](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost./)
+- [Local setup](LIVE-SETUP.md)
+- [Recorded collection timings](PERFORMANCE.md)
+
+A demo recording and presentation link have not been added.

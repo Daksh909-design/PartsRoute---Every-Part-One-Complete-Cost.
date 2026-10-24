@@ -12,4 +12,4 @@ The initial Robocraze DHT11 URL described a bare sensor. It was replaced with a 
 
 Direct-key TinyFish Fetch and Agent calls ran and original responses were saved. Successful transport does not establish correct extraction or verified shipping. Gemini generated structured extractions, with intermittent failures. The latest public quote returned two offers after 26.647 seconds, but no verified purchasing plan.
 
-Complete retailer qualification still requires a manually reviewed product sample and a complete exact-basket shipping result. [Latest report](evidence/public-budgeted-collection-2026-10-21.json) · [Evidence index](evidence/README.md) · [Historical research](archive/FEASIBILITY-2026-10-21.md)
+Complete retailer qualification still requires a manually reviewed product sample and a complete exact-basket shipping result. [Latest report](evidence/public-budgeted-collection-2026-10-21.json) · [Evidence index](evidence/README.md)

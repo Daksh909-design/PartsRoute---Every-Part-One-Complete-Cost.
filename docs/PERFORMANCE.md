@@ -4,7 +4,7 @@
 
 On 21 October 2026 a fresh quote submitted through public HTTP returned **partial** after **26.647 seconds**, with two offers and no complete verified purchasing plan. One retailer batch timed out; another product was blocked. The strict 30-second complete-result check failed. [Original report](evidence/public-budgeted-collection-2026-10-21.json).
 
-Earlier 7- and 10-second checks also failed. These results do not establish a service-level guarantee. [Historical measurements](archive/PERFORMANCE-2026-10-21.md).
+Earlier 7- and 10-second checks also failed. These results do not establish a service-level guarantee. Original reports remain in the evidence directory.
 
 ## Current execution
 

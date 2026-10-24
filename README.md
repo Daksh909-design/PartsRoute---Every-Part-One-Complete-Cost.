@@ -8,7 +8,7 @@ Built by **Team REsynced** for the AI/ML track at **Kritical Hacks**, for studen
 
 [Try the sample calculator](https://daksh909-design.github.io/PartsRoute---Every-Part-One-Complete-Cost./) · [Source](https://github.com/Daksh909-design/PartsRoute---Every-Part-One-Complete-Cost./)
 
-![Sample calculator with synthetic prices](docs/workbench-current-desktop.png)
+![Sample calculator with synthetic prices](docs/images/sample-calculator.png)
 
 ## What works today
 
@@ -33,7 +33,7 @@ The catalogue contains HC-SR04, DHT11 module and 400-point breadboard requests. 
 
 ## Run locally
 
-Use Node.js 24, pnpm 11.25.0 and PostgreSQL 17. The included Compose file provides a local database if Docker is installed.
+Use Node.js 24 and pnpm 11.25.0. Live mode also needs PostgreSQL 17; the Compose file supplies it locally.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -75,7 +75,7 @@ Copy [.env.example](.env.example) without committing the populated file.
 | `OBSERVATION_TTL_SECONDS`           | Saved-observation freshness, default 900 seconds                                |
 | `MAX_BROWSER_CHECKS`                | Up to three finalist basket checks                                              |
 
-The environment example also documents provider timeouts and request spacing. Keys stay server-side. There is no automatic paid-provider fallback; account eligibility, quotas and billing remain provider-specific. See [keys and costs](docs/KEYS-AND-COSTS.md).
+The environment example also documents timeouts and request spacing. Keys stay server-side. There is no automatic provider fallback. See [keys and costs](docs/KEYS-AND-COSTS.md).
 
 ## TinyFish and AI
 
@@ -92,6 +92,19 @@ Each component line is assigned to one eligible offer. The optimizer enumerates 
 Documented rules shortlist candidates; at most three distinct retailer baskets are selected for browser verification. Only complete verified plans qualify for recommendation: **best verified plan among checked options**. Partial estimates are displayed separately. See [architecture and data model](docs/ARCHITECTURE.md).
 
 ## Tests
+
+The code is split by responsibility:
+
+| Directory       | Contents                                                      |
+| --------------- | ------------------------------------------------------------- |
+| `src/domain`    | Matching, quantity rules, money calculations and plan ranking |
+| `src/server`    | TinyFish/AI clients, source validation, queue and persistence |
+| `src/app`       | Workspace, results, service connection and evidence views     |
+| `db/migrations` | PostgreSQL schema changes                                     |
+| `tests`         | Unit and fixture tests                                        |
+| `integration`   | Opt-in live provider tests                                    |
+
+Next.js App Router, React and TypeScript provide the web app; Tailwind/CSS handles styling, Zod validates data, and PostgreSQL stores jobs and observations. A separate Node process runs the worker. Dependencies are pinned in the lockfile.
 
 ```sh
 pnpm test

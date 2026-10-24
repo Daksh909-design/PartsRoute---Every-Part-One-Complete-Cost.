@@ -1,16 +1,16 @@
 # Validation
 
-This file separates application tests from external integration qualification. Historical execution logs are retained in [the archive](archive/VALIDATION-2026-10-21.md); original responses remain in [evidence](evidence/README.md).
+Application checks and external integration qualification are reported separately. Original responses remain in [evidence](evidence/README.md). Earlier development notes are available in Git history.
 
-## Repository cleanup checks — 24 October 2026
+## Local checks — 24 October 2026
 
 - 112 unit/fixture tests in 17 files passed, including timeout/network-error and repository-link regressions.
 - Standalone TypeScript check, production Next.js build and the separate Pages build passed.
-- Local documentation links passed in all 19 Markdown files.
+- Local documentation links passed in all 10 Markdown files after consolidating setup and deployment notes.
 - All 26 original evidence hashes matched. Tracked files and the generated public entry files contained none of the configured private provider keys or team token.
-- No new provider calls or PostgreSQL integration checks were run for this cleanup. Their earlier results below remain dated observations.
+- These checks did not call providers or rerun PostgreSQL integration checks. Those results are listed separately below.
 
-The public sample is built without the expired temporary backend origin. Live setup remains available; the server implementation was not removed.
+The public sample has no configured backend origin and shows live setup instructions.
 
 ## Earlier recorded checks — 21 October 2026
 

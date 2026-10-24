@@ -75,7 +75,7 @@ function launch(name, args) {
     });
   child.on("error", () => {
     console.error(
-      `${name} could not start. Run this launcher in your own terminal, outside the coding runtime.`,
+      `${name} could not start. Check its installation and whether your terminal can launch child processes.`,
     );
   });
   child.on("close", () => {

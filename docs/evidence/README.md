@@ -14,4 +14,4 @@ These are historical responses and benchmark reports from 20–21 October 2026. 
 
 Other JSON files preserve intermediate attempts. Read each report's timestamp, submission scope, status and `passed` field rather than interpreting a successful request as a verified quote.
 
-[Current validation](../VALIDATION.md) · [Retailer findings](../FEASIBILITY.md) · [Historical development records](../archive/README.md)
+[Current validation](../VALIDATION.md) · [Retailer findings](../FEASIBILITY.md)
