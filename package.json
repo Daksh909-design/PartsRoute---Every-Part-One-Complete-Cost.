@@ -16,6 +16,7 @@
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
     "test": "vitest run --configLoader native",
     "test:watch": "vitest --configLoader native",
+    "check:docs": "node scripts/check-docs.mjs",
     "typecheck": "tsc --noEmit",
     "validate:live": "tsx --env-file-if-exists=.env.local scripts/validate-live.ts",
     "validate:providers": "vitest run --configLoader native --config vitest.live.config.mjs",

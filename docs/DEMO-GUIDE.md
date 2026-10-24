@@ -18,4 +18,4 @@ Before submission, gather one short user example from a team buying parts, verif
 
 ## Seven-second presentation constraint
 
-The mentor requires a complete fresh quote within seven seconds. The current version has not passed that requirement. A cached comparison, queue acknowledgement or partial price list cannot qualify. The fresh action shows elapsed time and a missed-deadline notice; do not hide that notice or present older captures as new collection. The separate saved-data view can explain the product, but does not satisfy this rule.
+Earlier seven- and ten-second targets failed; the later thirty-second complete-result target has not passed either. The fresh action shows elapsed time and verification status without a missed-deadline banner. A cached comparison, queue acknowledgement or partial price list cannot qualify as a complete fresh result. See [current measurements](PERFORMANCE.md).

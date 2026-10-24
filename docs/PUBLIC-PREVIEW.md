@@ -1,8 +1,10 @@
-# Temporary public live server
+# Historical temporary preview
+
+This preview was used for development on 20–21 October 2026. Its hostname is not a current deployment endpoint. The public sample no longer points to this temporary address. Permanent backend hosting is still pending.
 
 The existing Next.js server, Node worker and PostgreSQL database can be reached through a Cloudflare Quick Tunnel. This is a live server connection, separate from the synthetic calculator and cached comparisons.
 
-Verified on **21 October 2026**: [current temporary backend](https://economy-ant-enhance-cycles.trycloudflare.com/api/health). Pages release `8a2f416e78e7e6fd6db75a0c442675ca4d5719db` is configured for this origin. This replaces the stopped previous tunnel; the lifetime limitations below still apply.
+Verified at the time on **21 October 2026**: the development origin was `https://economy-ant-enhance-cycles.trycloudflare.com`. Historical Pages release `8a2f416e78e7e6fd6db75a0c442675ca4d5719db` used that origin. Do not use that saved hostname for a new deployment.
 
 **This is a temporary preview, not permanent hosting.** The team computer, database, web server, worker and tunnel process must all remain running and online. Stopping the tunnel invalidates its hostname. A new tunnel normally gets a different hostname and requires rebuilding Pages with the new public backend origin. No Render account, billing setup or paid hosting was created.
 

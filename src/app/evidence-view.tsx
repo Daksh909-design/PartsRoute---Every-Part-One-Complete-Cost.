@@ -61,7 +61,7 @@ export default function EvidenceView({
             here.
           </p>
           <a
-            href={`${repository}/tree/main/docs/evidence`}
+            href={`${repository}tree/main/docs/evidence`}
             target="_blank"
             rel="noreferrer"
           >

@@ -436,7 +436,7 @@ export default function Workspace() {
         <div className="page-heading">
           <div>
             <span className="eyebrow">PARTS WORKBENCH</span>
-            <h1>Plan your next build.</h1>
+            <h1>Compare the full cost of your parts list.</h1>
             <p>
               Compare component orders from Robu and Robocraze, including pack
               sizes, tax and delivery to your pincode.
@@ -517,7 +517,7 @@ export default function Workspace() {
                     className={`connection-state ${status?.ready ? "ready" : ""}`}
                   >
                     {status?.ready
-                      ? "Worker ready"
+                      ? "Service ready"
                       : !liveAvailable
                         ? "Server not connected"
                         : status
@@ -535,7 +535,7 @@ export default function Workspace() {
                     </p>
                     <a
                       className="setup-link"
-                      href={`${repository}/blob/main/docs/LIVE-SETUP.md`}
+                      href={`${repository}blob/main/docs/LIVE-SETUP.md`}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -891,7 +891,7 @@ export default function Workspace() {
                           View saved observations ↗
                         </button>
                         <span>
-                          Separate cache-only view. Makes no new API calls.
+                          Previously collected data; no new retailer checks.
                         </span>
                       </div>
                     )}
@@ -911,18 +911,18 @@ export default function Workspace() {
                   </fieldset>
                 </form>
                 <details className="coverage">
-                  <summary>Retailer coverage & limits</summary>
+                  <summary>Supported retailers</summary>
                   <p>
-                    <strong>Robu · Robocraze</strong> — adapters implemented;
-                    complete live baskets remain unqualified. Product mismatches
-                    and shipping gaps are shown rather than filled in.
+                    <strong>Robu · Robocraze.</strong> Collection is limited to
+                    the curated products in this list. Missing specifications
+                    and shipping charges are marked as unknown.
                   </p>
                   <p>
-                    Evelta is research only. Amazon and Flipkart are planned;
-                    seller and variant verification are still needed.
+                    A complete live purchase recommendation still requires
+                    verified products and shipping for your pincode.
                   </p>
                   <a
-                    href={`${repository}/blob/main/docs/FEASIBILITY.md`}
+                    href={`${repository}blob/main/docs/FEASIBILITY.md`}
                     target="_blank"
                     rel="noreferrer"
                   >

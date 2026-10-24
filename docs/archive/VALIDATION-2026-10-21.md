@@ -1,0 +1,95 @@
+# Validation actually performed
+
+Checked on **20 October 2026**. Partial observations and fast responses do not establish a complete live purchasing recommendation.
+
+## Checks that passed
+
+- **77 Vitest tests in ten files**, using labelled synthetic fixtures and mocked HTTP. Includes pack rounding, minimums, breaks, tax, shipping consolidation and boundaries, stock, mismatches, partial failures, provider contracts, cached comparisons, expiry, obsolete normalization rejection, schema grounding, circuit behavior and job recovery.
+- TypeScript checking and the full Next.js production build, with type checking enabled. This Windows coding host needs PARTSROUTE_BUILD_THREADS=1 and pinned TypeScript 6.0.3 because forked child processes are restricted.
+- **Ten real PostgreSQL checks** in the separate partsroute_test database: repeated migrations through 005, duplicate enqueue, exclusive claiming, lease recovery, stale-owner refusal, original immutability, normalized/result persistence, heartbeat and exact source-timestamp preservation. The timestamp check covers a microsecond precision bug caught during browser validation.
+- **Nine HTTP smoke checks** against the final production server: homepage, health, calculated sample, input validation, refusal of live-to-fixture fallback, authorization, approved-origin preflight, unrelated-origin rejection and protected readiness.
+- Two ten-request local cached-comparison benchmarks. The final batch took **10.79–301.95 ms**, median **17.92 ms**. PostgreSQL counts confirmed **zero new jobs and zero provider-usage records** during that final batch. A cached browser result also displayed 0.15 seconds. This is a real comparison over existing retailer evidence, with zero purchase-ready lines; it is not merely a queue acknowledgement or a complete landed quote.
+- The separate Pages React/domain bundle built with pinned esbuild, with server imports and private environment files excluded from its dependency graph.
+
+## Real API checks and limits
+
+- Direct TinyFish Fetch retrieved products and policy content from both Robu and Robocraze. Earlier attempts timed out or retrieved Robu's old placeholder policy URL; the latest corrected policy response is recorded below. Its checked breadboard was out of stock. HTTP 200 is not treated as per-URL success.
+- A replacement Gemini key successfully generated structured JSON. Real gemini-3.5-flash-lite extraction then recovered Robocraze HC-SR04 at ₹75 and DHT11 module at ₹59, and Robu HC-SR04 at ₹79 and DHT11 module at ₹59, with verbatim excerpts and actual token usage stored. New evidence is in extraction-recheck-2026-10-20.json.
+- Actual extraction calls ranged from about 3 to 17 seconds, and further calls timed out. The last saved-page recheck took 89.8 seconds overall. The earlier project-denied 403 remains historical evidence, not the current diagnosis. A successful generation test does not guarantee sustained provider availability or free-tier eligibility.
+- HC-SR04 total pin count, ordering constraints and complete basket shipping were not established sufficiently. Incorrect signal-name extraction is rejected; unknown fields stay unknown. No complete live plan resulted.
+- Earlier TinyFish Agent run **52d7ca78-5076-4dbd-a08b-760a3d67c08c** reported a ₹248 three-line cart but did not verify pincode serviceability/shipping and marked its basket as mismatching. Shipping correctly stayed unknown. No new Agent run was started during the latest recheck because product requirements did not qualify a candidate basket. The new order-control schema remains unqualified live.
+
+## Browser checks
+
+The updated desktop layout and a narrow mobile layout were visually inspected. Mobile document width equalled viewport width (375 CSS pixels), with no horizontal overflow. Quantity three recalculated the sample from ₹295 to ₹370; reset restored ₹295. Cached comparison showed the four grounded prices and protected originals/usage in Evidence. No browser errors were reported. Proof: workbench-current-desktop.png and workbench-current-mobile.png.
+
+## Deployment boundary
+
+The full web application, PostgreSQL and worker run on localhost. The public GitHub Pages build is a clearly labelled synthetic calculator and server-setup interface. A public live backend has not been provisioned; the owner confirmed there is no hosting account. Pages cannot run the worker or PostgreSQL. No paid hosting or billing was enabled.
+
+The final Pages release is verified separately after publishing. Historical public-release records remain in Git history; main and gh-pages serve different build targets from the same source release.
+
+## Still open
+
+- Reliable extraction of every required attribute and ordering constraint, complete pincode shipping, two qualified retailers and one independently checked landed total.
+- Human review, user research, a demo recording and model accuracy evaluation.
+- A newly collected, fully verified basket within seven seconds. The cached response target does not satisfy that stricter interpretation; discuss it with the mentor.
+- Public live hosting, Docker execution and process-kill recovery beyond SQL lease tests.
+
+Run pnpm test, pnpm typecheck, pnpm build, pnpm test:http and pnpm benchmark:http. The benchmark is read-only and requires a usable cache. Real provider checks are opt-in and may consume quota. See [performance](../PERFORMANCE.md), [feasibility](../FEASIBILITY.md) and [deployment](../DEPLOYMENT.md).
+
+## Final public release check
+
+GitHub Pages reported commit **35d16916dbed288cd26896231c29d77cb3c06e7f** built successfully. The deployed HTML, hashed JavaScript and CSS returned HTTP 200. The actual public calculator changed quantity three to ₹370 and reset to ₹295, with no browser errors. Screenshot: [published release](../pages-current-release.png). Source implementation: **9c24a4790858c916e7aeb2bb6afb27477b9ca77b**. The public release remains the static sample, with no live backend connected.
+
+## Temporary backend connection and strict budget check
+
+A Cloudflare Quick Tunnel exposed the existing backend temporarily. Public health returned 200, allowed-origin preflight 204, protected readiness 200 with database/worker ready, and unauthenticated readiness 401. This is a real server path, not a static fixture; it remains dependent on the team computer and has no hosting uptime guarantee. The separate fresh-quote seven-second benchmark **failed**: the new refreshed job was still processing at the deadline. See [preview details](../PUBLIC-PREVIEW.md) and the two new evidence captures. This supersedes the earlier statement that Pages had no connected backend, once the new frontend release is published.
+
+## Connected frontend verification
+
+Pages release **9ee6f65206ce3033536a6e9438e92915a1141199** loaded the connected frontend successfully. In the actual public browser, team-token authentication reached the database and worker, and a cached comparison returned real retailer observations in 1.06 seconds. This was not a new collection and is not a strict-budget pass. All nine HTTP smoke checks also passed through the public tunnel. The refreshed budget-test quote later finished partial, with no complete verified plan. Proof: [connected frontend](../public-backend-connected.png). The preview remains dependent on the team computer staying online.
+
+## Primary action freshness correction
+
+The primary live button now starts a new collection rather than a cached comparison. The collection endpoint always forces refresh=true, TinyFish gets ttl=0, and new quote jobs bypass content-based model reuse. Same-job recovery remains idempotent. Saved observations have a separate button. Full elapsed time and missed seven-second deadlines are visible; the interface also links to the connected server.
+
+**84 tests in 12 files passed**, including new authenticated fresh-endpoint, cache-bypass, idempotency-fingerprint and eager-original-persistence regressions. TypeScript, Next.js production build and the separate Pages build passed. All nine HTTP smoke checks passed through the public tunnel with the configured Pages origin. An initial smoke invocation used the tunnel itself as the CORS origin and failed the preflight expectation; it passed with SMOKE_ALLOWED_ORIGIN set to the actual permitted Pages origin. No origin restrictions were weakened.
+
+One fresh public-server benchmark made two new TinyFish Fetch requests and four successful new Gemini requests, followed by a model timeout. It **failed** the seven-second requirement and finished partial after roughly 152 seconds, without a verified plan. TinyFish alone took 15.8–17.8 seconds. [Full report](../evidence/fresh-cache-bypass-2026-10-20.json). The later eager-persistence adjustment was fixture-tested without repeating live consumption. Earlier cached timings remain historical and do not qualify.
+
+Pages release **92b0ee1247e4fd6331fa57ee15541099bf95c035** built successfully from source **db4755e**. Public HTML, JavaScript and CSS returned 200. In the deployed browser, Live quote exposed the primary fresh action and separate saved-data button, displayed the connected backend address, and authenticated readiness returned Worker ready with database connected. [Browser proof](../fresh-collection-connected.png). The browser connection check did not start another provider quote; the public fresh benchmark above is the actual provider-call evidence.
+
+## Current collector and conditional total correction
+
+Independent product extraction now runs concurrently, bounded to four Gemini calls per quote. Identical active team jobs recover without duplication. Explicit source prices survive model outages; item estimates remain conditional. Migration 006 was applied to both databases. 94 mocked/fixture unit tests in 14 files and 13 real PostgreSQL checks passed. TypeScript, production Next build, Pages build and nine public HTTP checks passed. No paid hosting or billing was enabled.
+
+Two public fresh-quote checks of the ten-second target failed. The final reader-enabled run collected six offers and produced a conditional ₹248 item estimate for all three lines, finishing partial after 52.190 seconds. Shipping and required product/order gaps remain unresolved; no verified delivered total resulted. See [current collector changes and evidence](../COLLECTOR-UPDATE.md). Older seven-second records remain historical.
+
+Pages release 8648f1001593d27b69486e5f8daab39c751111ea built successfully from application source 21897fe. The actual public browser reopened the measured live quote through its protected API and showed the conditional ₹248 estimate, all three priced lines, saved duration 52.2 seconds, a missed-ten-second notice, and unavailable delivered total. This browser replay made no new provider collection and does not count as a speed pass. [Final public proof](../live-item-estimate-current.png).
+
+## Policy concurrency and evidence regressions
+
+The next revision runs policy extraction alongside product extraction, corrects Robu's policy URL, requires ordering labels around ordering evidence, and rejects conflicting required specifications regardless of source order. Grounding version is now v4. **96 unit/fixture tests in 14 files, 13 real PostgreSQL checks, TypeScript, production Next.js build, Pages build and nine public HTTP checks passed.**
+
+The compact batch alternative was tested separately on saved pages, consumed new Gemini quota, failed the ten-second extraction allowance and produced invalid source references with a longer allowance. It was not integrated into the live path. The experiment is recorded separately from the fresh collection.
+
+New public live quote `14c87a8c-30ae-4565-9e0d-78cc38208cf4` failed the ten-second deadline and finished partial after **46.189 seconds**. Both new TinyFish batches and all eight AI extractions returned successfully. The corrected Robu policy was retrieved and normalized, but no shipping fee could be established. Six offers and a conditional ₹248 item estimate are available; required specification/order evidence and complete pincode shipping remain unresolved. There is no verified delivered total. See [latest measurements and experiment](../COLLECTOR-UPDATE.md). These results do not establish a guaranteed timing reduction.
+
+GitHub Pages release `e75620684401af22be8f3feb36d20476847f0393` built successfully from application source `46fd3a7`. Public HTML uses the new hashed JavaScript; HTML, JavaScript and CSS served successfully. The actual deployed browser reopened this latest protected quote and showed saved duration 46.2 seconds, conditional items ₹248, shipping not verified, and delivered total unavailable. This browser replay created no new provider collection. [Latest public quote view](../live-policy-current.png). The connected backend remains a temporary tunnel to the local computer.
+
+## Thirty-second response revision
+
+107 unit/fixture tests in 16 files, 13 real PostgreSQL checks, TypeScript, production Next.js build, separate Pages build and nine public HTTP checks passed. Tests cover narrow structured extraction, preservation of prices/stock/bulk tiers, contradiction handling, cache bypass, the eight-call concurrency ceiling, expired-request rejection and in-flight cancellation with unknown remote usage.
+
+Pages release `66ff01696196f061f6f3b035dbe776a6b955e10c` deployed source `f4bcbe4`. Public HTML, JavaScript and CSS served successfully. In the actual deployed browser, the previous 46.2-second quote showed its duration and unknown delivered total without the removed ten-second warning. The updated server also uses a shared 26-second processing window.
+
+The first admitted public narrow-extraction run still took 54 seconds and failed thirty seconds. The subsequent shared-window operator validation used new TinyFish calls and new AI requests, the ordinary worker and public result polling. It returned partial in **26.460 seconds**, server duration **26.224 seconds**, with five offers and conditional listed items ₹209 for two lines. This is a measured partial response, **not a complete verified quote or a strict benchmark pass**. The public POST quota was retained; local operator submission is explicit in the report. See [full scopes and evidence](../COLLECTOR-UPDATE.md). No permanent hosting or paid billing was enabled.
+
+## Resumed public validation — 21 October 2026
+
+108 unit/fixture tests in 16 files, 13 real PostgreSQL checks, production Next.js build (including TypeScript), Pages build and nine public HTTP checks ran successfully after restarting the stack. A new public API quote returned partial in **26.647 seconds**, with two offers; Robocraze timed out and one Robu product was blocked. There is no complete purchasing plan or verified delivered total. The strict benchmark remains failed. [Recorded public response](../evidence/public-budgeted-collection-2026-10-21.json). The current temporary origin is https://economy-ant-enhance-cycles.trycloudflare.com; the static interface must be deployed with that origin.
+
+Pages release `8a2f416e78e7e6fd6db75a0c442675ca4d5719db` built successfully from application source `d7b157b`, with the new backend origin. Public HTML references `pages-entry-YG4JK6EU.js`; the HTML, JavaScript and CSS served successfully. The previous release's script is retained alongside the current one to reduce missing-asset failures during cached-HTML transitions. All 26 recorded evidence hashes verified, and the staged/public credential scan passed. No provider key or team token is in the public build.
+
+The attempted new visual check could not run: the in-app browser did not attach the new tab, and its security policy then denied access to the existing browser error page. No alternate browser mechanism was used. Therefore the 21 October deployment has HTTP verification, **not a new visual screenshot**. Earlier screenshots are dated historical captures and must not be presented as this fresh result.
